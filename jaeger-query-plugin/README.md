@@ -2,7 +2,7 @@
 
 **This is experimental software**
 
-> If you are looking for the legacy Jaeger plugin for InfluxDB v1/v2, see the [legacy repository/branch](https://github.com/influxdata/jaeger-influxdb/tree/legacy).
+> If you are looking for the legacy Jaeger plugin for InfluxDB v1/v2, see the [legacy jaeger-influxdb repository](https://github.com/influxdata/jaeger-influxdb).
 
 This storage plugin supports [InfluxDB/IOx](https://github.com/influxdata/influxdb_iox), a high-performance, scalable, time-series storage engine.
 The plugin enables querying InfluxDB via the Jaeger UI.
