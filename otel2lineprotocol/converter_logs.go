@@ -1,28 +1,25 @@
 package otel2lineprotocol
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
-	"go.opentelemetry.io/collector/consumer/pdata"
-	tracetranslator "go.opentelemetry.io/collector/translator/trace"
+	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
+	otlplogs "go.opentelemetry.io/proto/otlp/logs/v1"
+	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
 	"go.uber.org/zap"
 )
 
-func (c *OpenTelemetryToLineProtocolConverter) WriteLogs(ld pdata.Logs, w io.Writer) (droppedLogRecords int) {
-	resourceLogss := ld.ResourceLogs()
-	for i := 0; i < resourceLogss.Len(); i++ {
-		resourceLogs := resourceLogss.At(i)
-		resource := resourceLogs.Resource()
-		ilLogss := resourceLogs.InstrumentationLibraryLogs()
-		for j := 0; j < ilLogss.Len(); j++ {
-			ilLogs := ilLogss.At(j)
-			instrumentationLibrary := ilLogs.InstrumentationLibrary()
-			logs := ilLogs.Logs()
-			for k := 0; k < logs.Len(); k++ {
-				logRecord := logs.At(k)
+func (c *OpenTelemetryToLineProtocolConverter) WriteLogs(resourceLogss []*otlplogs.ResourceLogs, w io.Writer) (droppedLogRecords int) {
+	for _, resourceLogs := range resourceLogss {
+		resource := resourceLogs.Resource
+		for _, ilLogs := range resourceLogs.InstrumentationLibraryLogs {
+			instrumentationLibrary := ilLogs.InstrumentationLibrary
+			for _, logRecord := range ilLogs.Logs {
 				if err := c.writeLogRecord(resource, instrumentationLibrary, logRecord, w); err != nil {
 					droppedLogRecords++
 					c.logger.Debug("failed to convert log record to InfluxDB point", zap.Error(err))
@@ -33,13 +30,13 @@ func (c *OpenTelemetryToLineProtocolConverter) WriteLogs(ld pdata.Logs, w io.Wri
 	return
 }
 
-func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, logRecord pdata.LogRecord, w io.Writer) error {
-	timestamp := logRecord.Timestamp().AsTime()
+func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, logRecord *otlplogs.LogRecord, w io.Writer) error {
+	timestamp := time.Unix(0, int64(logRecord.TimeUnixNano))
 	if timestamp.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
 		// From otel proto field Logrecord.time_unix_name:
 		// "Value of 0 indicates unknown or missing timestamp."
-		return errors.New("log record contains no time stamp")
+		return errors.New("log record has no time stamp")
 	}
 
 	encoder := c.encoderPool.Get().(*lineprotocol.Encoder)
@@ -51,48 +48,58 @@ func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource pdata.Res
 
 	// TODO handle logRecord.Flags()
 	c.resourceToTags(resource, encoder)
-	c.instrumentationLibraryToTags(instrumentationLibrary, encoder)
+	instrumentationLibraryToTags(instrumentationLibrary, encoder)
 
-	if name := logRecord.Name(); name != "" {
+	if name := logRecord.Name; name != "" {
 		encoder.AddTag(attributeName, name)
 	}
-	if !logRecord.TraceID().IsEmpty() {
-		encoder.AddTag(attributeTraceID, logRecord.TraceID().HexString())
-		if !logRecord.SpanID().IsEmpty() {
-			encoder.AddTag(attributeSpanID, logRecord.SpanID().HexString())
+	if traceID := hex.EncodeToString(logRecord.TraceId); len(traceID) > 0 {
+		encoder.AddTag(attributeTraceID, traceID)
+		if spanID := hex.EncodeToString(logRecord.SpanId); len(spanID) > 0 {
+			encoder.AddTag(attributeSpanID, spanID)
 		}
 	}
 
-	if severityNumber := logRecord.SeverityNumber(); severityNumber != pdata.SeverityNumberUNDEFINED {
-		encoder.AddField(attributeSeverityNumber, lineprotocol.MustNewValue(int64(severityNumber)))
+	if severityNumber := logRecord.SeverityNumber; severityNumber != otlplogs.SeverityNumber_SEVERITY_NUMBER_UNSPECIFIED {
+		encoder.AddField(attributeSeverityNumber, lineprotocol.IntValue(int64(severityNumber)))
 	}
-	if severityText := logRecord.SeverityText(); severityText != "" {
-		encoder.AddField(attributeSeverityText, lineprotocol.MustNewValue(severityText))
-	}
-	if body := tracetranslator.AttributeValueToString(logRecord.Body(), false); body != "" {
-		encoder.AddField(attributeBody, lineprotocol.MustNewValue(body))
-	}
-
-	droppedAttributesCount := logRecord.DroppedAttributesCount()
-	logRecord.Attributes().ForEach(func(k string, av pdata.AttributeValue) {
-		lpv, err := c.attributeValueToLPV(av)
-		if err != nil {
-			droppedAttributesCount++
-			c.logger.Debug("failed to convert log attribute value to line protocol value", zap.Error(err))
+	if severityText := logRecord.SeverityText; severityText != "" {
+		if v, ok := lineprotocol.StringValue(severityText); !ok {
+			c.logger.Debug("invalid log record severity text", zap.String("severity-text", severityText))
 		} else {
-			encoder.AddField(k, lpv)
+			encoder.AddField(attributeSeverityText, v)
 		}
-	})
+	}
+	if body := logRecord.Body; body != nil {
+		if v, err := otlpValueToLPV(body); err != nil {
+			c.logger.Debug("invalid log record body", zap.Error(err))
+		} else {
+			encoder.AddField(attributeBody, v)
+		}
+	}
+
+	droppedAttributesCount := uint64(logRecord.DroppedAttributesCount)
+	for _, attribute := range logRecord.Attributes {
+		if k := attribute.Key; k == "" {
+			droppedAttributesCount++
+			c.logger.Debug("log record attribute key is empty")
+		} else if v, err := otlpValueToLPV(attribute.Value); err != nil {
+			droppedAttributesCount++
+			c.logger.Debug("invalid log record attribute value", zap.Error(err))
+		} else {
+			encoder.AddField(k, v)
+		}
+	}
 	if droppedAttributesCount > 0 {
-		encoder.AddField(attributeDroppedAttributesCount, lineprotocol.MustNewValue(droppedAttributesCount))
+		encoder.AddField(attributeDroppedAttributesCount, lineprotocol.UintValue(droppedAttributesCount))
 	}
 
 	encoder.EndLine(timestamp)
 	if b, err := encoder.Bytes(), encoder.Err(); err != nil {
 		b = append(b, '\n')
-		return fmt.Errorf("failed to convert log record to line protocol: %w", err)
+		return fmt.Errorf("failed to encode log record: %w", err)
 	} else if _, err = w.Write(b); err != nil {
-		return fmt.Errorf("failed to write log record as line protocol: %w", err)
+		return err
 	}
 
 	return nil
