@@ -10,7 +10,6 @@ import (
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	otlpmetrics "go.opentelemetry.io/proto/otlp/metrics/v1"
 	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
-	"go.uber.org/zap"
 )
 
 func (c *OpenTelemetryToLineProtocolConverter) WriteMetrics(resourceMetricss []*otlpmetrics.ResourceMetrics, w io.Writer) (droppedMetrics int) {
@@ -21,7 +20,7 @@ func (c *OpenTelemetryToLineProtocolConverter) WriteMetrics(resourceMetricss []*
 			for _, metric := range ilMetrics.Metrics {
 				if err := c.writeMetric(resource, instrumentationLibrary, metric, w); err != nil {
 					droppedMetrics++
-					c.logger.Debug("failed to convert metric to line protocol", zap.Error(err))
+					c.logger.Debug("failed to convert metric to line protocol", err)
 				}
 			}
 		}
@@ -106,7 +105,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeMetricDoubleGauge(resource *
 		instrumentationLibraryToTags(instrumentationLibrary, encoder)
 		c.metricLabelsToTags(dataPoint.Labels, encoder)
 		if v, ok := lineprotocol.FloatValue(dataPoint.Value); !ok {
-			c.logger.Debug("invalid double gauge metric value", zap.Float64("value", dataPoint.Value))
+			c.logger.Debug("invalid double gauge metric value", "value", dataPoint.Value)
 			// TODO encoder.AbortLine()
 		} else {
 			encoder.AddField(metricGaugeFieldKey, v)
@@ -175,7 +174,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeMetricDoubleSum(resource *ot
 		instrumentationLibraryToTags(instrumentationLibrary, encoder)
 		c.metricLabelsToTags(dataPoint.Labels, encoder)
 		if v, ok := lineprotocol.FloatValue(dataPoint.Value); !ok {
-			c.logger.Debug("invalid double sum metric value", zap.Float64("value", dataPoint.Value))
+			c.logger.Debug("invalid double sum metric value", "value", dataPoint.Value)
 			// TODO encoder.AbortLine()
 		} else {
 			encoder.AddField(metricCounterFieldKey, v)
@@ -256,7 +255,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeMetricDoubleHistogram(resour
 		c.metricLabelsToTags(dataPoint.Labels, encoder)
 		encoder.AddField(metricHistogramCountFieldKey, lineprotocol.UintValue(dataPoint.Count))
 		if v, ok := lineprotocol.FloatValue(dataPoint.Sum); !ok {
-			c.logger.Debug("invalid double histogram metric sum", zap.Float64("value", dataPoint.Sum))
+			c.logger.Debug("invalid double histogram metric sum", "value", dataPoint.Sum)
 			// TODO encoder.AbortLine()
 			continue
 		} else {
@@ -303,7 +302,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeMetricDoubleSummary(resource
 
 		encoder.AddField(metricSummaryCountFieldKey, lineprotocol.UintValue(dataPoint.Count))
 		if v, ok := lineprotocol.FloatValue(dataPoint.Sum); !ok {
-			c.logger.Debug("invalid summary metric sum", zap.Float64("value", dataPoint.Sum))
+			c.logger.Debug("invalid summary metric sum", "value", dataPoint.Sum)
 			// TODO encoder.AbortLine()
 			continue
 		} else {
@@ -312,7 +311,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeMetricDoubleSummary(resource
 		for _, valueAtQuantile := range dataPoint.QuantileValues {
 			k := strconv.FormatFloat(valueAtQuantile.Quantile, 'f', -1, 64)
 			if v, ok := lineprotocol.FloatValue(valueAtQuantile.Value); !ok {
-				c.logger.Debug("invalid summary quantile value", zap.Float64("value", valueAtQuantile.Value))
+				c.logger.Debug("invalid summary quantile value", "value", valueAtQuantile.Value)
 				// TODO encoder.AbortLine()
 				continue
 			} else {

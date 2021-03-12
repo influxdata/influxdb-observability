@@ -11,7 +11,6 @@ import (
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
 	otlptrace "go.opentelemetry.io/proto/otlp/trace/v1"
-	"go.uber.org/zap"
 )
 
 func (c *OpenTelemetryToLineProtocolConverter) WriteTraces(resourceSpanss []*otlptrace.ResourceSpans, w io.Writer) (droppedSpans int) {
@@ -22,7 +21,7 @@ func (c *OpenTelemetryToLineProtocolConverter) WriteTraces(resourceSpanss []*otl
 			for _, span := range ilSpans.Spans {
 				if err := c.writeSpan(resource, instrumentationLibrary, span, w); err != nil {
 					droppedSpans++
-					c.logger.Debug("failed to convert span", zap.Error(err))
+					c.logger.Debug("failed to convert span", err)
 				}
 			}
 		}
@@ -83,7 +82,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeSpan(resource *otlpresource.
 			c.logger.Debug("span attribute key is empty")
 		} else if v, err := otlpValueToLPV(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid span attribute value", zap.String("key", k), zap.Error(err))
+			c.logger.Debug("invalid span attribute value", "key", k, err)
 		} else {
 			encoder.AddField(k, v)
 		}
@@ -96,7 +95,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeSpan(resource *otlpresource.
 	for _, event := range span.Events {
 		if lp, err := c.spanEventToLP(traceID, spanID, event); err != nil {
 			droppedEventsCount++
-			c.logger.Debug("invalid span event", zap.Error(err))
+			c.logger.Debug("invalid span event", err)
 		} else if _, err = w.Write(lp); err != nil {
 			return err
 		}
@@ -109,7 +108,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeSpan(resource *otlpresource.
 	for _, link := range span.Links {
 		if lp, err := c.spanLinkToLP(traceID, spanID, timestamp, link); err != nil {
 			droppedLinksCount++
-			c.logger.Debug("invalid span link", zap.Error(err))
+			c.logger.Debug("invalid span link", err)
 		} else if _, err = w.Write(lp); err != nil {
 			return err
 		}
@@ -121,7 +120,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeSpan(resource *otlpresource.
 	if status := span.Status; status != nil {
 		if code := status.Code; code != otlptrace.Status_STATUS_CODE_UNSET {
 			if v, ok := lineprotocol.StringValue(code.String()); !ok {
-				c.logger.Debug("invalid span status code", zap.String("code", code.String()))
+				c.logger.Debug("invalid span status code", "code", code.String())
 			} else {
 				encoder.AddField(attributeStatusCode, v)
 			}
@@ -129,7 +128,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeSpan(resource *otlpresource.
 
 		if message := status.Message; message != "" {
 			if v, ok := lineprotocol.StringValue(message); !ok {
-				c.logger.Debug("invalid span status message", zap.String("message", message))
+				c.logger.Debug("invalid span status message", "message", message)
 			} else {
 				encoder.AddField(attributeStatusMessage, v)
 			}
@@ -169,7 +168,7 @@ func (c *OpenTelemetryToLineProtocolConverter) spanEventToLP(traceID, spanID str
 			c.logger.Debug("span event attribute key is empty")
 		} else if v, err := otlpValueToLPV(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid span event attribute value", zap.Error(err))
+			c.logger.Debug("invalid span event attribute value", err)
 		} else {
 			encoder.AddField(k, v)
 		}
@@ -225,7 +224,7 @@ func (c *OpenTelemetryToLineProtocolConverter) spanLinkToLP(traceID, spanID stri
 			c.logger.Debug("span link attribute key is empty")
 		} else if v, err := otlpValueToLPV(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid span link attribute value", zap.Error(err))
+			c.logger.Debug("invalid span link attribute value", err)
 		} else {
 			encoder.AddField(k, v)
 		}

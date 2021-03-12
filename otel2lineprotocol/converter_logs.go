@@ -11,7 +11,6 @@ import (
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	otlplogs "go.opentelemetry.io/proto/otlp/logs/v1"
 	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
-	"go.uber.org/zap"
 )
 
 func (c *OpenTelemetryToLineProtocolConverter) WriteLogs(resourceLogss []*otlplogs.ResourceLogs, w io.Writer) (droppedLogRecords int) {
@@ -22,7 +21,7 @@ func (c *OpenTelemetryToLineProtocolConverter) WriteLogs(resourceLogss []*otlplo
 			for _, logRecord := range ilLogs.Logs {
 				if err := c.writeLogRecord(resource, instrumentationLibrary, logRecord, w); err != nil {
 					droppedLogRecords++
-					c.logger.Debug("failed to convert log record to InfluxDB point", zap.Error(err))
+					c.logger.Debug("failed to convert log record to InfluxDB point", err)
 				}
 			}
 		}
@@ -65,14 +64,14 @@ func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource *otlpreso
 	}
 	if severityText := logRecord.SeverityText; severityText != "" {
 		if v, ok := lineprotocol.StringValue(severityText); !ok {
-			c.logger.Debug("invalid log record severity text", zap.String("severity-text", severityText))
+			c.logger.Debug("invalid log record severity text", "severity-text", severityText)
 		} else {
 			encoder.AddField(attributeSeverityText, v)
 		}
 	}
 	if body := logRecord.Body; body != nil {
 		if v, err := otlpValueToLPV(body); err != nil {
-			c.logger.Debug("invalid log record body", zap.Error(err))
+			c.logger.Debug("invalid log record body", err)
 		} else {
 			encoder.AddField(attributeBody, v)
 		}
@@ -85,7 +84,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource *otlpreso
 			c.logger.Debug("log record attribute key is empty")
 		} else if v, err := otlpValueToLPV(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid log record attribute value", zap.Error(err))
+			c.logger.Debug("invalid log record attribute value", err)
 		} else {
 			encoder.AddField(k, v)
 		}

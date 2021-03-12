@@ -10,16 +10,14 @@ import (
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
-	"go.uber.org/zap"
 )
 
 type OpenTelemetryToLineProtocolConverter struct {
 	encoderPool sync.Pool
-
-	logger *zap.Logger
+	logger      Logger
 }
 
-func NewOpenTelemetryToLineProtocolConverter(logger *zap.Logger) *OpenTelemetryToLineProtocolConverter {
+func NewOpenTelemetryToLineProtocolConverter(logger Logger) *OpenTelemetryToLineProtocolConverter {
 	converter := &OpenTelemetryToLineProtocolConverter{
 		encoderPool: sync.Pool{
 			New: func() interface{} {
@@ -29,7 +27,7 @@ func NewOpenTelemetryToLineProtocolConverter(logger *zap.Logger) *OpenTelemetryT
 				return e
 			},
 		},
-		logger: logger,
+		logger: &errorLogger{logger},
 	}
 
 	return converter
@@ -43,7 +41,7 @@ func (c *OpenTelemetryToLineProtocolConverter) resourceToTags(resource *otlpreso
 			c.logger.Debug("resource attribute key is empty")
 		} else if v, err := otlpValueToString(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid resource attribute value", zap.String("key", k), zap.Error(err))
+			c.logger.Debug("invalid resource attribute value", "key", k, err)
 		} else {
 			encoder.AddTag(k, v)
 		}
