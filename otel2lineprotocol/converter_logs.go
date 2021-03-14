@@ -69,7 +69,7 @@ func (c *OpenTelemetryToLineProtocolConverter) writeLogRecord(resource *otlpreso
 			encoder.AddField(attributeSeverityText, v)
 		}
 	}
-	if body := logRecord.Body; body != nil {
+	if body := logRecord.Body; body != nil && body.Value != nil {
 		if v, err := otlpValueToLPV(body); err != nil {
 			c.logger.Debug("invalid log record body", err)
 		} else {
