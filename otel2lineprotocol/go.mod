@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/influxdata/line-protocol/v2 v2.0.0-20210312163703-69fb9462cb3c
+	github.com/stretchr/testify v1.5.1
 	go.opentelemetry.io/proto/otlp v0.0.0-00010101000000-000000000000
 )
 
