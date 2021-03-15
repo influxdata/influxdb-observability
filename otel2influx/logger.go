@@ -1,4 +1,4 @@
-package otel2lineprotocol
+package otel2influx
 
 // Logger must be implemented by the user of this package.
 // Emitted logs indicate non-fatal conversion errors.

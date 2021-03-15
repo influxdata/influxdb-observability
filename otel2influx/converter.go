@@ -1,69 +1,53 @@
-package otel2lineprotocol
+package otel2influx
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 
-	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
 	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
 )
 
-type OpenTelemetryToLineProtocolConverter struct {
-	encoderPool sync.Pool
-	logger      Logger
+type OpenTelemetryToInfluxConverter struct {
+	logger Logger
 }
 
-func NewOpenTelemetryToLineProtocolConverter(logger Logger) *OpenTelemetryToLineProtocolConverter {
-	converter := &OpenTelemetryToLineProtocolConverter{
-		encoderPool: sync.Pool{
-			New: func() interface{} {
-				e := new(lineprotocol.Encoder)
-				e.SetLax(true)
-				e.SetPrecision(lineprotocol.Nanosecond)
-				return e
-			},
-		},
-		logger: &errorLogger{logger},
+func NewOpenTelemetryToInfluxConverter(logger Logger) *OpenTelemetryToInfluxConverter {
+	return &OpenTelemetryToInfluxConverter{
+		&errorLogger{logger},
 	}
-
-	return converter
 }
 
-func (c *OpenTelemetryToLineProtocolConverter) resourceToTags(resource *otlpresource.Resource, encoder *lineprotocol.Encoder) {
-	droppedAttributesCount := uint64(resource.DroppedAttributesCount)
+func (c *OpenTelemetryToInfluxConverter) resourceToTags(resource *otlpresource.Resource, tags map[string]string) (tagsAgain map[string]string, droppedAttributesCount uint64) {
+	droppedAttributesCount = uint64(resource.DroppedAttributesCount)
 	for _, attribute := range resource.Attributes {
 		if k := attribute.Key; k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("resource attribute key is empty")
-		} else if v, err := otlpValueToString(attribute.Value); err != nil {
+		} else if v, err := otlpValueToInfluxTagValue(attribute.Value); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid resource attribute value", "key", k, err)
 		} else {
-			encoder.AddTag(k, v)
+			tags[k] = v
 		}
 	}
-	if droppedAttributesCount > 0 {
-		encoder.AddField(attributeDroppedResourceAttributesCount, lineprotocol.UintValue(droppedAttributesCount))
-	}
-	return
+	return tags, droppedAttributesCount
 }
 
-func instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, encoder *lineprotocol.Encoder) {
+func (c *OpenTelemetryToInfluxConverter) instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name != "" {
-		encoder.AddTag(attributeInstrumentationLibraryName, instrumentationLibrary.Name)
+		tags[attributeInstrumentationLibraryName] = instrumentationLibrary.Name
 	}
 	if instrumentationLibrary.Version != "" {
-		encoder.AddTag(attributeInstrumentationLibraryVersion, instrumentationLibrary.Version)
+		tags[attributeInstrumentationLibraryVersion] = instrumentationLibrary.Version
 	}
+	return tags
 }
 
-func otlpValueToString(value *otlpcommon.AnyValue) (string, error) {
+func otlpValueToInfluxTagValue(value *otlpcommon.AnyValue) (string, error) {
 	if value == nil {
-		return "", errors.New("value is nil")
+		return "", nil
 	}
 	switch value.Value.(type) {
 	case *otlpcommon.AnyValue_StringValue:
@@ -87,53 +71,41 @@ func otlpValueToString(value *otlpcommon.AnyValue) (string, error) {
 			return string(jsonBytes), nil
 		}
 	case nil:
-		return "", errors.New("value is nil")
+		return "", nil
 	default:
 		return "", fmt.Errorf("unknown value type %T", value.Value)
 	}
 }
 
-func otlpValueToLPV(value *otlpcommon.AnyValue) (lineprotocol.Value, error) {
+func otlpValueToInfluxFieldValue(value *otlpcommon.AnyValue) (interface{}, error) {
 	if value == nil {
-		return lineprotocol.Value{}, errors.New("value is nil")
+		return nil, nil
 	}
 	switch value.Value.(type) {
 	case *otlpcommon.AnyValue_StringValue:
-		if v, ok := lineprotocol.StringValue(value.GetStringValue()); !ok {
-			return lineprotocol.Value{}, fmt.Errorf("string value invalid %q", value.String())
-		} else {
-			return v, nil
-		}
+		return value.GetStringValue(), nil
 	case *otlpcommon.AnyValue_IntValue:
-		return lineprotocol.IntValue(value.GetIntValue()), nil
+		return value.GetIntValue(), nil
 	case *otlpcommon.AnyValue_DoubleValue:
-		if v, ok := lineprotocol.FloatValue(value.GetDoubleValue()); !ok {
-			return lineprotocol.Value{}, nil
-		} else {
-			return v, nil
-		}
+		return value.GetDoubleValue(), nil
 	case *otlpcommon.AnyValue_BoolValue:
-		return lineprotocol.BoolValue(value.GetBoolValue()), nil
+		return value.GetBoolValue(), nil
 	case *otlpcommon.AnyValue_KvlistValue:
 		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.GetKvlistValue())); err != nil {
-			return lineprotocol.Value{}, err
-		} else if v, ok := lineprotocol.StringValueFromBytes(jsonBytes); !ok {
-			return lineprotocol.Value{}, fmt.Errorf("map value invalid as serialized JSON bytes %q", value.String())
+			return nil, err
 		} else {
-			return v, nil
+			return string(jsonBytes), nil
 		}
 	case *otlpcommon.AnyValue_ArrayValue:
 		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.GetArrayValue())); err != nil {
-			return lineprotocol.Value{}, err
-		} else if v, ok := lineprotocol.StringValueFromBytes(jsonBytes); !ok {
-			return lineprotocol.Value{}, fmt.Errorf("array value invalid as serialized JSON bytes %q", value.String())
+			return nil, err
 		} else {
-			return v, nil
+			return string(jsonBytes), nil
 		}
 	case nil:
-		return lineprotocol.Value{}, errors.New("value is nil")
+		return nil, nil
 	default:
-		return lineprotocol.Value{}, fmt.Errorf("unknown value type %T", value.Value)
+		return nil, fmt.Errorf("unknown value type %T", value.Value)
 	}
 }
 

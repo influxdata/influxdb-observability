@@ -1,4 +1,4 @@
-package otel2lineprotocol
+package otel2influx
 
 type RetryableError struct {
 	error
