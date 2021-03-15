@@ -150,6 +150,7 @@ func (s *Store) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Tra
 		} else if span, ok := spans[spanID]; !ok {
 			s.logger.Warn("span event contains unknown span ID")
 		} else {
+			// TODO filter span attributes duplicated in logs
 			span.Logs = append(span.Logs, *log)
 		}
 		return nil
@@ -196,6 +197,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 		RefType: model.SpanRefType_CHILD_OF,
 	}
 	process := model.Process{}
+	// TODO add more process attributes
 	var err error
 	for k, v := range record {
 		switch k {
@@ -236,6 +238,9 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			} else {
 				span.Duration = time.Duration(int64(vv))
 			}
+		case attributeEndTimeUnixNano:
+			// Jaeger likes duration ^^
+			continue
 		case attributeParentSpanID:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("parent span ID is type %T", v)

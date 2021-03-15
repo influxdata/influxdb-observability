@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/jaegertracing/jaeger/storage/spanstore"
 )
 
 // SQLTraceQuery abstracts an SQL query for spans
@@ -14,38 +12,6 @@ type SQLTraceQuery struct {
 	durationMin, durationMax   time.Duration
 	tags                       map[string]string
 	numTraces                  int
-}
-
-// SQLTraceQueryFromTQP constructs an SQLTraceQuery using parameters in a spanstore.TraceQueryParameters
-func SQLTraceQueryFromTQP(query *spanstore.TraceQueryParameters) *SQLTraceQuery {
-	q := &SQLTraceQuery{tags: map[string]string{}}
-
-	if query.ServiceName != "" {
-		q.ServiceName(query.ServiceName)
-	}
-	if query.OperationName != "" {
-		q.OperationName(query.OperationName)
-	}
-	if !query.StartTimeMin.IsZero() {
-		q.StartTimeMin(query.StartTimeMin)
-	}
-	if !query.StartTimeMax.IsZero() {
-		q.StartTimeMax(query.StartTimeMax)
-	}
-	for k, v := range query.Tags {
-		q.Tag(k, v)
-	}
-	if query.DurationMin > 0 {
-		q.DurationMin(query.DurationMin)
-	}
-	if query.DurationMax > 0 {
-		q.DurationMax(query.DurationMax)
-	}
-	if query.NumTraces > 0 {
-		q.NumTraces(query.NumTraces)
-	}
-
-	return q
 }
 
 // ServiceName sets the query service name.
