@@ -84,14 +84,12 @@ func (s *Store) executeQuery(ctx context.Context, query string, f func(record ma
 	q.Add("q", fmt.Sprintf(query, params...))
 	q.Add("format", "json")
 	u.RawQuery = q.Encode()
-	s.logger.Warn(u.String())
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), http.NoBody)
 	if err != nil {
 		return err
 	}
 
 	res, err := s.httpClient.Do(req)
-	s.logger.Warn("do called", "error", err)
 	if err != nil {
 		return err
 	}
@@ -106,17 +104,13 @@ func (s *Store) executeQuery(ctx context.Context, query string, f func(record ma
 
 	var m []map[string]interface{}
 	decoder := json.NewDecoder(res.Body)
-	s.logger.Warn("decoder created")
 	if err = decoder.Decode(&m); err != nil {
-		s.logger.Warn("decode failed", "error", err)
 		return err
 	}
 
 	for _, line := range m {
-		s.logger.Warn("calling f")
 		err = f(line)
 		if err != nil {
-			s.logger.Error("f failed", "error", err)
 			return err
 		}
 	}
@@ -404,7 +398,6 @@ func (s *Store) GetOperations(ctx context.Context, query spanstore.OperationQuer
 }
 
 func (s *Store) FindTraces(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]*model.Trace, error) {
-	s.logger.Warn("FindTraces")
 	query := queryFindTraceIDs(traceQueryParameters)
 	var traceIDs []model.TraceID
 	f := func(record map[string]interface{}) error {
@@ -419,7 +412,6 @@ func (s *Store) FindTraces(ctx context.Context, traceQueryParameters *spanstore.
 	}
 
 	err := s.executeQuery(ctx, query, f)
-	s.logger.Warn(query, "error", err)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +431,6 @@ func (s *Store) FindTraces(ctx context.Context, traceQueryParameters *spanstore.
 	}
 
 	err = s.executeQuery(ctx, query, f)
-	s.logger.Warn(query, "error", err)
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +450,6 @@ func (s *Store) FindTraces(ctx context.Context, traceQueryParameters *spanstore.
 	}
 
 	err = s.executeQuery(ctx, query, f)
-	s.logger.Warn(query, "error", err)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +469,6 @@ func (s *Store) FindTraces(ctx context.Context, traceQueryParameters *spanstore.
 	}
 
 	err = s.executeQuery(ctx, query, f)
-	s.logger.Warn(query, "error", err)
 	if err != nil {
 		return nil, err
 	}
