@@ -1,0 +1,52 @@
+services:
+  opentelemetry-collector:
+    # Configuration in opentelemetry-collector-config.yaml
+    image: jacobmarble/opentelemetry-collector-contrib-influxdb:2021-03-16
+    entrypoint: otelcontribcol --config /config.yaml --log-level INFO
+    volumes:
+    - ./opentelemetry-collector-config.yaml:/config.yaml:ro
+    links:
+    - influxdb-iox
+    - hotrod
+
+  influxdb-iox:
+    image: jacobmarble/influxdb_iox:2021-03-16
+    environment:
+    - RUST_LOG=warn
+    - INFLUXDB_IOX_ID=7
+    - INFLUXDB_IOX_BIND_ADDR=0.0.0.0:8080
+    - INFLUXDB_IOX_GRPC_BIND_ADDR=0.0.0.0:8082
+    #    - INFLUXDB_IOX_DB_DIR=/tmp
+    ports:
+    - "8080:8080"
+    - "8082:8082"
+
+  influxdb-iox-init:
+    image: jacobmarble/influxdb_iox:2021-03-16
+    environment:
+    - HOST=influxdb-iox
+    - PORT=8082
+    entrypoint: /influxdb-iox-init.sh
+    volumes:
+    - ./influxdb-iox-init.sh:/influxdb-iox-init.sh:ro
+    links:
+    - influxdb-iox
+
+  jaeger-query:
+    image: jacobmarble/jaeger-query-influxdb:2021-03-16
+    environment:
+    - INFLUXDB_HOST=http://influxdb-iox:8080
+    - INFLUXDB_DATABASE=myorg_mybucket
+    ports:
+    - "16686:16686"
+    links:
+    - influxdb-iox
+
+  hotrod:
+    image: jaegertracing/example-hotrod:1.22.0
+    environment:
+      JAEGER_AGENT_HOST: opentelemetry-collector
+      JAEGER_AGENT_PORT: 6831
+    ports:
+    - "8000:8080" # HTTP UI
+    - "8083:8083" # metrics
