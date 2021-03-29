@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
-	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
+	otlpcommon "github.com/open-telemetry/opentelemetry-proto/gen/go/common/v1"
+	otlpresource "github.com/open-telemetry/opentelemetry-proto/gen/go/resource/v1"
 )
 
 type OpenTelemetryToInfluxConverter struct {

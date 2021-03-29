@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	otlpcommon "go.opentelemetry.io/proto/otlp/common/v1"
-	otlpmetrics "go.opentelemetry.io/proto/otlp/metrics/v1"
-	otlpresource "go.opentelemetry.io/proto/otlp/resource/v1"
+	otlpcommon "github.com/open-telemetry/opentelemetry-proto/gen/go/common/v1"
+	otlpmetrics "github.com/open-telemetry/opentelemetry-proto/gen/go/metrics/v1"
+	otlpresource "github.com/open-telemetry/opentelemetry-proto/gen/go/resource/v1"
 )
 
 func (c *OpenTelemetryToInfluxConverter) WriteMetrics(ctx context.Context, resourceMetricss []*otlpmetrics.ResourceMetrics, w InfluxWriter) (droppedMetrics int) {
@@ -31,20 +31,14 @@ func (c *OpenTelemetryToInfluxConverter) WriteMetrics(ctx context.Context, resou
 func (c *OpenTelemetryToInfluxConverter) writeMetric(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, metric *otlpmetrics.Metric, w InfluxWriter) error {
 	// Ignore metric.Description() and metric.Unit() .
 	switch metricData := metric.Data.(type) {
-	case *otlpmetrics.Metric_IntGauge:
-		return c.writeMetricIntGauge(ctx, resource, instrumentationLibrary, metric.Name, metricData.IntGauge, w)
-	case *otlpmetrics.Metric_DoubleGauge:
-		return c.writeMetricDoubleGauge(ctx, resource, instrumentationLibrary, metric.Name, metricData.DoubleGauge, w)
-	case *otlpmetrics.Metric_IntSum:
-		return c.writeMetricIntSum(ctx, resource, instrumentationLibrary, metric.Name, metricData.IntSum, w)
-	case *otlpmetrics.Metric_DoubleSum:
-		return c.writeMetricDoubleSum(ctx, resource, instrumentationLibrary, metric.Name, metricData.DoubleSum, w)
-	case *otlpmetrics.Metric_IntHistogram:
-		return c.writeMetricIntHistogram(ctx, resource, instrumentationLibrary, metric.Name, metricData.IntHistogram, w)
-	case *otlpmetrics.Metric_DoubleHistogram:
-		return c.writeMetricDoubleHistogram(ctx, resource, instrumentationLibrary, metric.Name, metricData.DoubleHistogram, w)
-	case *otlpmetrics.Metric_DoubleSummary:
-		return c.writeMetricDoubleSummary(ctx, resource, instrumentationLibrary, metric.Name, metricData.DoubleSummary, w)
+	case *otlpmetrics.Metric_Gauge:
+		return c.writeMetricGauge(ctx, resource, instrumentationLibrary, metric.Name, metricData.Gauge, w)
+	case *otlpmetrics.Metric_Sum:
+		return c.writeMetricSum(ctx, resource, instrumentationLibrary, metric.Name, metricData.Sum, w)
+	case *otlpmetrics.Metric_Histogram:
+		return c.writeMetricHistogram(ctx, resource, instrumentationLibrary, metric.Name, metricData.Histogram, w)
+	case *otlpmetrics.Metric_Summary:
+		return c.writeMetricSummary(ctx, resource, instrumentationLibrary, metric.Name, metricData.Summary, w)
 	default:
 		return fmt.Errorf("unknown metric data type %T", metric.Data)
 	}
@@ -78,7 +72,7 @@ func (c *OpenTelemetryToInfluxConverter) initMetricTagsAndTimestamp(resource *ot
 	return
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeMetricIntGauge(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, gauge *otlpmetrics.IntGauge, w InfluxWriter) error {
+func (c *OpenTelemetryToInfluxConverter) writeMetricGauge(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, gauge *otlpmetrics.Gauge, w InfluxWriter) error {
 	for _, dataPoint := range gauge.DataPoints {
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
 		if err != nil {
@@ -88,31 +82,14 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricIntGauge(ctx context.Context
 		fields[metricGaugeFieldKey] = dataPoint.Value
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for int gauge: %w", err)
+			return fmt.Errorf("failed to write point for gauge: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeMetricDoubleGauge(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, gauge *otlpmetrics.DoubleGauge, w InfluxWriter) error {
-	for _, dataPoint := range gauge.DataPoints {
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
-		if err != nil {
-			return err
-		}
-
-		fields[metricGaugeFieldKey] = dataPoint.Value
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for double gauge: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (c *OpenTelemetryToInfluxConverter) writeMetricIntSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.IntSum, w InfluxWriter) error {
+func (c *OpenTelemetryToInfluxConverter) writeMetricSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.Sum, w InfluxWriter) error {
 	// Ignore sum.IsMonotonic .
 	if sum.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
 		return fmt.Errorf("unsupported metric aggregation temporality %q", sum.AggregationTemporality)
@@ -127,36 +104,14 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricIntSum(ctx context.Context, 
 		fields[metricCounterFieldKey] = dataPoint.Value
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for int sum: %w", err)
+			return fmt.Errorf("failed to write point for sum: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeMetricDoubleSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.DoubleSum, w InfluxWriter) error {
-	// Ignore sum.IsMonotonic .
-	if sum.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
-		return fmt.Errorf("unsupported metric aggregation temporality %q", sum.AggregationTemporality)
-	}
-
-	for _, dataPoint := range sum.DataPoints {
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
-		if err != nil {
-			return err
-		}
-
-		fields[metricCounterFieldKey] = dataPoint.Value
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for double sum: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (c *OpenTelemetryToInfluxConverter) writeMetricIntHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.IntHistogram, w InfluxWriter) error {
+func (c *OpenTelemetryToInfluxConverter) writeMetricHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.Histogram, w InfluxWriter) error {
 	if histogram.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
 		return fmt.Errorf("unsupported metric aggregation temporality %q", histogram.AggregationTemporality)
 	}
@@ -184,49 +139,14 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricIntHistogram(ctx context.Con
 		}
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for int histogram: %w", err)
+			return fmt.Errorf("failed to write point for histogram: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeMetricDoubleHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.DoubleHistogram, w InfluxWriter) error {
-	if histogram.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
-		return fmt.Errorf("unsupported metric aggregation temporality %q", histogram.AggregationTemporality)
-	}
-
-	for _, dataPoint := range histogram.DataPoints {
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
-		if err != nil {
-			return err
-		}
-
-		fields[metricHistogramCountFieldKey] = dataPoint.Count
-		fields[metricHistogramSumFieldKey] = dataPoint.Sum
-		bucketCounts, explicitBounds := dataPoint.BucketCounts, dataPoint.ExplicitBounds
-		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
-			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
-		}
-		for j, bucketCount := range bucketCounts {
-			var boundFieldKey string
-			if j < len(explicitBounds) {
-				boundFieldKey = strconv.FormatFloat(explicitBounds[j], 'f', -1, 64)
-			} else {
-				boundFieldKey = metricHistogramInfFieldKey
-			}
-			fields[boundFieldKey] = bucketCount
-		}
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for double histogram: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (c *OpenTelemetryToInfluxConverter) writeMetricDoubleSummary(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, summary *otlpmetrics.DoubleSummary, w InfluxWriter) error {
+func (c *OpenTelemetryToInfluxConverter) writeMetricSummary(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, summary *otlpmetrics.Summary, w InfluxWriter) error {
 	for _, dataPoint := range summary.DataPoints {
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
 		if err != nil {
