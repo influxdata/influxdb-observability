@@ -89,7 +89,7 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedAttributesCount] = droppedAttributesCount
+		fields[attributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
 	droppedEventsCount := uint64(span.DroppedEventsCount)
@@ -119,8 +119,14 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 	}
 
 	if status := span.Status; status != nil {
-		if code := status.Code; code != otlptrace.Status_STATUS_CODE_UNSET {
-			fields[attributeStatusCode] = code.String()
+		switch status.Code {
+		case otlptrace.Status_STATUS_CODE_UNSET:
+		case otlptrace.Status_STATUS_CODE_OK:
+			fields[attributeStatusCode] = attributeStatusCodeOK
+		case otlptrace.Status_STATUS_CODE_ERROR:
+			fields[attributeStatusCode] = attributeStatusCodeError
+		default:
+			c.logger.Debug("status code not recognized: %q", status.Code)
 		}
 
 		if message := status.Message; message != "" {
@@ -166,7 +172,7 @@ func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, r
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedAttributesCount] = droppedAttributesCount
+		fields[attributeDroppedEventAttributesCount] = droppedAttributesCount
 	}
 
 	if len(fields) == 0 {
@@ -222,7 +228,7 @@ func (c *OpenTelemetryToInfluxConverter) spanLinkToLP(traceID, spanID string, sp
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedAttributesCount] = droppedAttributesCount
+		fields[attributeDroppedLinkAttributesCount] = droppedAttributesCount
 	}
 
 	if len(fields) == 0 {

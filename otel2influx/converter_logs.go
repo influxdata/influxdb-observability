@@ -85,7 +85,7 @@ func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, res
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedAttributesCount] = droppedAttributesCount
+		fields[attributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
 	if err := w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {

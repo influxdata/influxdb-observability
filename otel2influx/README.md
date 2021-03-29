@@ -1,9 +1,15 @@
 # OpenTelemetry to InfluxDB Line Protocol Converter
 
-**This is experimental software**
+> This is experimental software
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/influxdata/influxdb-observability/otel2influx.svg)](https://pkg.go.dev/github.com/influxdata/influxdb-observability/otel2influx)
 
 This package converts OpenTelemetry traces, metrics, and logs to [InfluxDB line protocol](https://docs.influxdata.com/influxdb/v2.0/reference/syntax/line-protocol/).
 The schema is optimized for [InfluxDB/IOx](https://github.com/influxdata/influxdb_iox), a timeseries database engine that is currently under development.
+
+[Docker Image: WIP OpenTelemetry Collector Contrib](https://hub.docker.com/r/jacobmarble/opentelemetry-collector-contrib-influxdb)
+
+[Docker Image: WIP Telegraf](https://hub.docker.com/r/jacobmarble/telegraf-opentelemetry)
 
 ## Definitions
 
