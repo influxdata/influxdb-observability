@@ -23,7 +23,7 @@ A span is composed of:
 
 Influx measurement/tag/field                        | OpenTelemetry Span field                    | Jaeger Span field                                                                | Zipkin Span field
 --- | --- | --- | ---
-`spans` measurement                                 | -
+measurement =`spans`                                | .
 timestamp                                           | `start_time_unix_nano` fixed64              | `start_time` Timestamp                                                           | `timestamp` fixed64 (µs)
 `trace_id` tag                                      | `trace_id` bytes                            | `trace_id` bytes                                                                 | `trace_id` bytes
 `span_id` tag                                       | `span_id` bytes                             | `span_id` bytes                                                                  | `id` bytes
@@ -33,15 +33,15 @@ timestamp                                           | `start_time_unix_nano` fix
 `kind` tag<br />(OTel stringified)                  | `kind` enum SpanKind                        | `tags["span.kind"]`                                                              | `kind` enum Kind
 `end_time_unix_nano` field int                      | `end_time_unix_nano` fixed64
 `duration_nano` field int                           |                                             | `duration` Duration                                                              | `duration` uint64 (µs)
--                                                   | `status` Status
-`otel.status_code` tag; `OK` or `ERROR`             | `status.code` enum StatusCode               | `tags["otel.status_code"]`<br />if `ERROR` then add:<br />`tags["error"] = true` | `tags["otel.status_code"]`<br />if `ERROR` then add:<br />`tags["error"] = true`
-`otel.status_description` field string              | `status.message` string                     | `tags["otel.status_description"]`                                                | `tags["error"]`<br />iff `otel.status_code` == ERROR
--                                                   | `instrumentation_library` InstrumentationLibrary
+.                                                   | `status` Status
+`otel.status_code` tag; `OK` or `ERROR`             | `status.code` enum StatusCode               | `tags["otel.status_code"]`<br />if `ERROR` then add:<br />`tags["error"]=true` | `tags["otel.status_code"]`<br />if `ERROR` then add:<br />`tags["error"]=true`
+`otel.status_description` field string              | `status.message` string                     | `tags["otel.status_description"]`                                                | `tags["error"]`<br />iff `otel.status_code` == `ERROR`
+.                                                   | `instrumentation_library` InstrumentationLibrary
 `otel.library.name` tag                             | `InstrumentationLibrary.name` string        | `tags["otel.library.name"]`                                                      | `tags["otel.library.name"]`
 `otel.library.version` tag                          | `InstrumentationLibrary.version` string     | `tags["otel.library.version"]`                                                   | `tags["otel.library.version"]`
--                                                   | `resource` Resource                         | `process` Process
--                                                   | `attributes["service.name"]`                | `process.service_name` string
+.                                                   | `resource` Resource                         | `process` Process
 (free-form fields)\*                                | `Resource.attributes` repeated KeyValue.    | `process.tags` repeated KeyValue
+.                                                   | `Resource.attributes["service.name"]`       | `process.service_name` string
 `otel.resource.dropped_attributes_count` field uint | `Resource.dropped_attributes_count` uint32
 (free-form fields)\*                                | `attributes` repeated KeyValue              | `tags` repeated KeyValue                                                         | `tags` map<string, string>
 `otel.span.dropped_attributes_count` field uint     | `dropped_attributes_count` uint32
@@ -49,12 +49,12 @@ timestamp                                           | `start_time_unix_nano` fix
 `otel.span.dropped_events_count` field uint.        | `dropped_events_count` uint32
 (see "Influx measurement `span-links`")             | `links` repeated Link                       | `references` repeated SpanRef
 `otel.span.dropped_links_count` field uint          | `dropped_links_count` uint32
--                                                   |                                             | `flags` uint32
--                                                   |                                             | `warnings` string
--                                                   | `attributes["zipkin.local_endpoint"]`       |                                                                                  | `local_endpoint` Endpoint
--                                                   | \*\*                                        |                                                                                  | `remote_endpoint` Endpoint
--                                                   | `attributes["zipkin.debug"]`                |                                                                                  | `debug` bool
--                                                   | `attributes["zipkin.shared"]`               |                                                                                  | `shared` bool
+.                                                   |                                             | `flags` uint32
+.                                                   |                                             | `warnings` string
+.                                                   | `attributes["zipkin.local_endpoint"]`       |                                                                                  | `local_endpoint` Endpoint
+.                                                   | \*\*                                        |                                                                                  | `remote_endpoint` Endpoint
+.                                                   | `attributes["zipkin.debug"]`                |                                                                                  | `debug` bool
+.                                                   | `attributes["zipkin.shared"]`               |                                                                                  | `shared` bool
 
 \* To convert from Influx to OTel, use common OTel attribute key prefixes to distinguish resource attributes from span attributes.
 This regex matches resource attribute keys:
