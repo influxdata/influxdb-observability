@@ -23,16 +23,16 @@ Log records are composed of:
 
 Influx measurement/tag/field                        | OpenTelemetry LogRecord field                   | Fluentd                                                   | Greylog GELF                                         | Syslog 3164                | Syslog 5424
 --- | --- | --- | --- | --- | ---
-measurement =`logs`                                 | -                                                                                                                                                             
+measurement =`logs`                                 | .                                                                                                                                                             
 timestamp                                           | `time_unix_nano` fixed64                        | `time` float                                              | `timestamp` number                                   | `HEADER timestamp` string  | `TIMESTAMP` string
 `body` field string                                 | `body` AnyValue                                 | `record["message"]` string or<br />`record["log"]` string | `full_message` string or<br />`short_message` string | `MSG content` string       | `MSG` string
 `name` tag                                          | `name` string                                   |                                                           |                                                      | `MSG tag` string           | `APP-NAME` string
 `trace_id` tag                                      | `trace_id` bytes
 `span_id` tag                                       | `span_id` bytes
--                                                   | `instrumentation_library` InstrumentationLibrary
+.                                                   | `instrumentation_library` InstrumentationLibrary
 `otel.library.name` tag                             | `InstrumentationLibrary.name` string
 `otel.library.version` tag                          | `InstrumentationLibrary.version` string
--                                                   | `resource` Resource
+.                                                   | `resource` Resource
 (free-form fields)\*                                | `Resource.attributes` repeated KeyValue
 `otel.resource.dropped_attributes_count` field uint | `Resource.dropped_attributes_count` uint32
 (free-form fields)\*                                | `attributes` repeated KeyValue                  | `record` JSON map                                         | `_[additional field]` string or number               |                            | `STRUCTURED-DATA` string
@@ -40,13 +40,13 @@ timestamp                                           | `time_unix_nano` fixed64  
 `severity_number` tag uint                          | `severity_number` enum SeverityNumber           |                                                           | `level` number                                       | `PRI severity` integer     | `PRI severity` integer
 `severity_text` field string                        | `severity_text` string
 `otel.log.flags` field uint                         | `flags` fixed32
--                                                   | `attributes["fluent.tag"]` string               | `tag` string
--                                                   | `Resource.attributes["net.host.name"]` string   |                                                           | `host` string                                        | `HEADER hostname` string   | `HOSTNAME` string
--                                                   | `Resource.attributes["net.host.ip"]` string     |                                                           |                                                      | `HEADER IP address` string | `HOSTNAME` string
--                                                   | `Resource.attributes["greylog.version"]` string |                                                           | `version` string =`1.1`
--                                                   | `Resource.attributes["syslog.version"]` string  |                                                           |                                                      |                            | `VERSION` integer =`1`
--                                                   | TODO                                            |                                                           |                                                      |                            | `PROCID` varying
--                                                   | TODO                                            |                                                           |                                                      |                            | `MSGID` string
+.                                                   | `attributes["fluent.tag"]` string               | `tag` string
+.                                                   | `Resource.attributes["net.host.name"]` string   |                                                           | `host` string                                        | `HEADER hostname` string   | `HOSTNAME` string
+.                                                   | `Resource.attributes["net.host.ip"]` string     |                                                           |                                                      | `HEADER IP address` string | `HOSTNAME` string
+.                                                   | `Resource.attributes["greylog.version"]` string |                                                           | `version` string =`1.1`
+.                                                   | `Resource.attributes["syslog.version"]` string  |                                                           |                                                      |                            | `VERSION` integer =`1`
+.                                                   | TODO                                            |                                                           |                                                      |                            | `PROCID` varying
+.                                                   | TODO                                            |                                                           |                                                      |                            | `MSGID` string
 
 
 
