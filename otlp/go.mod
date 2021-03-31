@@ -1,3 +1,3 @@
-module github.com/open-telemetry/opentelemetry-proto/gen/go
+module github.com/influxdata/influxdb-observability/otlp
 
 go 1.15

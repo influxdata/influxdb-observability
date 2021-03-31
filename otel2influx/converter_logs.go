@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	otlpcommon "github.com/open-telemetry/opentelemetry-proto/gen/go/common/v1"
-	otlplogs "github.com/open-telemetry/opentelemetry-proto/gen/go/logs/v1"
-	otlpresource "github.com/open-telemetry/opentelemetry-proto/gen/go/resource/v1"
+	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
+	otlplogs "github.com/influxdata/influxdb-observability/otlp/logs/v1"
+	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
 func (c *OpenTelemetryToInfluxConverter) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) (droppedLogRecords int) {

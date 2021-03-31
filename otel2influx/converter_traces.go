@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	otlpcommon "github.com/open-telemetry/opentelemetry-proto/gen/go/common/v1"
-	otlpresource "github.com/open-telemetry/opentelemetry-proto/gen/go/resource/v1"
-	otlptrace "github.com/open-telemetry/opentelemetry-proto/gen/go/trace/v1"
+	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
+	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
+	otlptrace "github.com/influxdata/influxdb-observability/otlp/trace/v1"
 )
 
 // TODO return which spans were dropped
