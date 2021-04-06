@@ -11,15 +11,15 @@ type NoopLogger struct{}
 
 func (_ NoopLogger) Debug(_ string, _ ...interface{}) {}
 
-// errorLogger intercepts log entries emitted by this package,
+// ErrorLogger intercepts log entries emitted by this package,
 // adding key "error" before any error type value.
 //
-// errorLogger panicks if the resulting kv slice length is odd.
-type errorLogger struct {
+// ErrorLogger panicks if the resulting kv slice length is odd.
+type ErrorLogger struct {
 	Logger
 }
 
-func (e *errorLogger) Debug(msg string, kv ...interface{}) {
+func (e *ErrorLogger) Debug(msg string, kv ...interface{}) {
 	for i := range kv {
 		if _, isError := kv[i].(error); isError {
 			kv = append(kv, nil)
