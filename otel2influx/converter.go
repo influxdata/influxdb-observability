@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
 type OpenTelemetryToInfluxConverter struct {
-	logger Logger
+	logger common.Logger
 }
 
-func NewOpenTelemetryToInfluxConverter(logger Logger) *OpenTelemetryToInfluxConverter {
+func NewOpenTelemetryToInfluxConverter(logger common.Logger) *OpenTelemetryToInfluxConverter {
 	return &OpenTelemetryToInfluxConverter{
-		&errorLogger{logger},
+		&common.ErrorLogger{Logger: logger},
 	}
 }
 
@@ -37,10 +38,10 @@ func (c *OpenTelemetryToInfluxConverter) resourceToTags(resource *otlpresource.R
 
 func (c *OpenTelemetryToInfluxConverter) instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name != "" {
-		tags[attributeInstrumentationLibraryName] = instrumentationLibrary.Name
+		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name
 	}
 	if instrumentationLibrary.Version != "" {
-		tags[attributeInstrumentationLibraryVersion] = instrumentationLibrary.Version
+		tags[common.AttributeInstrumentationLibraryVersion] = instrumentationLibrary.Version
 	}
 	return tags
 }

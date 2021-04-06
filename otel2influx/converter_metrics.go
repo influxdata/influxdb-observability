@@ -7,11 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
+// TODO return which metrics were dropped
 func (c *OpenTelemetryToInfluxConverter) WriteMetrics(ctx context.Context, resourceMetricss []*otlpmetrics.ResourceMetrics, w InfluxWriter) (droppedMetrics int) {
 	for _, resourceMetrics := range resourceMetricss {
 		resource := resourceMetrics.Resource
@@ -65,7 +67,7 @@ func (c *OpenTelemetryToInfluxConverter) initMetricTagsAndTimestamp(resource *ot
 	var droppedResourceAttributesCount uint64
 	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
 	if droppedResourceAttributesCount > 0 {
-		fields[attributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
+		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
 	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
 
@@ -79,7 +81,7 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricGauge(ctx context.Context, r
 			return err
 		}
 
-		fields[metricGaugeFieldKey] = dataPoint.Value
+		fields[common.MetricGaugeFieldKey] = dataPoint.Value
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
 			return fmt.Errorf("failed to write point for gauge: %w", err)
@@ -101,7 +103,7 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricSum(ctx context.Context, res
 			return err
 		}
 
-		fields[metricCounterFieldKey] = dataPoint.Value
+		fields[common.MetricCounterFieldKey] = dataPoint.Value
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
 			return fmt.Errorf("failed to write point for sum: %w", err)
@@ -122,8 +124,8 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricHistogram(ctx context.Contex
 			return err
 		}
 
-		fields[metricHistogramCountFieldKey] = dataPoint.Count
-		fields[metricHistogramSumFieldKey] = dataPoint.Sum
+		fields[common.MetricHistogramCountFieldKey] = dataPoint.Count
+		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum
 		bucketCounts, explicitBounds := dataPoint.BucketCounts, dataPoint.ExplicitBounds
 		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
@@ -133,7 +135,7 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricHistogram(ctx context.Contex
 			if j < len(explicitBounds) {
 				boundFieldKey = strconv.FormatFloat(explicitBounds[j], 'f', -1, 64)
 			} else {
-				boundFieldKey = metricHistogramInfFieldKey
+				boundFieldKey = common.MetricHistogramInfFieldKey
 			}
 			fields[boundFieldKey] = bucketCount
 		}
@@ -153,8 +155,8 @@ func (c *OpenTelemetryToInfluxConverter) writeMetricSummary(ctx context.Context,
 			return err
 		}
 
-		fields[metricSummaryCountFieldKey] = dataPoint.Count
-		fields[metricSummarySumFieldKey] = dataPoint.Sum
+		fields[common.MetricSummaryCountFieldKey] = dataPoint.Count
+		fields[common.MetricSummarySumFieldKey] = dataPoint.Sum
 		for _, valueAtQuantile := range dataPoint.QuantileValues {
 			quantileFieldKey := strconv.FormatFloat(valueAtQuantile.Quantile, 'f', -1, 64)
 			fields[quantileFieldKey] = valueAtQuantile.Value

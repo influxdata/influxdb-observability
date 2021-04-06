@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlplogs "github.com/influxdata/influxdb-observability/otlp/logs/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
+// TODO return which log records were dropped
 func (c *OpenTelemetryToInfluxConverter) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) (droppedLogRecords int) {
 	for _, resourceLogs := range resourceLogss {
 		resource := resourceLogs.Resource
@@ -37,7 +39,7 @@ func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, res
 		return errors.New("log record has no time stamp")
 	}
 
-	measurement := measurementLogs
+	measurement := common.MeasurementLogs
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
 
@@ -45,31 +47,31 @@ func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, res
 	var droppedResourceAttributesCount uint64
 	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
 	if droppedResourceAttributesCount > 0 {
-		fields[attributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
+		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
 	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	if name := logRecord.Name; name != "" {
-		fields[attributeName] = name
+		fields[common.AttributeName] = name
 	}
 	if traceID := hex.EncodeToString(logRecord.TraceId); len(traceID) > 0 {
-		tags[attributeTraceID] = traceID
+		tags[common.AttributeTraceID] = traceID
 		if spanID := hex.EncodeToString(logRecord.SpanId); len(spanID) > 0 {
-			tags[attributeSpanID] = spanID
+			tags[common.AttributeSpanID] = spanID
 		}
 	}
 
 	if severityNumber := logRecord.SeverityNumber; severityNumber != otlplogs.SeverityNumber_SEVERITY_NUMBER_UNSPECIFIED {
-		fields[attributeSeverityNumber] = int64(severityNumber)
+		fields[common.AttributeSeverityNumber] = int64(severityNumber)
 	}
 	if severityText := logRecord.SeverityText; severityText != "" {
-		fields[attributeSeverityText] = severityText
+		fields[common.AttributeSeverityText] = severityText
 	}
 	if v, err := otlpValueToInfluxFieldValue(logRecord.Body); err != nil {
 		c.logger.Debug("invalid log record body", err)
-		fields[attributeBody] = nil
+		fields[common.AttributeBody] = nil
 	} else {
-		fields[attributeBody] = v
+		fields[common.AttributeBody] = v
 	}
 
 	droppedAttributesCount := uint64(logRecord.DroppedAttributesCount)
@@ -85,7 +87,7 @@ func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, res
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedSpanAttributesCount] = droppedAttributesCount
+		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
 	if err := w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {

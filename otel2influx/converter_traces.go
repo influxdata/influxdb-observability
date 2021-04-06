@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 	otlptrace "github.com/influxdata/influxdb-observability/otlp/trace/v1"
@@ -30,14 +31,14 @@ func (c *OpenTelemetryToInfluxConverter) WriteTraces(ctx context.Context, resour
 }
 
 func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, span *otlptrace.Span, w InfluxWriter) error {
-	measurement := measurementSpans
+	measurement := common.MeasurementSpans
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
 
 	var droppedResourceAttributesCount uint64
 	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
 	if droppedResourceAttributesCount > 0 {
-		fields[attributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
+		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
 	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
 
@@ -45,25 +46,25 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 	if len(traceID) == 0 {
 		return errors.New("span has no trace ID")
 	}
-	tags[attributeTraceID] = traceID
+	tags[common.AttributeTraceID] = traceID
 
 	spanID := hex.EncodeToString(span.SpanId)
 	if len(spanID) == 0 {
 		return errors.New("span has no span ID")
 	}
-	tags[attributeSpanID] = spanID
+	tags[common.AttributeSpanID] = spanID
 
 	if span.TraceState != "" {
-		tags[attributeTraceState] = span.TraceState
+		tags[common.AttributeTraceState] = span.TraceState
 	}
 	if len(span.ParentSpanId) > 0 {
-		tags[attributeParentSpanID] = hex.EncodeToString(span.ParentSpanId)
+		tags[common.AttributeParentSpanID] = hex.EncodeToString(span.ParentSpanId)
 	}
 	if span.Name != "" {
-		tags[attributeName] = span.Name
+		tags[common.AttributeName] = span.Name
 	}
 	if otlptrace.Span_SPAN_KIND_UNSPECIFIED != span.Kind {
-		tags[attributeSpanKind] = span.Kind.String()
+		tags[common.AttributeSpanKind] = span.Kind.String()
 	}
 
 	ts := time.Unix(0, int64(span.StartTimeUnixNano))
@@ -72,8 +73,8 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 	}
 
 	if endTime := time.Unix(0, int64(span.EndTimeUnixNano)); !endTime.IsZero() {
-		fields[attributeEndTimeUnixNano] = endTime.UnixNano()
-		fields[attributeDurationNano] = endTime.Sub(ts).Nanoseconds()
+		fields[common.AttributeEndTimeUnixNano] = endTime.UnixNano()
+		fields[common.AttributeDurationNano] = endTime.Sub(ts).Nanoseconds()
 	}
 
 	droppedAttributesCount := uint64(span.DroppedAttributesCount)
@@ -89,7 +90,7 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedSpanAttributesCount] = droppedAttributesCount
+		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
 	droppedEventsCount := uint64(span.DroppedEventsCount)
@@ -102,7 +103,7 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 		}
 	}
 	if droppedEventsCount > 0 {
-		fields[attributeDroppedEventsCount] = droppedEventsCount
+		fields[common.AttributeDroppedEventsCount] = droppedEventsCount
 	}
 
 	droppedLinksCount := uint64(span.DroppedLinksCount)
@@ -115,22 +116,22 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 		}
 	}
 	if droppedLinksCount > 0 {
-		fields[attributeDroppedLinksCount] = droppedLinksCount
+		fields[common.AttributeDroppedLinksCount] = droppedLinksCount
 	}
 
 	if status := span.Status; status != nil {
 		switch status.Code {
 		case otlptrace.Status_STATUS_CODE_UNSET:
 		case otlptrace.Status_STATUS_CODE_OK:
-			fields[attributeStatusCode] = attributeStatusCodeOK
+			fields[common.AttributeStatusCode] = common.AttributeStatusCodeOK
 		case otlptrace.Status_STATUS_CODE_ERROR:
-			fields[attributeStatusCode] = attributeStatusCodeError
+			fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
 		default:
 			c.logger.Debug("status code not recognized: %q", status.Code)
 		}
 
 		if message := status.Message; message != "" {
-			fields[attributeStatusMessage] = message
+			fields[common.AttributeStatusMessage] = message
 		}
 	}
 
@@ -142,21 +143,21 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 }
 
 func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, spanEvent *otlptrace.Span_Event) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
-	measurement = measurementLogs
+	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
 	var droppedResourceAttributesCount uint64
 	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
 	if droppedResourceAttributesCount > 0 {
-		fields[attributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
+		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
 	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
 
-	tags[attributeTraceID] = traceID
-	tags[attributeSpanID] = spanID
+	tags[common.AttributeTraceID] = traceID
+	tags[common.AttributeSpanID] = spanID
 	if name := spanEvent.Name; name != "" {
-		tags[attributeName] = name
+		tags[common.AttributeName] = name
 	}
 
 	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount)
@@ -172,7 +173,7 @@ func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, r
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedEventAttributesCount] = droppedAttributesCount
+		fields[common.AttributeDroppedEventAttributesCount] = droppedAttributesCount
 	}
 
 	if len(fields) == 0 {
@@ -190,29 +191,29 @@ func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, r
 }
 
 func (c *OpenTelemetryToInfluxConverter) spanLinkToLP(traceID, spanID string, spanLink *otlptrace.Span_Link) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
-	measurement = measurementSpanLinks
+	measurement = common.MeasurementSpanLinks
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	tags[attributeTraceID] = traceID
-	tags[attributeSpanID] = spanID
+	tags[common.AttributeTraceID] = traceID
+	tags[common.AttributeSpanID] = spanID
 
 	if linkedTraceID := hex.EncodeToString(spanLink.TraceId); len(linkedTraceID) == 0 {
 		err = errors.New("span link has no trace ID")
 		return
 	} else {
-		tags[attributeLinkedTraceID] = linkedTraceID
+		tags[common.AttributeLinkedTraceID] = linkedTraceID
 	}
 
 	if linkedSpanID := hex.EncodeToString(spanLink.SpanId); len(linkedSpanID) == 0 {
 		err = errors.New("span link has no span ID")
 		return
 	} else {
-		tags[attributeLinkedSpanID] = linkedSpanID
+		tags[common.AttributeLinkedSpanID] = linkedSpanID
 	}
 
 	if traceState := spanLink.TraceState; traceState != "" {
-		tags[attributeTraceState] = traceState
+		tags[common.AttributeTraceState] = traceState
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount)
@@ -228,7 +229,7 @@ func (c *OpenTelemetryToInfluxConverter) spanLinkToLP(traceID, spanID string, sp
 		}
 	}
 	if droppedAttributesCount > 0 {
-		fields[attributeDroppedLinkAttributesCount] = droppedAttributesCount
+		fields[common.AttributeDroppedLinkAttributesCount] = droppedAttributesCount
 	}
 
 	if len(fields) == 0 {
