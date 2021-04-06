@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"regexp"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/config"
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
@@ -186,9 +186,6 @@ func (s *Store) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Tra
 	return trace, nil
 }
 
-// https://github.com/open-telemetry/opentelemetry-specification/tree/v1.0.1/specification/resource/semantic_conventions
-var resourceNamespace = regexp.MustCompile(`^(service\.|telemetry\.|container\.|process\.|host\.|os\.|cloud\.|deployment\.|k8s\.|aws\.|gcp\.|azure\.|faas\.name|faas\.id|faas\.version|faas\.instance|faas\.max_memory)`)
-
 func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 	span := model.Span{
 		Process: &model.Process{
@@ -276,7 +273,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 				}
 			}
 		default:
-			if resourceNamespace.MatchString(k) {
+			if common.ResourceNamespace.MatchString(k) {
 				span.Process.Tags = append(span.Process.Tags, kvToKeyValue(k, v))
 			} else {
 				span.Tags = append(span.Tags, kvToKeyValue(k, v))
