@@ -14,10 +14,15 @@ Its design objectives include critical features for storing and querying observa
 
 [Schema reference with conversion tables](docs/index.md).
 
-## `otel2influx`
+## `otel2influx` and `influx2otel`
 
 The golang package [`otel2influx`](otel2influx/README.md) converts OpenTelemetry protocol buffer objects to (measurement, tags, fields, timestamp) tuples.
-It is imported by [a WIP fork of OpenTelemetry Collector Contrib](https://github.com/influxdata/opentelemetry-collector-contrib/tree/influxdb) and by [a WIP fork of Telegraf](https://github.com/jacobmarble/telegraf/tree/jgm-opentelemetry).
+It is imported by [a proposed OpenTelemetry Collector Contrib exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/2952)
+and by [a proposed Telegraf input plugin](https://github.com/influxdata/telegraf/pull/9077).
+
+The golang package [`influx2otel`](influx2otel/README.md) converts (measurement, tags, fields, timestamp) tuples to OpenTelemetry protocol buffer objects.
+It could be imported by an OpenTelemtry Collector Contrib receiver
+or by a Telegraf output plugin.
 
 ## `jaeger-query-plugin`
 
