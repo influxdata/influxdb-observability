@@ -18,6 +18,8 @@ rm -rf "$BASEDIR"/opentelemetry-proto "$BASEDIR"/otlp
 git clone --depth 1 --branch ${OTEL_PROTO_VERSION} --quiet https://github.com/open-telemetry/opentelemetry-proto "$BASEDIR"/opentelemetry-proto
 cd "$BASEDIR"/opentelemetry-proto
 find . -type f -name '*.proto' -exec sed -i '' 's+github.com/open-telemetry/opentelemetry-proto/gen/go/+github.com/influxdata/influxdb-observability/otlp/+g' {} +
+find . -type f -name '*.proto' -exec sed -i '' 's+opentelemetry\.proto\.+internal.opentelemetry.proto.+g' {} +
+find . -type f -name '*.yaml' -exec sed -i '' 's+selector: opentelemetry\.proto\.+selector: internal.opentelemetry.proto.+g' {} +
 make gen-go
 mv gen/go/github.com/influxdata/influxdb-observability/otlp "$BASEDIR"/
 cd "$BASEDIR"/otlp
