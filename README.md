@@ -30,3 +30,12 @@ To regenerate:
 ```console
 $ ./gen-proto.sh
 ```
+
+This package is only intended for use by packages within this repository.
+
+## `common`
+
+The golang package `common` contains simple utilities and common string values,
+used in at least two of the above-mentioned packages.
+
+This package is only intended for use by packages within this repository.
