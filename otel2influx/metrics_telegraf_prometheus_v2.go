@@ -157,7 +157,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricHistogram(ctx context.Cont
 			}
 
 			boundTagValue := strconv.FormatFloat(explicitBound, 'f', -1, 64)
-			t["le"] = boundTagValue
+			t[common.MetricHistogramBoundKeyV2] = boundTagValue
 			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts[i])
 
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
@@ -201,7 +201,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricSummary(ctx context.Contex
 			}
 
 			quantileTagValue := strconv.FormatFloat(valueAtQuantile.Quantile, 'f', -1, 64)
-			t["quantile"] = quantileTagValue // TODO le and quantile to constants
+			t[common.MetricSummaryQuantileKeyV2] = quantileTagValue
 			f[measurement] = float64(valueAtQuantile.Value)
 
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {

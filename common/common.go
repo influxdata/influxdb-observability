@@ -16,11 +16,13 @@ const (
 	MetricHistogramCountFieldKey = "count"
 	MetricHistogramSumFieldKey   = "sum"
 	MetricHistogramInfFieldKey   = "inf"
+	MetricHistogramBoundKeyV2    = "le"
 	MetricHistogramCountSuffix   = "_count"
 	MetricHistogramSumSuffix     = "_sum"
 	MetricHistogramBucketSuffix  = "_bucket"
 	MetricSummaryCountFieldKey   = "count"
 	MetricSummarySumFieldKey     = "sum"
+	MetricSummaryQuantileKeyV2   = "quantile"
 	MetricSummaryCountSuffix     = "_count"
 	MetricSummarySumSuffix       = "_sum"
 
