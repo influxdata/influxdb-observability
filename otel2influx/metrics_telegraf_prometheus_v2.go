@@ -13,11 +13,11 @@ import (
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
-type metricWriterTelegrafPrometheusV1 struct {
+type metricWriterTelegrafPrometheusV2 struct {
 	logger common.Logger
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, metric *otlpmetrics.Metric, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV2) writeMetric(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, metric *otlpmetrics.Metric, w InfluxWriter) error {
 	// Ignore metric.Description() and metric.Unit() .
 	switch metricData := metric.Data.(type) {
 	case *otlpmetrics.Metric_Gauge:
@@ -33,7 +33,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, reso
 	}
 }
 
-func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, timeUnixNano uint64, labels []*otlpcommon.StringKeyValue) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, timeUnixNano uint64, labels []*otlpcommon.StringKeyValue) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	ts = time.Unix(0, int64(timeUnixNano))
 	if ts.IsZero() {
 		err = errors.New("metric has no timestamp")
@@ -61,7 +61,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource *
 	return
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetricGauge(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, gauge *otlpmetrics.Gauge, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV2) writeMetricGauge(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, gauge *otlpmetrics.Gauge, w InfluxWriter) error {
 	for _, dataPoint := range gauge.DataPoints {
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
 		if err != nil {
@@ -70,14 +70,14 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetricGauge(ctx context.Context,
 
 		switch v := dataPoint.Value.(type) {
 		case *otlpmetrics.NumberDataPoint_AsDouble:
-			fields[common.MetricGaugeFieldKey] = v.AsDouble
+			fields[measurement] = v.AsDouble
 		case *otlpmetrics.NumberDataPoint_AsInt:
-			fields[common.MetricGaugeFieldKey] = float64(v.AsInt)
+			fields[measurement] = float64(v.AsInt)
 		default:
 			return fmt.Errorf("unrecognized gauge data point type %T", dataPoint.Value)
 		}
 
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
 			return fmt.Errorf("failed to write point for gauge: %w", err)
 		}
 	}
@@ -85,7 +85,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetricGauge(ctx context.Context,
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetricSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.Sum, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV2) writeMetricSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
 		return fmt.Errorf("unsupported metric aggregation temporality %q", sum.AggregationTemporality)
 	}
@@ -101,14 +101,14 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetricSum(ctx context.Context, r
 
 		switch v := dataPoint.Value.(type) {
 		case *otlpmetrics.NumberDataPoint_AsDouble:
-			fields[common.MetricCounterFieldKey] = v.AsDouble
+			fields[measurement] = v.AsDouble
 		case *otlpmetrics.NumberDataPoint_AsInt:
-			fields[common.MetricCounterFieldKey] = float64(v.AsInt)
+			fields[measurement] = float64(v.AsInt)
 		default:
 			return fmt.Errorf("unrecognized gauge data point type %T", dataPoint.Value)
 		}
 
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
 			return fmt.Errorf("failed to write point for sum: %w", err)
 		}
 	}
@@ -116,7 +116,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetricSum(ctx context.Context, r
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetricHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.Histogram, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV2) writeMetricHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.Histogram, w InfluxWriter) error {
 	if histogram.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
 		return fmt.Errorf("unsupported metric aggregation temporality %q", histogram.AggregationTemporality)
 	}
@@ -127,41 +127,86 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetricHistogram(ctx context.Cont
 			return err
 		}
 
-		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count)
-		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum
+		{
+			f := make(map[string]interface{}, len(fields)+2)
+			for k, v := range fields {
+				f[k] = v
+			}
+
+			f[measurement+common.MetricHistogramCountSuffix] = float64(dataPoint.Count)
+			f[measurement+common.MetricHistogramSumSuffix] = dataPoint.Sum
+
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
+				return fmt.Errorf("failed to write point for histogram: %w", err)
+			}
+		}
+
 		bucketCounts, explicitBounds := dataPoint.BucketCounts, dataPoint.ExplicitBounds
 		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
 		}
-		for i, explicitBound := range explicitBounds {
-			boundFieldKey := strconv.FormatFloat(explicitBound, 'f', -1, 64)
-			fields[boundFieldKey] = float64(bucketCounts[i])
-		} // Skip last bucket count - infinity not used in this schema
 
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for histogram: %w", err)
-		}
+		for i, explicitBound := range explicitBounds {
+			t := make(map[string]string, len(tags)+1)
+			for k, v := range tags {
+				t[k] = v
+			}
+			f := make(map[string]interface{}, len(fields)+1)
+			for k, v := range fields {
+				f[k] = v
+			}
+
+			boundTagValue := strconv.FormatFloat(explicitBound, 'f', -1, 64)
+			t["le"] = boundTagValue
+			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts[i])
+
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
+				return fmt.Errorf("failed to write point for histogram: %w", err)
+			}
+		} // Skip last bucket count - infinity not used in this schema
 	}
 
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetricSummary(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, summary *otlpmetrics.Summary, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV2) writeMetricSummary(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, summary *otlpmetrics.Summary, w InfluxWriter) error {
 	for _, dataPoint := range summary.DataPoints {
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.TimeUnixNano, dataPoint.Labels)
 		if err != nil {
 			return err
 		}
 
-		fields[common.MetricSummaryCountFieldKey] = float64(dataPoint.Count)
-		fields[common.MetricSummarySumFieldKey] = dataPoint.Sum
-		for _, valueAtQuantile := range dataPoint.QuantileValues {
-			quantileFieldKey := strconv.FormatFloat(valueAtQuantile.Quantile, 'f', -1, 64)
-			fields[quantileFieldKey] = valueAtQuantile.Value
+		{
+			f := make(map[string]interface{}, len(fields)+2)
+			for k, v := range fields {
+				f[k] = v
+			}
+
+			f[measurement+common.MetricSummaryCountSuffix] = float64(dataPoint.Count)
+			f[measurement+common.MetricSummarySumSuffix] = dataPoint.Sum
+
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
+				return fmt.Errorf("failed to write point for histogram: %w", err)
+			}
 		}
 
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts); err != nil {
-			return fmt.Errorf("failed to write point for summary: %w", err)
+		for _, valueAtQuantile := range dataPoint.QuantileValues {
+			t := make(map[string]string, len(tags)+1)
+			for k, v := range tags {
+				t[k] = v
+			}
+			f := make(map[string]interface{}, len(fields)+1)
+			for k, v := range fields {
+				f[k] = v
+			}
+
+			quantileTagValue := strconv.FormatFloat(valueAtQuantile.Quantile, 'f', -1, 64)
+			t["quantile"] = quantileTagValue // TODO le and quantile to constants
+			f[measurement] = float64(valueAtQuantile.Value)
+
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
+				return fmt.Errorf("failed to write point for histogram: %w", err)
+			}
 		}
 	}
 

@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWriteMetric_v1_gauge(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+func TestWriteMetric_v2_gauge(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -73,7 +73,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 
 	expected := []mockPoint{
 		{
-			measurement: "cache_age_seconds",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -81,13 +81,13 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 				"engine_id":            "0",
 			},
 			fields: map[string]interface{}{
-				"gauge":                                  float64(23.9),
+				"cache_age_seconds":                      float64(23.9),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),
 		},
 		{
-			measurement: "cache_age_seconds",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -95,7 +95,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 				"engine_id":            "1",
 			},
 			fields: map[string]interface{}{
-				"gauge":                                  float64(11.9),
+				"cache_age_seconds":                      float64(11.9),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),
@@ -105,8 +105,8 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	assert.EqualValues(t, expected, w.points)
 }
 
-func TestWriteMetric_v1_sum(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+func TestWriteMetric_v2_sum(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -168,7 +168,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 
 	expected := []mockPoint{
 		{
-			measurement: "http_requests_total",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -177,13 +177,13 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
-				"counter":                                float64(1027),
+				"http_requests_total":                    float64(1027),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),
 		},
 		{
-			measurement: "http_requests_total",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -192,7 +192,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 				"code":                 "400",
 			},
 			fields: map[string]interface{}{
-				"counter":                                float64(3),
+				"http_requests_total":                    float64(3),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),
@@ -202,8 +202,8 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	assert.EqualValues(t, expected, w.points)
 }
 
-func TestWriteMetric_v1_histogram(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+func TestWriteMetric_v2_histogram(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -259,7 +259,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 
 	expected := []mockPoint{
 		{
-			measurement: "http_request_duration_seconds",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -268,13 +268,88 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
-				"count":                                  float64(144320),
-				"sum":                                    float64(53423),
-				"0.05":                                   float64(24054),
-				"0.1":                                    float64(33444),
-				"0.2":                                    float64(100392),
-				"0.5":                                    float64(129389),
-				"1":                                      float64(133988),
+				"http_request_duration_seconds_count":    float64(144320),
+				"http_request_duration_seconds_sum":      float64(53423),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.05",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket":   float64(24054),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.1",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket":   float64(33444),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.2",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket":   float64(100392),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.5",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket":   float64(129389),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "1",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket":   float64(133988),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),
@@ -284,8 +359,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	assert.Equal(t, expected, w.points)
 }
 
-func TestWriteMetric_v1_summary(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+func TestWriteMetric_v2_summary(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -345,7 +420,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 
 	expected := []mockPoint{
 		{
-			measurement: "rpc_duration_seconds",
+			measurement: "prometheus",
 			tags: map[string]string{
 				"node":                 "42",
 				"otel.library.name":    "My Library",
@@ -354,13 +429,88 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
-				"count":                                  float64(2693),
-				"sum":                                    float64(17560473),
-				"0.01":                                   float64(3102),
-				"0.05":                                   float64(3272),
-				"0.5":                                    float64(4773),
-				"0.9":                                    float64(9001),
-				"0.99":                                   float64(76656),
+				"rpc_duration_seconds_count":             float64(2693),
+				"rpc_duration_seconds_sum":               float64(17560473),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"quantile":                   "0.01",
+			},
+			fields: map[string]interface{}{
+				"rpc_duration_seconds":                   float64(3102),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"quantile":                   "0.05",
+			},
+			fields: map[string]interface{}{
+				"rpc_duration_seconds":                   float64(3272),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"quantile":                   "0.5",
+			},
+			fields: map[string]interface{}{
+				"rpc_duration_seconds":                   float64(4773),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"quantile":                   "0.9",
+			},
+			fields: map[string]interface{}{
+				"rpc_duration_seconds":                   float64(9001),
+				"otel.resource.dropped_attributes_count": float64(1),
+			},
+			ts: time.Unix(0, 1395066363000000123),
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"quantile":                   "0.99",
+			},
+			fields: map[string]interface{}{
+				"rpc_duration_seconds":                   float64(76656),
 				"otel.resource.dropped_attributes_count": float64(1),
 			},
 			ts: time.Unix(0, 1395066363000000123),

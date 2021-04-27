@@ -36,7 +36,9 @@ func NewOtelMetricsToLineProtocol(logger common.Logger, schema MetricsSchema) (*
 			logger: logger,
 		}
 	case MetricsSchemaTelegrafPrometheusV2:
-		panic("not implemented")
+		writer = &metricWriterTelegrafPrometheusV2{
+			logger: logger,
+		}
 	default:
 		return nil, fmt.Errorf("unrecognized metrics schema %d", schema)
 	}

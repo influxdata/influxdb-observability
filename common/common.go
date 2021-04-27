@@ -6,17 +6,23 @@ import "regexp"
 var ResourceNamespace = regexp.MustCompile(`^(service\.|telemetry\.|container\.|process\.|host\.|os\.|cloud\.|deployment\.|k8s\.|aws\.|gcp\.|azure\.|faas\.name|faas\.id|faas\.version|faas\.instance|faas\.max_memory)`)
 
 const (
-	MeasurementSpans     = "spans"
-	MeasurementSpanLinks = "span-links"
-	MeasurementLogs      = "logs"
+	MeasurementSpans      = "spans"
+	MeasurementSpanLinks  = "span-links"
+	MeasurementLogs       = "logs"
+	MeasurementPrometheus = "prometheus"
 
 	MetricGaugeFieldKey          = "gauge"
 	MetricCounterFieldKey        = "counter"
 	MetricHistogramCountFieldKey = "count"
 	MetricHistogramSumFieldKey   = "sum"
 	MetricHistogramInfFieldKey   = "inf"
+	MetricHistogramCountSuffix   = "_count"
+	MetricHistogramSumSuffix     = "_sum"
+	MetricHistogramBucketSuffix  = "_bucket"
 	MetricSummaryCountFieldKey   = "count"
 	MetricSummarySumFieldKey     = "sum"
+	MetricSummaryCountSuffix     = "_count"
+	MetricSummarySumSuffix       = "_sum"
 
 	// These attribute key names are influenced by the proto message keys.
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/trace/v1/trace.proto
