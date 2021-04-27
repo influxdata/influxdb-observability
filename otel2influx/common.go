@@ -10,30 +10,17 @@ import (
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
-type OpenTelemetryToInfluxConverter struct {
-	logger common.Logger
-}
-
-func NewOpenTelemetryToInfluxConverter(logger common.Logger) *OpenTelemetryToInfluxConverter {
-	return &OpenTelemetryToInfluxConverter{
-		&common.ErrorLogger{Logger: logger},
-	}
-}
-
-func resourceToTags(logger common.Logger, resource *otlpresource.Resource, tags map[string]string) (tagsAgain map[string]string, droppedAttributesCount uint64) {
-	droppedAttributesCount = uint64(resource.DroppedAttributesCount)
+func resourceToTags(logger common.Logger, resource *otlpresource.Resource, tags map[string]string) (tagsAgain map[string]string) {
 	for _, attribute := range resource.Attributes {
 		if k := attribute.Key; k == "" {
-			droppedAttributesCount++
 			logger.Debug("resource attribute key is empty")
 		} else if v, err := otlpValueToInfluxTagValue(attribute.Value); err != nil {
-			droppedAttributesCount++
 			logger.Debug("invalid resource attribute value", "key", k, err)
 		} else {
 			tags[k] = v
 		}
 	}
-	return tags, droppedAttributesCount
+	return tags
 }
 
 func instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {

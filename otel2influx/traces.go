@@ -17,6 +17,12 @@ type OtelTracesToLineProtocol struct {
 	logger common.Logger
 }
 
+func NewOtelTracesToLineProtocol(logger common.Logger) *OtelTracesToLineProtocol {
+	return &OtelTracesToLineProtocol{
+		logger: logger,
+	}
+}
+
 func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, resourceSpanss []*otlptrace.ResourceSpans, w InfluxWriter) error {
 	for _, resourceSpans := range resourceSpanss {
 		resource := resourceSpans.Resource
@@ -37,11 +43,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
 
-	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
-	if droppedResourceAttributesCount > 0 {
-		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
-	}
+	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	traceID := hex.EncodeToString(span.TraceId)
@@ -149,11 +151,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resourc
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
-	if droppedResourceAttributesCount > 0 {
-		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
-	}
+	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	tags[common.AttributeTraceID] = traceID

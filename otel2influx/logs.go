@@ -17,6 +17,12 @@ type OtelLogsToLineProtocol struct {
 	logger common.Logger
 }
 
+func NewOtelLogsToLineProtocol(logger common.Logger) *OtelLogsToLineProtocol {
+	return &OtelLogsToLineProtocol{
+		logger: logger,
+	}
+}
+
 func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) error {
 	for _, resourceLogs := range resourceLogss {
 		resource := resourceLogs.Resource
@@ -46,11 +52,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource *o
 	fields := make(map[string]interface{})
 
 	// TODO handle logRecord.Flags()
-	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
-	if droppedResourceAttributesCount > 0 {
-		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
-	}
+	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	if name := logRecord.Name; name != "" {

@@ -51,11 +51,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource *
 		}
 	}
 
-	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
-	if droppedResourceAttributesCount > 0 {
-		fields[common.AttributeDroppedResourceAttributesCount] = float64(droppedResourceAttributesCount)
-	}
+	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	return
