@@ -13,24 +13,26 @@ import (
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 )
 
-// TODO return which log records were dropped
-func (c *OpenTelemetryToInfluxConverter) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) (droppedLogRecords int) {
+type OtelLogsToLineProtocol struct {
+	logger common.Logger
+}
+
+func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) error {
 	for _, resourceLogs := range resourceLogss {
 		resource := resourceLogs.Resource
 		for _, ilLogs := range resourceLogs.InstrumentationLibraryLogs {
 			instrumentationLibrary := ilLogs.InstrumentationLibrary
 			for _, logRecord := range ilLogs.Logs {
 				if err := c.writeLogRecord(ctx, resource, instrumentationLibrary, logRecord, w); err != nil {
-					droppedLogRecords++
-					c.logger.Debug("failed to convert log record to InfluxDB point", err)
+					return fmt.Errorf("failed to convert OTLP log record to line protocol: %w", err)
 				}
 			}
 		}
 	}
-	return
+	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, logRecord *otlplogs.LogRecord, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, logRecord *otlplogs.LogRecord, w InfluxWriter) error {
 	ts := time.Unix(0, int64(logRecord.TimeUnixNano))
 	if ts.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
@@ -45,11 +47,11 @@ func (c *OpenTelemetryToInfluxConverter) writeLogRecord(ctx context.Context, res
 
 	// TODO handle logRecord.Flags()
 	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
+	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
 	if droppedResourceAttributesCount > 0 {
 		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
-	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	if name := logRecord.Name; name != "" {
 		fields[common.AttributeName] = name

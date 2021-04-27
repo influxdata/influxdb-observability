@@ -20,15 +20,15 @@ func NewOpenTelemetryToInfluxConverter(logger common.Logger) *OpenTelemetryToInf
 	}
 }
 
-func (c *OpenTelemetryToInfluxConverter) resourceToTags(resource *otlpresource.Resource, tags map[string]string) (tagsAgain map[string]string, droppedAttributesCount uint64) {
+func resourceToTags(logger common.Logger, resource *otlpresource.Resource, tags map[string]string) (tagsAgain map[string]string, droppedAttributesCount uint64) {
 	droppedAttributesCount = uint64(resource.DroppedAttributesCount)
 	for _, attribute := range resource.Attributes {
 		if k := attribute.Key; k == "" {
 			droppedAttributesCount++
-			c.logger.Debug("resource attribute key is empty")
+			logger.Debug("resource attribute key is empty")
 		} else if v, err := otlpValueToInfluxTagValue(attribute.Value); err != nil {
 			droppedAttributesCount++
-			c.logger.Debug("invalid resource attribute value", "key", k, err)
+			logger.Debug("invalid resource attribute value", "key", k, err)
 		} else {
 			tags[k] = v
 		}
@@ -36,7 +36,7 @@ func (c *OpenTelemetryToInfluxConverter) resourceToTags(resource *otlpresource.R
 	return tags, droppedAttributesCount
 }
 
-func (c *OpenTelemetryToInfluxConverter) instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
+func instrumentationLibraryToTags(instrumentationLibrary *otlpcommon.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name != "" {
 		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name
 	}

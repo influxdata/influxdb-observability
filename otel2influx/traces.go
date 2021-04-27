@@ -13,34 +13,36 @@ import (
 	otlptrace "github.com/influxdata/influxdb-observability/otlp/trace/v1"
 )
 
-// TODO return which spans were dropped
-func (c *OpenTelemetryToInfluxConverter) WriteTraces(ctx context.Context, resourceSpanss []*otlptrace.ResourceSpans, w InfluxWriter) (droppedSpans int) {
+type OtelTracesToLineProtocol struct {
+	logger common.Logger
+}
+
+func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, resourceSpanss []*otlptrace.ResourceSpans, w InfluxWriter) error {
 	for _, resourceSpans := range resourceSpanss {
 		resource := resourceSpans.Resource
 		for _, ilSpans := range resourceSpans.InstrumentationLibrarySpans {
 			instrumentationLibrary := ilSpans.InstrumentationLibrary
 			for _, span := range ilSpans.Spans {
 				if err := c.writeSpan(ctx, resource, instrumentationLibrary, span, w); err != nil {
-					droppedSpans++
-					c.logger.Debug("failed to convert span", err)
+					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
 				}
 			}
 		}
 	}
-	return
+	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, span *otlptrace.Span, w InfluxWriter) error {
+func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, span *otlptrace.Span, w InfluxWriter) error {
 	measurement := common.MeasurementSpans
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
 
 	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
+	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
 	if droppedResourceAttributesCount > 0 {
 		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
-	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	traceID := hex.EncodeToString(span.TraceId)
 	if len(traceID) == 0 {
@@ -142,17 +144,17 @@ func (c *OpenTelemetryToInfluxConverter) writeSpan(ctx context.Context, resource
 	return nil
 }
 
-func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, spanEvent *otlptrace.Span_Event) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, spanEvent *otlptrace.Span_Event) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
 	var droppedResourceAttributesCount uint64
-	tags, droppedResourceAttributesCount = c.resourceToTags(resource, tags)
+	tags, droppedResourceAttributesCount = resourceToTags(c.logger, resource, tags)
 	if droppedResourceAttributesCount > 0 {
 		fields[common.AttributeDroppedResourceAttributesCount] = droppedResourceAttributesCount
 	}
-	tags = c.instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	tags[common.AttributeTraceID] = traceID
 	tags[common.AttributeSpanID] = spanID
@@ -190,7 +192,7 @@ func (c *OpenTelemetryToInfluxConverter) spanEventToLP(traceID, spanID string, r
 	return
 }
 
-func (c *OpenTelemetryToInfluxConverter) spanLinkToLP(traceID, spanID string, spanLink *otlptrace.Span_Link) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
+func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID, spanID string, spanLink *otlptrace.Span_Link) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
 	measurement = common.MeasurementSpanLinks
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
