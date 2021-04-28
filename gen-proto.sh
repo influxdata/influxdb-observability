@@ -2,7 +2,7 @@
 
 set -e
 
-OTEL_PROTO_VERSION="v0.8.0"
+OTEL_PROTO_VERSION="8ab21e9da6246e465cd9d50d405561aedef31a1e"
 
 cd "$(dirname "$0")"
 BASEDIR=$(pwd)
@@ -15,8 +15,9 @@ cleanup() {
 trap cleanup EXIT
 
 rm -rf "$BASEDIR"/opentelemetry-proto "$BASEDIR"/otlp
-git clone --depth 1 --branch ${OTEL_PROTO_VERSION} --quiet https://github.com/open-telemetry/opentelemetry-proto "$BASEDIR"/opentelemetry-proto
+git clone --quiet https://github.com/open-telemetry/opentelemetry-proto "$BASEDIR"/opentelemetry-proto
 cd "$BASEDIR"/opentelemetry-proto
+git checkout ${OTEL_PROTO_VERSION}
 find . -type f -name '*.proto' -exec sed -i '' 's+github.com/open-telemetry/opentelemetry-proto/gen/go/+github.com/influxdata/influxdb-observability/otlp/+g' {} +
 find . -type f -name '*.proto' -exec sed -i '' 's+opentelemetry\.proto\.+internal.opentelemetry.proto.+g' {} +
 find . -type f -name '*.yaml' -exec sed -i '' 's+selector: opentelemetry\.proto\.+selector: internal.opentelemetry.proto.+g' {} +

@@ -39,22 +39,22 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 						{
 							Name:        "cache_age_seconds",
 							Description: "Age in seconds of the current cache",
-							Data: &otlpmetrics.Metric_Gauge{
-								Gauge: &otlpmetrics.Gauge{
-									DataPoints: []*otlpmetrics.NumberDataPoint{
+							Data: &otlpmetrics.Metric_DoubleGauge{
+								DoubleGauge: &otlpmetrics.DoubleGauge{
+									DataPoints: []*otlpmetrics.DoubleDataPoint{
 										{
 											Labels: []*otlpcommon.StringKeyValue{
 												{Key: "engine_id", Value: "0"},
 											},
 											TimeUnixNano: 1395066363000000123,
-											Value:        &otlpmetrics.NumberDataPoint_AsDouble{AsDouble: 23.9},
+											Value:        23.9,
 										},
 										{
 											Labels: []*otlpcommon.StringKeyValue{
 												{Key: "engine_id", Value: "1"},
 											},
 											TimeUnixNano: 1395066363000000123,
-											Value:        &otlpmetrics.NumberDataPoint_AsDouble{AsDouble: 11.9},
+											Value:        11.9,
 										},
 									},
 								},
@@ -128,18 +128,18 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 						{
 							Name:        "http_requests_total",
 							Description: "The total number of HTTP requests.",
-							Data: &otlpmetrics.Metric_Sum{
-								Sum: &otlpmetrics.Sum{
+							Data: &otlpmetrics.Metric_DoubleSum{
+								DoubleSum: &otlpmetrics.DoubleSum{
 									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
 									IsMonotonic:            true,
-									DataPoints: []*otlpmetrics.NumberDataPoint{
+									DataPoints: []*otlpmetrics.DoubleDataPoint{
 										{
 											Labels: []*otlpcommon.StringKeyValue{
 												{Key: "method", Value: "post"},
 												{Key: "code", Value: "200"},
 											},
 											TimeUnixNano: 1395066363000000123,
-											Value:        &otlpmetrics.NumberDataPoint_AsDouble{AsDouble: 1027},
+											Value:        1027,
 										},
 										{
 											Labels: []*otlpcommon.StringKeyValue{
@@ -147,7 +147,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 												{Key: "code", Value: "400"},
 											},
 											TimeUnixNano: 1395066363000000123,
-											Value:        &otlpmetrics.NumberDataPoint_AsDouble{AsDouble: 3},
+											Value:        3,
 										},
 									},
 								},
@@ -223,10 +223,10 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 						{
 							Name:        "http_request_duration_seconds",
 							Description: "A histogram of the request duration",
-							Data: &otlpmetrics.Metric_Histogram{
-								Histogram: &otlpmetrics.Histogram{
+							Data: &otlpmetrics.Metric_DoubleHistogram{
+								DoubleHistogram: &otlpmetrics.DoubleHistogram{
 									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.HistogramDataPoint{
+									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
 										{
 											Labels: []*otlpcommon.StringKeyValue{
 												{Key: "method", Value: "post"},
@@ -304,9 +304,9 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 						{
 							Name:        "rpc_duration_seconds",
 							Description: "A summary of the RPC duration in seconds.",
-							Data: &otlpmetrics.Metric_Summary{
-								Summary: &otlpmetrics.Summary{
-									DataPoints: []*otlpmetrics.SummaryDataPoint{
+							Data: &otlpmetrics.Metric_DoubleSummary{
+								DoubleSummary: &otlpmetrics.DoubleSummary{
+									DataPoints: []*otlpmetrics.DoubleSummaryDataPoint{
 										{
 											Labels: []*otlpcommon.StringKeyValue{
 												{Key: "method", Value: "post"},
@@ -315,7 +315,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 											TimeUnixNano: 1395066363000000123,
 											Count:        2693,
 											Sum:          17560473,
-											QuantileValues: []*otlpmetrics.SummaryDataPoint_ValueAtQuantile{
+											QuantileValues: []*otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile{
 												{Quantile: 0.01, Value: 3102},
 												{Quantile: 0.05, Value: 3272},
 												{Quantile: 0.5, Value: 4773},

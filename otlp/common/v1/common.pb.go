@@ -401,7 +401,6 @@ type InstrumentationLibrary struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// An empty instrumentation library name means the name is unknown.
 	Name    string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 }
