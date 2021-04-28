@@ -83,10 +83,10 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricGauge(ctx context.Context,
 
 func (c *metricWriterTelegrafPrometheusV2) writeMetricSum(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, sum *otlpmetrics.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
-		return fmt.Errorf("unsupported metric aggregation temporality %q", sum.AggregationTemporality)
+		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality)
 	}
 	if !sum.IsMonotonic {
-		return fmt.Errorf("unsupported non-monotonic metric '%s'", measurement)
+		return fmt.Errorf("unsupported non-monotonic sum '%s'", measurement)
 	}
 
 	for _, dataPoint := range sum.DataPoints {
@@ -101,7 +101,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricSum(ctx context.Context, r
 		case *otlpmetrics.NumberDataPoint_AsInt:
 			fields[measurement] = float64(v.AsInt)
 		default:
-			return fmt.Errorf("unrecognized gauge data point type %T", dataPoint.Value)
+			return fmt.Errorf("unrecognized sum data point type %T", dataPoint.Value)
 		}
 
 		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
@@ -114,7 +114,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricSum(ctx context.Context, r
 
 func (c *metricWriterTelegrafPrometheusV2) writeMetricHistogram(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, measurement string, histogram *otlpmetrics.Histogram, w InfluxWriter) error {
 	if histogram.AggregationTemporality != otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE {
-		return fmt.Errorf("unsupported metric aggregation temporality %q", histogram.AggregationTemporality)
+		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality)
 	}
 
 	for _, dataPoint := range histogram.DataPoints {
@@ -182,7 +182,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricSummary(ctx context.Contex
 			f[measurement+common.MetricSummarySumSuffix] = dataPoint.Sum
 
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
-				return fmt.Errorf("failed to write point for histogram: %w", err)
+				return fmt.Errorf("failed to write point for summary: %w", err)
 			}
 		}
 
@@ -201,7 +201,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetricSummary(ctx context.Contex
 			f[measurement] = float64(valueAtQuantile.Value)
 
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
-				return fmt.Errorf("failed to write point for histogram: %w", err)
+				return fmt.Errorf("failed to write point for summary: %w", err)
 			}
 		}
 	}
