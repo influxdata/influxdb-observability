@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
+	otlpcollectorlogs "github.com/influxdata/influxdb-observability/otlp/collector/logs/v1"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlplogs "github.com/influxdata/influxdb-observability/otlp/logs/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type OtelLogsToLineProtocol struct {
@@ -21,6 +23,15 @@ func NewOtelLogsToLineProtocol(logger common.Logger) *OtelLogsToLineProtocol {
 	return &OtelLogsToLineProtocol{
 		logger: logger,
 	}
+}
+
+func (c *OtelLogsToLineProtocol) WriteLogsFromRequestBytes(ctx context.Context, b []byte, w InfluxWriter) error {
+	var req otlpcollectorlogs.ExportLogsServiceRequest
+	err := proto.Unmarshal(b, &req)
+	if err != nil {
+		return err
+	}
+	return c.WriteLogs(ctx, req.ResourceLogs, w)
 }
 
 func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, resourceLogss []*otlplogs.ResourceLogs, w InfluxWriter) error {
