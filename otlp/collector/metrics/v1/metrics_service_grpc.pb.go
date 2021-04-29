@@ -33,7 +33,7 @@ func NewMetricsServiceClient(cc grpc.ClientConnInterface) MetricsServiceClient {
 
 func (c *metricsServiceClient) Export(ctx context.Context, in *ExportMetricsServiceRequest, opts ...grpc.CallOption) (*ExportMetricsServiceResponse, error) {
 	out := new(ExportMetricsServiceResponse)
-	err := c.cc.Invoke(ctx, "/internal.opentelemetry.proto.collector.metrics.v1.MetricsService/Export", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _MetricsService_Export_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/internal.opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+		FullMethod: "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetricsServiceServer).Export(ctx, req.(*ExportMetricsServiceRequest))
@@ -92,7 +92,7 @@ func _MetricsService_Export_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var MetricsService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "internal.opentelemetry.proto.collector.metrics.v1.MetricsService",
+	ServiceName: "opentelemetry.proto.collector.metrics.v1.MetricsService",
 	HandlerType: (*MetricsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

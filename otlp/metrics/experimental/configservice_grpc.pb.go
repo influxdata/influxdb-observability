@@ -31,7 +31,7 @@ func NewMetricConfigClient(cc grpc.ClientConnInterface) MetricConfigClient {
 
 func (c *metricConfigClient) GetMetricConfig(ctx context.Context, in *MetricConfigRequest, opts ...grpc.CallOption) (*MetricConfigResponse, error) {
 	out := new(MetricConfigResponse)
-	err := c.cc.Invoke(ctx, "/internal.opentelemetry.proto.metrics.experimental.MetricConfig/GetMetricConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/opentelemetry.proto.metrics.experimental.MetricConfig/GetMetricConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func _MetricConfig_GetMetricConfig_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/internal.opentelemetry.proto.metrics.experimental.MetricConfig/GetMetricConfig",
+		FullMethod: "/opentelemetry.proto.metrics.experimental.MetricConfig/GetMetricConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetricConfigServer).GetMetricConfig(ctx, req.(*MetricConfigRequest))
@@ -88,7 +88,7 @@ func _MetricConfig_GetMetricConfig_Handler(srv interface{}, ctx context.Context,
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var MetricConfig_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "internal.opentelemetry.proto.metrics.experimental.MetricConfig",
+	ServiceName: "opentelemetry.proto.metrics.experimental.MetricConfig",
 	HandlerType: (*MetricConfigServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
