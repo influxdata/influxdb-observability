@@ -83,7 +83,8 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"gauge": float64(23.9),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeGauge,
 		},
 		{
 			measurement: "cache_age_seconds",
@@ -96,7 +97,8 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"gauge": float64(11.9),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeGauge,
 		},
 	}
 
@@ -177,7 +179,8 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"counter": float64(1027),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSum,
 		},
 		{
 			measurement: "http_requests_total",
@@ -191,7 +194,8 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"counter": float64(3),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSum,
 		},
 	}
 
@@ -272,7 +276,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 				"0.5":   float64(129389),
 				"1":     float64(133988),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 	}
 
@@ -357,7 +362,8 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"0.9":   float64(9001),
 				"0.99":  float64(76656),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 	}
 

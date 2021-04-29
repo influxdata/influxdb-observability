@@ -83,7 +83,8 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"cache_age_seconds": float64(23.9),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeGauge,
 		},
 		{
 			measurement: "prometheus",
@@ -96,7 +97,8 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"cache_age_seconds": float64(11.9),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeGauge,
 		},
 	}
 
@@ -177,7 +179,8 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_requests_total": float64(1027),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSum,
 		},
 		{
 			measurement: "prometheus",
@@ -191,7 +194,8 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_requests_total": float64(3),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSum,
 		},
 	}
 
@@ -267,7 +271,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_count": float64(144320),
 				"http_request_duration_seconds_sum":   float64(53423),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -282,7 +287,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_request_duration_seconds_bucket": float64(24054),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -297,7 +303,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_request_duration_seconds_bucket": float64(33444),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -312,7 +319,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_request_duration_seconds_bucket": float64(100392),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -327,7 +335,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_request_duration_seconds_bucket": float64(129389),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -342,7 +351,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 			fields: map[string]interface{}{
 				"http_request_duration_seconds_bucket": float64(133988),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeHistogram,
 		},
 	}
 
@@ -422,7 +432,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds_count": float64(2693),
 				"rpc_duration_seconds_sum":   float64(17560473),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -437,7 +448,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 			fields: map[string]interface{}{
 				"rpc_duration_seconds": float64(3102),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -452,7 +464,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 			fields: map[string]interface{}{
 				"rpc_duration_seconds": float64(3272),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -467,7 +480,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 			fields: map[string]interface{}{
 				"rpc_duration_seconds": float64(4773),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -482,7 +496,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 			fields: map[string]interface{}{
 				"rpc_duration_seconds": float64(9001),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -497,7 +512,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 			fields: map[string]interface{}{
 				"rpc_duration_seconds": float64(76656),
 			},
-			ts: time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123),
+			vType: otel2influx.InfluxWriterValueTypeSummary,
 		},
 	}
 

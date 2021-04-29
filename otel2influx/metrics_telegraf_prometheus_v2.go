@@ -72,7 +72,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleGauge(ctx context.Context,
 
 		fields[measurement] = dataPoint.Value
 
-		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts, InfluxWriterValueTypeGauge); err != nil {
 			return fmt.Errorf("failed to write point for gauge: %w", err)
 		}
 	}
@@ -89,7 +89,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeIntGauge(ctx context.Context, re
 
 		fields[measurement] = float64(dataPoint.Value)
 
-		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts, InfluxWriterValueTypeGauge); err != nil {
 			return fmt.Errorf("failed to write point for gauge: %w", err)
 		}
 	}
@@ -113,7 +113,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleSum(ctx context.Context, r
 
 		fields[measurement] = dataPoint.Value
 
-		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts, InfluxWriterValueTypeSum); err != nil {
 			return fmt.Errorf("failed to write point for sum: %w", err)
 		}
 	}
@@ -137,7 +137,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeIntSum(ctx context.Context, reso
 
 		fields[measurement] = float64(dataPoint.Value)
 
-		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts); err != nil {
+		if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, fields, ts, InfluxWriterValueTypeSum); err != nil {
 			return fmt.Errorf("failed to write point for sum: %w", err)
 		}
 	}
@@ -165,7 +165,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleHistogram(ctx context.Cont
 			f[measurement+common.MetricHistogramCountSuffix] = float64(dataPoint.Count)
 			f[measurement+common.MetricHistogramSumSuffix] = dataPoint.Sum
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts, InfluxWriterValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
 		}
@@ -189,7 +189,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleHistogram(ctx context.Cont
 			t[common.MetricHistogramBoundKeyV2] = boundTagValue
 			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts[i])
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, InfluxWriterValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
 		} // Skip last bucket count - infinity not used in this schema
@@ -218,7 +218,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeIntHistogram(ctx context.Context
 			f[measurement+common.MetricHistogramCountSuffix] = float64(dataPoint.Count)
 			f[measurement+common.MetricHistogramSumSuffix] = float64(dataPoint.Sum)
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts, InfluxWriterValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
 		}
@@ -242,7 +242,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeIntHistogram(ctx context.Context
 			t[common.MetricHistogramBoundKeyV2] = boundTagValue
 			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts[i])
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, InfluxWriterValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
 		} // Skip last bucket count - infinity not used in this schema
@@ -267,7 +267,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleSummary(ctx context.Contex
 			f[measurement+common.MetricSummaryCountSuffix] = float64(dataPoint.Count)
 			f[measurement+common.MetricSummarySumSuffix] = dataPoint.Sum
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, tags, f, ts, InfluxWriterValueTypeSummary); err != nil {
 				return fmt.Errorf("failed to write point for summary: %w", err)
 			}
 		}
@@ -286,7 +286,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeDoubleSummary(ctx context.Contex
 			t[common.MetricSummaryQuantileKeyV2] = quantileTagValue
 			f[measurement] = float64(valueAtQuantile.Value)
 
-			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts); err != nil {
+			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, InfluxWriterValueTypeSummary); err != nil {
 				return fmt.Errorf("failed to write point for summary: %w", err)
 			}
 		}
