@@ -15,7 +15,7 @@ import (
 )
 
 func TestWriteMetric_v2_gauge(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -84,7 +84,7 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 				"cache_age_seconds": float64(23.9),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeGauge,
+			vType: common.InfluxMetricValueTypeGauge,
 		},
 		{
 			measurement: "prometheus",
@@ -98,7 +98,7 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 				"cache_age_seconds": float64(11.9),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeGauge,
+			vType: common.InfluxMetricValueTypeGauge,
 		},
 	}
 
@@ -106,7 +106,7 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 }
 
 func TestWriteMetric_v2_sum(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -180,7 +180,7 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 				"http_requests_total": float64(1027),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSum,
+			vType: common.InfluxMetricValueTypeSum,
 		},
 		{
 			measurement: "prometheus",
@@ -195,7 +195,7 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 				"http_requests_total": float64(3),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSum,
+			vType: common.InfluxMetricValueTypeSum,
 		},
 	}
 
@@ -203,7 +203,7 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 }
 
 func TestWriteMetric_v2_histogram(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -272,7 +272,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_sum":   float64(53423),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -288,7 +288,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_bucket": float64(24054),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -304,7 +304,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_bucket": float64(33444),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -320,7 +320,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_bucket": float64(100392),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -336,7 +336,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_bucket": float64(129389),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
 			measurement: "prometheus",
@@ -352,7 +352,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"http_request_duration_seconds_bucket": float64(133988),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 	}
 
@@ -360,7 +360,7 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 }
 
 func TestWriteMetric_v2_summary(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV2)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -433,7 +433,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds_sum":   float64(17560473),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -449,7 +449,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds": float64(3102),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -465,7 +465,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds": float64(3272),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -481,7 +481,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds": float64(4773),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -497,7 +497,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds": float64(9001),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
 			measurement: "prometheus",
@@ -513,7 +513,7 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"rpc_duration_seconds": float64(76656),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 	}
 

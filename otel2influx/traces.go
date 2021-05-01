@@ -113,7 +113,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		if measurement, tags, fields, ts, err := c.spanEventToLP(traceID, spanID, resource, instrumentationLibrary, event); err != nil {
 			droppedEventsCount++
 			c.logger.Debug("invalid span event", err)
-		} else if err = w.WritePoint(ctx, measurement, tags, fields, ts, InfluxWriterValueTypeUntyped); err != nil {
+		} else if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 			return fmt.Errorf("failed to write point for span event: %w", err)
 		}
 	}
@@ -126,7 +126,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		if measurement, tags, fields, err := c.spanLinkToLP(traceID, spanID, link); err != nil {
 			droppedLinksCount++
 			c.logger.Debug("invalid span link", err)
-		} else if err = w.WritePoint(ctx, measurement, tags, fields, ts, InfluxWriterValueTypeUntyped); err != nil {
+		} else if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 			return fmt.Errorf("failed to write point for span link: %w", err)
 		}
 	}
@@ -150,7 +150,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		}
 	}
 
-	if err := w.WritePoint(ctx, measurement, tags, fields, ts, InfluxWriterValueTypeUntyped); err != nil {
+	if err := w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for span: %w", err)
 	}
 

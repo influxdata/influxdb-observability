@@ -105,7 +105,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource *o
 		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
-	if err := w.WritePoint(ctx, measurement, tags, fields, ts, InfluxWriterValueTypeUntyped); err != nil {
+	if err := w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for int gauge: %w", err)
 	}
 

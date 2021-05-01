@@ -15,7 +15,7 @@ import (
 )
 
 func TestWriteMetric_v1_gauge(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -23,7 +23,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			Resource: &otlpresource.Resource{
 				Attributes: []*otlpcommon.KeyValue{
 					{
-						Key:   "node",
+						Key:   "container.name",
 						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
 					},
 				},
@@ -75,7 +75,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 		{
 			measurement: "cache_age_seconds",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"engine_id":            "0",
@@ -84,12 +84,12 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 				"gauge": float64(23.9),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeGauge,
+			vType: common.InfluxMetricValueTypeGauge,
 		},
 		{
 			measurement: "cache_age_seconds",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"engine_id":            "1",
@@ -98,15 +98,15 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 				"gauge": float64(11.9),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeGauge,
+			vType: common.InfluxMetricValueTypeGauge,
 		},
 	}
 
-	assert.EqualValues(t, expected, w.points)
+	assert.Equal(t, expected, w.points)
 }
 
 func TestWriteMetric_v1_sum(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -114,7 +114,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			Resource: &otlpresource.Resource{
 				Attributes: []*otlpcommon.KeyValue{
 					{
-						Key:   "node",
+						Key:   "container.name",
 						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
 					},
 				},
@@ -170,7 +170,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 		{
 			measurement: "http_requests_total",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"method":               "post",
@@ -180,12 +180,12 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 				"counter": float64(1027),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSum,
+			vType: common.InfluxMetricValueTypeSum,
 		},
 		{
 			measurement: "http_requests_total",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"method":               "post",
@@ -195,15 +195,15 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 				"counter": float64(3),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSum,
+			vType: common.InfluxMetricValueTypeSum,
 		},
 	}
 
-	assert.EqualValues(t, expected, w.points)
+	assert.Equal(t, expected, w.points)
 }
 
 func TestWriteMetric_v1_histogram(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -211,7 +211,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 			Resource: &otlpresource.Resource{
 				Attributes: []*otlpcommon.KeyValue{
 					{
-						Key:   "node",
+						Key:   "container.name",
 						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
 					},
 				},
@@ -261,7 +261,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 		{
 			measurement: "http_request_duration_seconds",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"method":               "post",
@@ -277,7 +277,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 				"1":     float64(133988),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeHistogram,
+			vType: common.InfluxMetricValueTypeHistogram,
 		},
 	}
 
@@ -285,7 +285,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 }
 
 func TestWriteMetric_v1_summary(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), otel2influx.MetricsSchemaTelegrafPrometheusV1)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	rm := []*otlpmetrics.ResourceMetrics{
@@ -293,7 +293,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 			Resource: &otlpresource.Resource{
 				Attributes: []*otlpcommon.KeyValue{
 					{
-						Key:   "node",
+						Key:   "container.name",
 						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
 					},
 				},
@@ -347,7 +347,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 		{
 			measurement: "rpc_duration_seconds",
 			tags: map[string]string{
-				"node":                 "42",
+				"container.name":       "42",
 				"otel.library.name":    "My Library",
 				"otel.library.version": "latest",
 				"method":               "post",
@@ -363,7 +363,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"0.99":  float64(76656),
 			},
 			ts:    time.Unix(0, 1395066363000000123),
-			vType: otel2influx.InfluxWriterValueTypeSummary,
+			vType: common.InfluxMetricValueTypeSummary,
 		},
 	}
 

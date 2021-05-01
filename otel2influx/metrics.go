@@ -12,14 +12,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type MetricsSchema uint8
-
-const (
-	_ = iota
-	MetricsSchemaTelegrafPrometheusV1
-	MetricsSchemaTelegrafPrometheusV2
-)
-
 type metricWriter interface {
 	writeMetric(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, metric *otlpmetrics.Metric, w InfluxWriter) error
 }
@@ -28,14 +20,14 @@ type OtelMetricsToLineProtocol struct {
 	writer metricWriter
 }
 
-func NewOtelMetricsToLineProtocol(logger common.Logger, schema MetricsSchema) (*OtelMetricsToLineProtocol, error) {
+func NewOtelMetricsToLineProtocol(logger common.Logger, schema common.MetricsSchema) (*OtelMetricsToLineProtocol, error) {
 	var writer metricWriter
 	switch schema {
-	case MetricsSchemaTelegrafPrometheusV1:
+	case common.MetricsSchemaTelegrafPrometheusV1:
 		writer = &metricWriterTelegrafPrometheusV1{
 			logger: logger,
 		}
-	case MetricsSchemaTelegrafPrometheusV2:
+	case common.MetricsSchemaTelegrafPrometheusV2:
 		writer = &metricWriterTelegrafPrometheusV2{
 			logger: logger,
 		}
