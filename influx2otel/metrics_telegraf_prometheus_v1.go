@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
+	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 type metricsBatchPrometheusV1 struct {
@@ -33,9 +35,30 @@ func newMetricsBatchPrometheusV1(logger common.Logger) MetricsBatch {
 func (b *metricsBatchPrometheusV1) ToProto() []*otlpmetrics.ResourceMetrics {
 	var resourceMetricss []*otlpmetrics.ResourceMetrics
 	for _, resourceMetrics := range b.rmByAttributes {
+
+		// Ensure that the extra bucket counts have been added.
+		for _, ilMetrics := range resourceMetrics.InstrumentationLibraryMetrics {
+			for _, metric := range ilMetrics.Metrics {
+				if histogram, ok := metric.Data.(*otlpmetrics.Metric_DoubleHistogram); ok {
+					for _, dp := range histogram.DoubleHistogram.DataPoints {
+						if len(dp.BucketCounts) == len(dp.ExplicitBounds) {
+							dp.BucketCounts = append(dp.BucketCounts, dp.Count)
+						}
+					}
+				}
+			}
+		}
+
 		resourceMetricss = append(resourceMetricss, resourceMetrics)
 	}
 	return resourceMetricss
+}
+
+func (b *metricsBatchPrometheusV1) ToProtoBytes() ([]byte, error) {
+	req := otlpcollectormetrics.ExportMetricsServiceRequest{
+		ResourceMetrics: b.ToProto(),
+	}
+	return proto.Marshal(&req)
 }
 
 func (b *metricsBatchPrometheusV1) AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {

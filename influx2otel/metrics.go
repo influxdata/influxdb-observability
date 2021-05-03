@@ -40,6 +40,7 @@ func (c *LineProtocolToOtelMetrics) NewBatch() MetricsBatch {
 type MetricsBatch interface {
 	AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error
 	ToProto() []*otlpmetrics.ResourceMetrics
+	ToProtoBytes() ([]byte, error)
 }
 
 func resourceAttributesToKey(rAttributes []*otlpcommon.KeyValue) string {
