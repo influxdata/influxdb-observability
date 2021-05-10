@@ -80,7 +80,7 @@ func (b *metricsBatchPrometheusV1) AddPoint(measurement string, tags map[string]
 	case common.InfluxMetricValueTypeSummary:
 		err = b.convertSummary(metric, labels, fields, ts)
 	default:
-		panic("impossible InfluxMetricValueType")
+		err = fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 	}
 
 	return err
@@ -169,7 +169,7 @@ func (b *metricsBatchPrometheusV1) lookupMetric(metricName string, rAttributes [
 				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
 		default:
-			panic("impossible InfluxMetricValueType")
+			return nil, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 		}
 		metric = m
 
