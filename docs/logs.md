@@ -23,7 +23,7 @@ Log records are composed of:
 
 Influx measurement/tag/field                        | OpenTelemetry LogRecord field                   | Fluentd                                                   | Greylog GELF                                         | Syslog 3164                | Syslog 5424
 --- | --- | --- | --- | --- | ---
-measurement =`logs`                                 | .                                                                                                                                                             
+measurement =`logs`                                 | .
 timestamp                                           | `time_unix_nano` fixed64                        | `time` float                                              | `timestamp` number                                   | `HEADER timestamp` string  | `TIMESTAMP` string
 `body` field string                                 | `body` AnyValue                                 | `record["message"]` string or<br />`record["log"]` string | `full_message` string or<br />`short_message` string | `MSG content` string       | `MSG` string
 `name` tag                                          | `name` string                                   |                                                           |                                                      | `MSG tag` string           | `APP-NAME` string

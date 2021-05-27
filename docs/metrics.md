@@ -34,11 +34,11 @@ This package emits two metrics schemas, based on Telegraf's Prometheus input plu
 
 ### Gauge Metric
 
-Influx measurement/tag/field | OpenTelemetry Metric field                         | Prometheus attribute                        
+Influx measurement/tag/field | OpenTelemetry Metric field                         | Prometheus attribute
 --- | --- | ---
 measurement                  | `name` string                                      | metric name
 .                            | `description` string                               | `HELP` (string)
-.                            | `unit` string                                      | 
+.                            | `unit` string                                      |
 .                            | `resource` Resource                                |
 (free-form tags)             | `Resource.attributes` repeated KeyValue            | (labels)
 .                            | `Resource.dropped_attributes_count` uint32         |
@@ -55,47 +55,47 @@ timestamp                    | `gauge.data_points.time_unix_nano` fixed64       
 
 ### Sum Metric
 
-Influx measurement/tag/field | OpenTelemetry Metric field                                | Prometheus attribute      
---- | --- | ---                                                                                                          
-measurement                  | `name` string                                             | metric name               
-.                            | `description` string                                      | `HELP` (string)           
-.                            | `unit` string                                             |                           
-.                            | `resource` Resource                                       |                           
-(free-form tags)             | `Resource.attributes` repeated KeyValue                   | (labels)                  
-.                            | `Resource.dropped_attributes_count` uint32                |                           
-.                            | `instrumentation_library` InstrumentationLibrary          |                           
-`otel.library.name` tag      | `InstrumentationLibrary.name` string                      | (labels)                  
+Influx measurement/tag/field | OpenTelemetry Metric field                                | Prometheus attribute
+--- | --- | ---
+measurement                  | `name` string                                             | metric name
+.                            | `description` string                                      | `HELP` (string)
+.                            | `unit` string                                             |
+.                            | `resource` Resource                                       |
+(free-form tags)             | `Resource.attributes` repeated KeyValue                   | (labels)
+.                            | `Resource.dropped_attributes_count` uint32                |
+.                            | `instrumentation_library` InstrumentationLibrary          |
+`otel.library.name` tag      | `InstrumentationLibrary.name` string                      | (labels)
 `otel.library.version` tag   | `InstrumentationLibrary.version` string                   | (labels)
 .                            | `sum` Sum                                                 | `TYPE` = `counter`
-(only CUMULATIVE)            | `sum.aggregation_temporality` enum AggregationTemporality |           
-(only TRUE)                  | `sum.is_monotonic` bool                                   |                           
+(only CUMULATIVE)            | `sum.aggregation_temporality` enum AggregationTemporality |
+(only TRUE)                  | `sum.is_monotonic` bool                                   |
 .                            | `sum.data_points.start_time_unix_nano` fixed64            |
 timestamp                    | `sum.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)
-(free-form tags)             | `sum.data_points.labels` repeated StringKeyValue          | labels (string:string map)             
-`counter` field float        | `sum.data_points.value` double or sfixed64                | value (float)                           
+(free-form tags)             | `sum.data_points.labels` repeated StringKeyValue          | labels (string:string map)
+`counter` field float        | `sum.data_points.value` double or sfixed64                | value (float)
 .                            | `sum.data_points.exemplars` repeated Exemplars            |
 
 
 ### Histogram Metric
 
-Influx measurement/tag/field         | OpenTelemetry Metric field                                      | Prometheus attribute         
---- | --- | ---                                                                                                                             
-measurement                          | `name` string                                                   | metric name                  
-.                                    | `description` string                                            | `HELP` (string)              
-.                                    | `unit` string                                                   |                              
-.                                    | `resource` Resource                                             |                              
-(free-form tags)                     | `Resource.attributes` repeated KeyValue                         | (labels)                     
-.                                    | `Resource.dropped_attributes_count` uint32                      |                              
-.                                    | `instrumentation_library` InstrumentationLibrary                |                              
-`otel.library.name` tag              | `InstrumentationLibrary.name` string                            | (labels)                     
+Influx measurement/tag/field         | OpenTelemetry Metric field                                      | Prometheus attribute
+--- | --- | ---
+measurement                          | `name` string                                                   | metric name
+.                                    | `description` string                                            | `HELP` (string)
+.                                    | `unit` string                                                   |
+.                                    | `resource` Resource                                             |
+(free-form tags)                     | `Resource.attributes` repeated KeyValue                         | (labels)
+.                                    | `Resource.dropped_attributes_count` uint32                      |
+.                                    | `instrumentation_library` InstrumentationLibrary                |
+`otel.library.name` tag              | `InstrumentationLibrary.name` string                            | (labels)
 `otel.library.version` tag           | `InstrumentationLibrary.version` string                         | (labels)
 .                                    | `histogram` Histogram                                           | `TYPE` = `histogram`
-(only CUMULATIVE)                    | `histogram.aggregation_temporality` enum AggregationTemporality |            
-.                                    | `histogram.data_points.start_time_unix_nano` fixed64            |                              
-timestamp                            | `histogram.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)                                
-(free-form tags)                     | `histogram.data_points.labels` repeated StringKeyValue          | labels (string:string map)   
+(only CUMULATIVE)                    | `histogram.aggregation_temporality` enum AggregationTemporality |
+.                                    | `histogram.data_points.start_time_unix_nano` fixed64            |
+timestamp                            | `histogram.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)
+(free-form tags)                     | `histogram.data_points.labels` repeated StringKeyValue          | labels (string:string map)
 `count` field float                  | `histogram.data_points.count` fixed64                           | metric name + `_count` (float)
-`sum` field float                    | `histogram.data_points.sum` double                              | metric name + `_sum` (float)                
+`sum` field float                    | `histogram.data_points.sum` double                              | metric name + `_sum` (float)
 (bucket count as string) field key   | `histogram.data_points.bucket_counts` repeated fixed64          | metric name + `_bucket` (float)
 (bucket count as string) field float | `histogram.data_points.explicit_bounds` repeated double         | label `le`
 .                                    | `histogram.data_points.exemplars` repeated Exemplars            |
@@ -103,25 +103,25 @@ timestamp                            | `histogram.data_points.time_unix_nano` fi
 
 ### Summary Metric
 
-Influx measurement/tag/field      OpenTelemetry Metric field                                      | Prometheus attribute              
---- | --- | ---                                                                                                                             
-measurement                      | `name` string                                                  | metric name                       
-.                                | `description` string                                           | `HELP` (string)                   
-.                                | `unit` string                                                  |                                   
-.                                | `resource` Resource                                            |                                   
-(free-form tags)                 | `Resource.attributes` repeated KeyValue                        | (labels)                          
-.                                | `Resource.dropped_attributes_count` uint32                     |                                   
-.                                | `instrumentation_library` InstrumentationLibrary               |                                   
-`otel.library.name` tag          | `InstrumentationLibrary.name` string                           | (labels)                          
+Influx measurement/tag/field      OpenTelemetry Metric field                                      | Prometheus attribute
+--- | --- | ---
+measurement                      | `name` string                                                  | metric name
+.                                | `description` string                                           | `HELP` (string)
+.                                | `unit` string                                                  |
+.                                | `resource` Resource                                            |
+(free-form tags)                 | `Resource.attributes` repeated KeyValue                        | (labels)
+.                                | `Resource.dropped_attributes_count` uint32                     |
+.                                | `instrumentation_library` InstrumentationLibrary               |
+`otel.library.name` tag          | `InstrumentationLibrary.name` string                           | (labels)
 `otel.library.version` tag       | `InstrumentationLibrary.version` string                        | (labels)
 .                                | `summary` Summary                                              | `TYPE` = `summary`
-.                                | `summary.data_points.start_time_unix_nano` fixed64             |               
-timestamp                        | `summary.data_points.time_unix_nano` fixed64                   | timestamp (Unix millis)                                          
-(free-form tags)                 | `summary.data_points.labels` repeated StringKeyValue           | labels (string:string map)        
-`count` field float              | `summary.data_points.count` fixed64                            | metric name + `_count` (float)    
-`sum` field float                | `summary.data_points.sum` double                               | metric name + `_sum` (float)      
-.                                | `summary.data_points.quantile_values` repeated ValueAtQuantile |    
-(quantile as string) field key   | `summary.data_points.quantile_values.quantile` double          | value (float)    
+.                                | `summary.data_points.start_time_unix_nano` fixed64             |
+timestamp                        | `summary.data_points.time_unix_nano` fixed64                   | timestamp (Unix millis)
+(free-form tags)                 | `summary.data_points.labels` repeated StringKeyValue           | labels (string:string map)
+`count` field float              | `summary.data_points.count` fixed64                            | metric name + `_count` (float)
+`sum` field float                | `summary.data_points.sum` double                               | metric name + `_sum` (float)
+.                                | `summary.data_points.quantile_values` repeated ValueAtQuantile |
+(quantile as string) field key   | `summary.data_points.quantile_values.quantile` double          | value (float)
 (quantile as string) field float | `summary.data_points.quantile_values.value` double             | label `quantile`
 
 
@@ -131,93 +131,92 @@ In this schema, the Influx measurement name is always `prometheus`.
 
 ### Gauge Metric
 
-Influx tag/field           | OpenTelemetry Metric field                         | Prometheus attribute      
---- | --- | ---                                                                                                   
-.                          | `name` string                                      | metric name               
-.                          | `description` string                               | `HELP` (string)           
-.                          | `unit` string                                      |                           
-.                          | `resource` Resource                                |                           
-(free-form tags)           | `Resource.attributes` repeated KeyValue            | (labels)                  
-.                          | `Resource.dropped_attributes_count` uint32         |                           
-.                          | `instrumentation_library` InstrumentationLibrary   |                           
-`otel.library.name` tag    | `InstrumentationLibrary.name` string               | (labels)                  
-`otel.library.version` tag | `InstrumentationLibrary.version` string            | (labels)                  
+Influx tag/field           | OpenTelemetry Metric field                         | Prometheus attribute
+--- | --- | ---
+.                          | `name` string                                      | metric name
+.                          | `description` string                               | `HELP` (string)
+.                          | `unit` string                                      |
+.                          | `resource` Resource                                |
+(free-form tags)           | `Resource.attributes` repeated KeyValue            | (labels)
+.                          | `Resource.dropped_attributes_count` uint32         |
+.                          | `instrumentation_library` InstrumentationLibrary   |
+`otel.library.name` tag    | `InstrumentationLibrary.name` string               | (labels)
+`otel.library.version` tag | `InstrumentationLibrary.version` string            | (labels)
 .                          | `gauge` Gauge                                      | `TYPE` = `gauge`
-.                          | `gauge.data_points.start_time_unix_nano` fixed64   |          
-timestamp                  | `gauge.data_points.time_unix_nano` fixed64         | timestamp (Unix millis)                              
+.                          | `gauge.data_points.start_time_unix_nano` fixed64   |
+timestamp                  | `gauge.data_points.time_unix_nano` fixed64         | timestamp (Unix millis)
 (free-form tags)           | `gauge.data_points.labels` repeated StringKeyValue | labels (string:string map)
-(Metric name) field float  | `gauge.data_points.value` double or sfixed64       | value (float)             
-.                          | `gauge.data_points.exemplars` repeated Exemplars   |                            
+(Metric name) field float  | `gauge.data_points.value` double or sfixed64       | value (float)
+.                          | `gauge.data_points.exemplars` repeated Exemplars   |
 
 
 ### Sum Metric
 
-Influx tag/field           | OpenTelemetry Metric field                                | Prometheus attribute      
---- | --- | ---                                                                                                          
-.                          | `name` string                                             | metric name               
-.                          | `description` string                                      | `HELP` (string)           
-.                          | `unit` string                                             |                           
-.                          | `resource` Resource                                       |                           
-(free-form tags)           | `Resource.attributes` repeated KeyValue                   | (labels)                  
-.                          | `Resource.dropped_attributes_count` uint32                |                           
-.                          | `instrumentation_library` InstrumentationLibrary          |                           
-`otel.library.name` tag    | `InstrumentationLibrary.name` string                      | (labels)                  
-`otel.library.version` tag | `InstrumentationLibrary.version` string                   | (labels)                  
+Influx tag/field           | OpenTelemetry Metric field                                | Prometheus attribute
+--- | --- | ---
+.                          | `name` string                                             | metric name
+.                          | `description` string                                      | `HELP` (string)
+.                          | `unit` string                                             |
+.                          | `resource` Resource                                       |
+(free-form tags)           | `Resource.attributes` repeated KeyValue                   | (labels)
+.                          | `Resource.dropped_attributes_count` uint32                |
+.                          | `instrumentation_library` InstrumentationLibrary          |
+`otel.library.name` tag    | `InstrumentationLibrary.name` string                      | (labels)
+`otel.library.version` tag | `InstrumentationLibrary.version` string                   | (labels)
 .                          | `sum` Sum                                                 | `TYPE` = `counter`
-(only CUMULATIVE)          | `sum.aggregation_temporality` enum AggregationTemporality |        
-(only TRUE)                | `sum.is_monotonic` bool                                   |                           
-.                          | `sum.data_points.start_time_unix_nano` fixed64            |                           
-timestamp                  | `sum.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)                              
+(only CUMULATIVE)          | `sum.aggregation_temporality` enum AggregationTemporality |
+(only TRUE)                | `sum.is_monotonic` bool                                   |
+.                          | `sum.data_points.start_time_unix_nano` fixed64            |
+timestamp                  | `sum.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)
 (free-form tags)           | `sum.data_points.labels` repeated StringKeyValue          | labels (string:string map)
-(Metric name) field float  | `sum.data_points.value` double or sfixed64                | value (float)             
-.                          | `sum.data_points.exemplars` repeated Exemplars            |                           
+(Metric name) field float  | `sum.data_points.value` double or sfixed64                | value (float)
+.                          | `sum.data_points.exemplars` repeated Exemplars            |
 
 
 ### Histogram Metric
 
-Influx tag/field                     | OpenTelemetry Metric field                                      | Prometheus attribute           
---- | ---                                                                                                                               
-.                                    | `name` string                                                   | metric name                    
-.                                    | `description` string                                            | `HELP` (string)                
-.                                    | `unit` string                                                   |                                
-.                                    | `resource` Resource                                             |                                
-(free-form tags)                     | `Resource.attributes` repeated KeyValue                         | (labels)                       
-.                                    | `Resource.dropped_attributes_count` uint32                      |                                
-.                                    | `instrumentation_library` InstrumentationLibrary                |                                
-`otel.library.name` tag              | `InstrumentationLibrary.name` string                            | (labels)                       
-`otel.library.version` tag           | `InstrumentationLibrary.version` string                         | (labels)                       
+Influx tag/field                     | OpenTelemetry Metric field                                      | Prometheus attribute
+--- | ---
+.                                    | `name` string                                                   | metric name
+.                                    | `description` string                                            | `HELP` (string)
+.                                    | `unit` string                                                   |
+.                                    | `resource` Resource                                             |
+(free-form tags)                     | `Resource.attributes` repeated KeyValue                         | (labels)
+.                                    | `Resource.dropped_attributes_count` uint32                      |
+.                                    | `instrumentation_library` InstrumentationLibrary                |
+`otel.library.name` tag              | `InstrumentationLibrary.name` string                            | (labels)
+`otel.library.version` tag           | `InstrumentationLibrary.version` string                         | (labels)
 .                                    | `histogram` Histogram                                           | `TYPE` = `histogram`
-(only CUMULATIVE)                    | `histogram.aggregation_temporality` enum AggregationTemporality |           
-.                                    | `histogram.data_points.start_time_unix_nano` fixed64            |                                
-timestamp                            | `histogram.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)                                       
-(free-form tags)                     | `histogram.data_points.labels` repeated StringKeyValue          | labels (string:string map)     
-(Metric name) +`_count` field float  | `histogram.data_points.count` fixed64                           | metric name + `_count` (float) 
-(Metric name) +`_sum` field float    | `histogram.data_points.sum` double                              | metric name + `_sum` (float)   
+(only CUMULATIVE)                    | `histogram.aggregation_temporality` enum AggregationTemporality |
+.                                    | `histogram.data_points.start_time_unix_nano` fixed64            |
+timestamp                            | `histogram.data_points.time_unix_nano` fixed64                  | timestamp (Unix millis)
+(free-form tags)                     | `histogram.data_points.labels` repeated StringKeyValue          | labels (string:string map)
+(Metric name) +`_count` field float  | `histogram.data_points.count` fixed64                           | metric name + `_count` (float)
+(Metric name) +`_sum` field float    | `histogram.data_points.sum` double                              | metric name + `_sum` (float)
 (Metric name) +`_bucket` field float | `histogram.data_points.bucket_counts` repeated fixed64          | metric name + `_bucket` (float)
-`le` tag                             | `histogram.data_points.explicit_bounds` repeated double         | label `le`                     
-.                                    | `histogram.data_points.exemplars` repeated Exemplars            | 
+`le` tag                             | `histogram.data_points.explicit_bounds` repeated double         | label `le`
+.                                    | `histogram.data_points.exemplars` repeated Exemplars            |
 
 
 ### Summary Metric
 
-Influx tag/field                     | OpenTelemetry Metric field                                     | Prometheus attribute          
---- | ---                                                                                                                             
-.                                    | `name` string                                                  | metric name                   
-.                                    | `description` string                                           | `HELP` (string)               
-.                                    | `unit` string                                                  |                               
-.                                    | `resource` Resource                                            |                               
-(free-form tags)                     | `Resource.attributes` repeated KeyValue                        | (labels)                      
-.                                    | `Resource.dropped_attributes_count` uint32                     |                               
-.                                    | `instrumentation_library` InstrumentationLibrary               |                               
-`otel.library.name` tag              | `InstrumentationLibrary.name` string                           | (labels)                      
-`otel.library.version` tag           | `InstrumentationLibrary.version` string                        | (labels)                      
+Influx tag/field                     | OpenTelemetry Metric field                                     | Prometheus attribute
+--- | ---
+.                                    | `name` string                                                  | metric name
+.                                    | `description` string                                           | `HELP` (string)
+.                                    | `unit` string                                                  |
+.                                    | `resource` Resource                                            |
+(free-form tags)                     | `Resource.attributes` repeated KeyValue                        | (labels)
+.                                    | `Resource.dropped_attributes_count` uint32                     |
+.                                    | `instrumentation_library` InstrumentationLibrary               |
+`otel.library.name` tag              | `InstrumentationLibrary.name` string                           | (labels)
+`otel.library.version` tag           | `InstrumentationLibrary.version` string                        | (labels)
 .                                    | `summary` Summary                                              | `TYPE` = `summary`
-.                                    | `summary.data_points.start_time_unix_nano` fixed64             |                               
-timestamp                            | `summary.data_points.time_unix_nano` fixed64                   | timestamp (Unix millis)       
-(free-form tags)                     | `summary.data_points.labels` repeated StringKeyValue           | labels (string:string map)    
+.                                    | `summary.data_points.start_time_unix_nano` fixed64             |
+timestamp                            | `summary.data_points.time_unix_nano` fixed64                   | timestamp (Unix millis)
+(free-form tags)                     | `summary.data_points.labels` repeated StringKeyValue           | labels (string:string map)
 (metric name) +`_count` field float  | `summary.data_points.count` fixed64                            | metric name + `_count` (float)
-(metric name) +`_sum` field float    | `summary.data_points.sum` double                               | metric name + `_sum` (float)  
-.                                    | `summary.data_points.quantile_values` repeated ValueAtQuantile |                               
-`quantile` tag                       | `summary.data_points.quantile_values.quantile` double          | value (float)                 
-(metric name) field float            | `summary.data_points.quantile_values.value` double             | label `quantile`              
-
+(metric name) +`_sum` field float    | `summary.data_points.sum` double                               | metric name + `_sum` (float)
+.                                    | `summary.data_points.quantile_values` repeated ValueAtQuantile |
+`quantile` tag                       | `summary.data_points.quantile_values.quantile` double          | value (float)
+(metric name) field float            | `summary.data_points.quantile_values.value` double             | label `quantile`
