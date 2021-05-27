@@ -1,7 +1,5 @@
 # OpenTelemetry to InfluxDB Line Protocol Converter
 
-> This is experimental software
-
 [![Go Reference](https://pkg.go.dev/badge/github.com/influxdata/influxdb-observability/otel2influx.svg)](https://pkg.go.dev/github.com/influxdata/influxdb-observability/otel2influx)
 
 This package converts OpenTelemetry traces, metrics, and logs to [InfluxDB line protocol](https://docs.influxdata.com/influxdb/v2.0/reference/syntax/line-protocol/).

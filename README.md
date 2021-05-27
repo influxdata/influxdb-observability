@@ -1,14 +1,6 @@
 # InfluxDB Observability
 
-> This is experimental software
-
-This repository is a reference for converting observability signals (traces, metrics, logs) to/from a common InfluxDB/IOx schema.
-
-The [InfluxDB/IOx storage engine](https://github.com/influxdata/influxdb_iox) is a new time series storage engine, currently under active development.
-Its design objectives include critical features for storing and querying observability signals at scale:
-- high cardinality
-- high capacity
-- high performance
+This repository is a reference for converting observability signals (traces, metrics, logs) to/from a common InfluxDB schema.
 
 ## Schema Reference
 
@@ -17,12 +9,12 @@ Its design objectives include critical features for storing and querying observa
 ## `otel2influx` and `influx2otel`
 
 The golang package [`otel2influx`](otel2influx/README.md) converts OpenTelemetry protocol buffer objects to (measurement, tags, fields, timestamp) tuples.
-It is imported by [a proposed OpenTelemetry Collector Contrib exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/2952)
-and by [a proposed Telegraf input plugin](https://github.com/influxdata/telegraf/pull/9077).
+It is imported by [the OpenTelemetry Collector InfluxDB exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.27.0/exporter/influxdbexporter)
+and by [the Telegraf OpenTelemetry input plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/opentelemetry).
 
 The golang package [`influx2otel`](influx2otel/README.md) converts (measurement, tags, fields, timestamp) tuples to OpenTelemetry protocol buffer objects.
-It could be imported by an OpenTelemtry Collector Contrib receiver
-or by a Telegraf output plugin.
+It is imported by [the OpenTelemtry Collector InfluxDB receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.27.0/receiver/influxdbreceiver)
+and by [the (WIP) Telegraf OpenTelemetry output plugin](https://github.com/influxdata/telegraf/pull/9228).
 
 ## `jaeger-query-plugin`
 
