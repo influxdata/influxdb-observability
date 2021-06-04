@@ -103,7 +103,7 @@ timestamp                            | `histogram.data_points.time_unix_nano` fi
 
 ### Summary Metric
 
-Influx measurement/tag/field      OpenTelemetry Metric field                                      | Prometheus attribute
+Influx measurement/tag/field     | OpenTelemetry Metric field                                     | Prometheus attribute
 --- | --- | ---
 measurement                      | `name` string                                                  | metric name
 .                                | `description` string                                           | `HELP` (string)
@@ -176,7 +176,7 @@ timestamp                  | `sum.data_points.time_unix_nano` fixed64           
 ### Histogram Metric
 
 Influx tag/field                     | OpenTelemetry Metric field                                      | Prometheus attribute
---- | ---
+--- | --- | ---
 .                                    | `name` string                                                   | metric name
 .                                    | `description` string                                            | `HELP` (string)
 .                                    | `unit` string                                                   |
@@ -201,7 +201,7 @@ timestamp                            | `histogram.data_points.time_unix_nano` fi
 ### Summary Metric
 
 Influx tag/field                     | OpenTelemetry Metric field                                     | Prometheus attribute
---- | ---
+--- | --- | ---
 .                                    | `name` string                                                  | metric name
 .                                    | `description` string                                           | `HELP` (string)
 .                                    | `unit` string                                                  |
