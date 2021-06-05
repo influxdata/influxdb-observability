@@ -92,9 +92,9 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -178,9 +178,9 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -270,9 +270,9 @@ func TestAddPoint_v2_sum(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -360,9 +360,9 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -513,9 +513,9 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -666,9 +666,9 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -823,9 +823,9 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }
@@ -976,9 +976,9 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		},
 	}
 
-	sortResourceMetrics(expect)
+	influx2otel.SortResourceMetrics(expect)
 	got := b.ToProto()
-	sortResourceMetrics(got)
+	influx2otel.SortResourceMetrics(got)
 
 	assert.Equal(t, expect, got)
 }

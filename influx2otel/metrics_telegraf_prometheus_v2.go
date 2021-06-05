@@ -86,6 +86,9 @@ func (b *metricsBatchPrometheusV2) AddPoint(measurement string, tags map[string]
 	if err != nil {
 		return err
 	}
+	if ts.IsZero() {
+		ts = time.Now()
+	}
 
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:

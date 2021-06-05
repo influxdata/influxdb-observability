@@ -1,14 +1,12 @@
-package influx2otel_test
+package influx2otel
 
 import (
 	"sort"
-	"strings"
 
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 )
 
-func sortResourceMetrics(rm []*otlpmetrics.ResourceMetrics) {
+func SortResourceMetrics(rm []*otlpmetrics.ResourceMetrics) {
 	for _, r := range rm {
 		for _, il := range r.InstrumentationLibraryMetrics {
 			for _, m := range il.Metrics {
@@ -91,13 +89,4 @@ func (s sortableBuckets) Less(i, j int) bool {
 func (s sortableBuckets) Swap(i, j int) {
 	s[i].count, s[j].count = s[j].count, s[i].count
 	s[i].bound, s[j].bound = s[j].bound, s[i].bound
-}
-
-func resourceAttributesToKey(rAttributes []*otlpcommon.KeyValue) string {
-	var key strings.Builder
-	for _, kv := range rAttributes {
-		key.WriteString(kv.Key)
-		key.WriteByte(':')
-	}
-	return key.String()
 }
