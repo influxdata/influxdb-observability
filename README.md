@@ -36,3 +36,8 @@ The golang package `common` contains simple utilities and common string values,
 used in at least two of the above-mentioned packages.
 
 This package is only intended for use by packages within this repository.
+
+## `tests`
+
+The golang package `tests` contains integration tests.
+These tests exercise the above packages against OpenTelemetry Collector and Telegraf.
