@@ -3,11 +3,9 @@ package influx2otel
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 )
 
@@ -41,15 +39,6 @@ type MetricsBatch interface {
 	AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error
 	ToProto() []*otlpmetrics.ResourceMetrics
 	ToProtoBytes() ([]byte, error)
-}
-
-func resourceAttributesToKey(rAttributes []*otlpcommon.KeyValue) string {
-	var key strings.Builder
-	for _, kv := range rAttributes {
-		key.WriteString(kv.Key)
-		key.WriteByte(':')
-	}
-	return key.String()
 }
 
 func isStringNumeric(s string) bool {

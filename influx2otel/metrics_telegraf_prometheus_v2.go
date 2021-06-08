@@ -240,7 +240,7 @@ func (b *metricsBatchPrometheusV2) unpackTags(tags map[string]string) (rAttribut
 }
 
 func (b *metricsBatchPrometheusV2) lookupMetric(metricName string, rAttributes []*otlpcommon.KeyValue, ilName, ilVersion string, vType common.InfluxMetricValueType) (*otlpmetrics.Metric, error) {
-	rKey := resourceAttributesToKey(rAttributes)
+	rKey := common.ResourceAttributesToKey(rAttributes)
 	var resourceMetrics *otlpmetrics.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
 		resourceMetrics = rm

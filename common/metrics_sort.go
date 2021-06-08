@@ -1,4 +1,4 @@
-package influx2otel
+package common
 
 import (
 	"sort"
@@ -56,7 +56,7 @@ func SortResourceMetrics(rm []*otlpmetrics.ResourceMetrics) {
 		})
 	}
 	sort.Slice(rm, func(i, j int) bool {
-		return resourceAttributesToKey(rm[i].Resource.Attributes) < resourceAttributesToKey(rm[j].Resource.Attributes)
+		return ResourceAttributesToKey(rm[i].Resource.Attributes) < ResourceAttributesToKey(rm[j].Resource.Attributes)
 	})
 }
 

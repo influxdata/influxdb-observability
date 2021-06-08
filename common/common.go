@@ -1,6 +1,11 @@
 package common
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+
+	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
+)
 
 // https://github.com/open-telemetry/opentelemetry-specification/tree/v1.0.1/specification/resource/semantic_conventions
 var ResourceNamespace = regexp.MustCompile(`^(service\.|telemetry\.|container\.|process\.|host\.|os\.|cloud\.|deployment\.|k8s\.|aws\.|gcp\.|azure\.|faas\.name|faas\.id|faas\.version|faas\.instance|faas\.max_memory)`)
@@ -56,3 +61,12 @@ const (
 	AttributeSeverityText                   = "severity_text"
 	AttributeBody                           = "body"
 )
+
+func ResourceAttributesToKey(rAttributes []*otlpcommon.KeyValue) string {
+	var key strings.Builder
+	for _, kv := range rAttributes {
+		key.WriteString(kv.Key)
+		key.WriteByte(':')
+	}
+	return key.String()
+}
