@@ -1,6 +1,6 @@
 module github.com/influxdata/influxdb-observability/otel2influx
 
-go 1.15
+go 1.16
 
 require (
 	github.com/influxdata/influxdb-observability/common v0.0.0-20210503043157-6ea7daf489f3

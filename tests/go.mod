@@ -1,6 +1,6 @@
 module tests
 
-go 1.15
+go 1.16
 
 require (
 	github.com/containerd/containerd v1.5.2 // indirect
