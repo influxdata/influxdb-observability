@@ -3,18 +3,22 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"testing"
 	"time"
 
+	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
+	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
 	"github.com/influxdata/telegraf/config"
 	"github.com/influxdata/telegraf/models"
-	"github.com/influxdata/telegraf/plugins/inputs/opentelemetry"
+	otelinput "github.com/influxdata/telegraf/plugins/inputs/opentelemetry"
 	"github.com/influxdata/telegraf/plugins/outputs/health"
+	oteloutput "github.com/influxdata/telegraf/plugins/outputs/opentelemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -28,7 +32,7 @@ func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutpu
 	telegrafConfig := config.NewConfig()
 
 	otelInputAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
-	inputPlugin := &opentelemetry.OpenTelemetry{
+	inputPlugin := &otelinput.OpenTelemetry{
 		ServiceAddress: otelInputAddress,
 		Timeout:        config.Duration(time.Second),
 		MetricsSchema:  "prometheus-v1",
@@ -167,4 +171,131 @@ func (m *mockOutputPlugin) lineprotocol(t *testing.T) string {
 
 	require.NoError(t, encoder.Err())
 	return string(encoder.Bytes())
+}
+
+func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtelService, context.CancelFunc) {
+	t.Helper()
+
+	telegrafConfig := config.NewConfig()
+
+	mockInputPlugin := new(mockInputPlugin)
+	mockInputConfig := &models.InputConfig{
+		Name: "mock",
+	}
+	telegrafConfig.Inputs = append(telegrafConfig.Inputs, models.NewRunningInput(mockInputPlugin, mockInputConfig))
+
+	otelOutputAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
+	otelOutputPlugin := &oteloutput.OpenTelemetry{
+		ServiceAddress: otelOutputAddress,
+		MetricsSchema:  "prometheus-v1",
+		Log:            zaptest.NewLogger(t, zaptest.Level(zapcore.InfoLevel)).Sugar(),
+	}
+	otelOutputConfig := &models.OutputConfig{
+		Name: "opentelemetry",
+	}
+	healthOutputAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
+	healthOutputPlugin := health.NewHealth()
+	healthOutputPlugin.ServiceAddress = "http://" + healthOutputAddress
+	healthOutputConfig := &models.OutputConfig{
+		Name: "health",
+	}
+	telegrafConfig.Outputs = append(telegrafConfig.Outputs,
+		models.NewRunningOutput(otelOutputPlugin, otelOutputConfig, 0, 0),
+		models.NewRunningOutput(healthOutputPlugin, healthOutputConfig, 0, 0))
+
+	ag, err := agent.NewAgent(telegrafConfig)
+	require.NoError(t, err)
+	ctx, stopAgent := context.WithCancel(context.Background())
+
+	mockOtelServiceListener, err := net.Listen("tcp", otelOutputAddress)
+	require.NoError(t, err)
+	mockOtelService := newMockOtelService()
+	mockOtelServiceGrpcServer := grpc.NewServer()
+	otlpcollectormetrics.RegisterMetricsServiceServer(mockOtelServiceGrpcServer, mockOtelService)
+
+	go func() {
+		err := mockOtelServiceGrpcServer.Serve(mockOtelServiceListener)
+		assert.NoError(t, err)
+	}()
+	t.Cleanup(mockOtelServiceGrpcServer.Stop)
+
+	agentDone := make(chan struct{})
+	go func(ctx context.Context) {
+		err := ag.Run(ctx)
+		assert.NoError(t, err)
+		close(agentDone)
+	}(ctx)
+	t.Cleanup(stopAgent)
+
+	go func() {
+		select {
+		case <-agentDone:
+			return
+		case <-time.NewTimer(time.Second).C:
+			t.Log("test timed out")
+			t.Fail()
+			stopAgent()
+		}
+	}()
+
+	for { // Wait for health check to be green
+		response, _ := http.Get(fmt.Sprintf("http://%s", healthOutputAddress))
+		if response != nil && response.StatusCode/100 == 2 {
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-agentDone:
+			return nil, nil, nil
+		default:
+		}
+	}
+
+	return mockInputPlugin, mockOtelService, stopAgent
+}
+
+var _ telegraf.ServiceInput = (*mockInputPlugin)(nil)
+
+type mockInputPlugin struct {
+	accumulator telegraf.Accumulator
+}
+
+func (m *mockInputPlugin) Start(accumulator telegraf.Accumulator) error {
+	m.accumulator = accumulator
+	return nil
+}
+
+func (m mockInputPlugin) Stop() {
+}
+
+func (m mockInputPlugin) SampleConfig() string {
+	return ""
+}
+
+func (m mockInputPlugin) Description() string {
+	return ""
+}
+
+func (m mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
+	return nil
+}
+
+var _ otlpcollectormetrics.MetricsServiceServer = (*mockOtelService)(nil)
+
+type mockOtelService struct {
+	otlpcollectormetrics.UnimplementedMetricsServiceServer
+
+	metrics chan []*otlpmetrics.ResourceMetrics
+}
+
+func newMockOtelService() *mockOtelService {
+	return &mockOtelService{
+		metrics: make(chan []*otlpmetrics.ResourceMetrics),
+	}
+}
+
+func (m *mockOtelService) Export(ctx context.Context, request *otlpcollectormetrics.ExportMetricsServiceRequest) (*otlpcollectormetrics.ExportMetricsServiceResponse, error) {
+	m.metrics <- request.ResourceMetrics
+	return &otlpcollectormetrics.ExportMetricsServiceResponse{}, nil
 }

@@ -9,11 +9,11 @@ import (
 )
 
 var metricTests = []struct {
-	metrics []*otlpmetrics.ResourceMetrics
-	lp      string
+	otel []*otlpmetrics.ResourceMetrics
+	lp   string
 }{
 	{
-		metrics: []*otlpmetrics.ResourceMetrics{
+		otel: []*otlpmetrics.ResourceMetrics{
 			{
 				Resource: &otlpresource.Resource{},
 				InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
@@ -80,11 +80,11 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 }
 
 var traceTests = []struct {
-	spans []*otlptrace.ResourceSpans
-	lp    string
+	otel []*otlptrace.ResourceSpans
+	lp   string
 }{
 	{
-		spans: []*otlptrace.ResourceSpans{
+		otel: []*otlptrace.ResourceSpans{
 			{
 				Resource: &otlpresource.Resource{},
 				InstrumentationLibrarySpans: []*otlptrace.InstrumentationLibrarySpans{
@@ -179,11 +179,11 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 }
 
 var logTests = []struct {
-	logRecords []*otlplogs.ResourceLogs
-	lp         string
+	otel []*otlplogs.ResourceLogs
+	lp   string
 }{
 	{
-		logRecords: []*otlplogs.ResourceLogs{
+		otel: []*otlplogs.ResourceLogs{
 			{
 				Resource: &otlpresource.Resource{},
 				InstrumentationLibraryLogs: []*otlplogs.InstrumentationLibraryLogs{

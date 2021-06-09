@@ -14,7 +14,7 @@ import (
 )
 
 func TestOtel2Influx(t *testing.T) {
-	t.Run("metrics", func(t *testing.T) {
+	t.Run("otel", func(t *testing.T) {
 		for i, mt := range metricTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
@@ -22,7 +22,7 @@ func TestOtel2Influx(t *testing.T) {
 					t.Cleanup(mockDestination.Close)
 
 					request := &otlpcollectormetrics.ExportMetricsServiceRequest{
-						ResourceMetrics: mt.metrics,
+						ResourceMetrics: mt.otel,
 					}
 					requestBytes, err := proto.Marshal(request)
 					require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 
 					request := &otlpcollectormetrics.ExportMetricsServiceRequest{
-						ResourceMetrics: mt.metrics,
+						ResourceMetrics: mt.otel,
 					}
 
 					client := otlpcollectormetrics.NewMetricsServiceClient(clientConn)
@@ -65,7 +65,7 @@ func TestOtel2Influx(t *testing.T) {
 					t.Cleanup(mockDestination.Close)
 
 					request := &otlpcollectortrace.ExportTraceServiceRequest{
-						ResourceSpans: tt.spans,
+						ResourceSpans: tt.otel,
 					}
 					requestBytes, err := proto.Marshal(request)
 					require.NoError(t, err)
@@ -84,7 +84,7 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 
 					request := &otlpcollectortrace.ExportTraceServiceRequest{
-						ResourceSpans: tt.spans,
+						ResourceSpans: tt.otel,
 					}
 
 					client := otlpcollectortrace.NewTraceServiceClient(clientConn)
@@ -108,7 +108,7 @@ func TestOtel2Influx(t *testing.T) {
 					t.Cleanup(mockDestination.Close)
 
 					request := &otlpcollectorlogs.ExportLogsServiceRequest{
-						ResourceLogs: lt.logRecords,
+						ResourceLogs: lt.otel,
 					}
 					requestBytes, err := proto.Marshal(request)
 					require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 
 					request := &otlpcollectorlogs.ExportLogsServiceRequest{
-						ResourceLogs: lt.logRecords,
+						ResourceLogs: lt.otel,
 					}
 
 					client := otlpcollectorlogs.NewLogsServiceClient(clientConn)

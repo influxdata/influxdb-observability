@@ -7,15 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
+	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
 
 func TestInflux2Otel(t *testing.T) {
-	t.Run("metrics", func(t *testing.T) {
+	t.Run("otel", func(t *testing.T) {
 		for i, mt := range metricTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
@@ -29,40 +31,66 @@ func TestInflux2Otel(t *testing.T) {
 					for _, rm := range mockExporterFactory.resourceMetrics {
 						got.ResourceMetrics = append(got.ResourceMetrics, proto.Clone(rm).(*otlpmetrics.ResourceMetrics))
 					}
-					sortResourceMetrics(got.ResourceMetrics)
+					common.SortResourceMetrics(got.ResourceMetrics)
 
 					expect := new(otlpcollectormetrics.ExportMetricsServiceRequest)
-					for _, rm := range mt.metrics {
+					for _, rm := range mt.otel {
 						expect.ResourceMetrics = append(expect.ResourceMetrics, proto.Clone(rm).(*otlpmetrics.ResourceMetrics))
 					}
-					sortResourceMetrics(expect.ResourceMetrics)
+					common.SortResourceMetrics(expect.ResourceMetrics)
 
 					assertProtosEqual(t, expect, got)
 				})
 
-				// t.Run("telegraf", func(t *testing.T) {
-				// 	clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-				//
-				// 	request := &otlpcollectormetrics.ExportMetricsServiceRequest{
-				// 		ResourceMetrics: mt.metrics,
-				// 	}
-				//
-				// 	client := otlpcollectormetrics.NewMetricsServiceClient(clientConn)
-				// 	_, err := client.Export(context.Background(), request)
-				// 	require.NoError(t, err)
-				//
-				// 	stopTelegraf() // flush telegraf buffers
-				// 	got := mockOutputPlugin.lineprotocol(t)
-				//
-				// 	assertLineprotocolEqual(t, mt.lp, got)
-				// })
+				t.Run("telegraf", func(t *testing.T) {
+					mockInputPlugin, mockOtelService, stopTelegraf := setupTelegrafOpenTelemetryOutput(t)
+
+					lpdec := lineprotocol.NewDecoder(strings.NewReader(mt.lp))
+					for lpdec.Next() {
+						name, err := lpdec.Measurement()
+						require.NoError(t, err)
+						tags := make(map[string]string)
+						for k, v, _ := lpdec.NextTag(); k != nil; k, v, _ = lpdec.NextTag() {
+							tags[string(k)] = string(v)
+						}
+						fields := make(map[string]interface{})
+						for k, v, _ := lpdec.NextField(); k != nil; k, v, _ = lpdec.NextField() {
+							fields[string(k)] = v.Interface()
+						}
+						ts, err := lpdec.Time(lineprotocol.Nanosecond, time.Now())
+						require.NoError(t, err)
+						mockInputPlugin.accumulator.AddFields(string(name), fields, tags, ts)
+					}
+					require.NoError(t, lpdec.Err())
+
+					stopTelegraf() // flush telegraf buffers
+
+					got := new(otlpcollectormetrics.ExportMetricsServiceRequest)
+					select {
+					case rm := <-mockOtelService.metrics:
+						got.ResourceMetrics = rm
+					case <-time.NewTimer(time.Second).C:
+						t.Log("test timed out")
+						t.Fail()
+						return
+					}
+					common.SortResourceMetrics(got.ResourceMetrics)
+
+					expect := new(otlpcollectormetrics.ExportMetricsServiceRequest)
+					for _, rm := range mt.otel {
+						expect.ResourceMetrics = append(expect.ResourceMetrics, proto.Clone(rm).(*otlpmetrics.ResourceMetrics))
+					}
+					common.SortResourceMetrics(expect.ResourceMetrics)
+
+					assertProtosEqual(t, expect, got)
+				})
 			})
 		}
 	})
 }
 
 func TestInflux2Otel_nowtime(t *testing.T) {
-	t.Run("metrics", func(t *testing.T) {
+	t.Run("otel", func(t *testing.T) {
 		t.Run("otelcol", func(t *testing.T) {
 			otelcolReceiverAddress, mockExporterFactory := setupOtelcolInfluxDBReceiver(t)
 
