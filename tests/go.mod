@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/containerd/containerd v1.5.2 // indirect
-	github.com/influxdata/influxdb-observability/common v0.0.0-20210503044220-4051d4b8738f
 	github.com/influxdata/influxdb-observability/otlp v0.0.0-20210605003714-a868e4b21ba8
 	github.com/influxdata/line-protocol/v2 v2.0.0-20210428091617-0567a5134992
 	github.com/influxdata/telegraf v1.18.3

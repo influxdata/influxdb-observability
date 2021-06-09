@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,16 +12,21 @@ import (
 	"testing"
 	"time"
 
+	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
+	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/consumer/pdata"
 	"go.opentelemetry.io/collector/extension/healthcheckextension"
 	"go.opentelemetry.io/collector/service"
 	"go.opentelemetry.io/collector/service/parserprovider"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory) {
@@ -222,5 +228,180 @@ func (m mockReceiver) Start(ctx context.Context, host component.Host) error {
 }
 
 func (m mockReceiver) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func setupOtelcolInfluxDBReceiver(t *testing.T) (string, *mockExporterFactory) {
+	t.Helper()
+
+	const otelcolConfigTemplate = `
+receivers:
+  influxdb:
+    endpoint: ADDRESS_INFLUXDB
+    metrics_schema: SCHEMA
+
+exporters:
+  mock:
+
+extensions:
+  health_check:
+    endpoint: ADDRESS_HEALTH_CHECK
+
+service:
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [influxdb]
+      exporters: [mock]
+`
+
+	otelcolReceiverAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
+	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
+	otelcolConfig := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
+	otelcolConfig = strings.ReplaceAll(otelcolConfig, "SCHEMA", "telegraf-prometheus-v1")
+	otelcolConfig = strings.ReplaceAll(otelcolConfig, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
+
+	receiverFactories, err := component.MakeReceiverFactoryMap(influxdbreceiver.NewFactory())
+	require.NoError(t, err)
+	mockExporterFactory := new(mockExporterFactory)
+	exporterFactories, err := component.MakeExporterFactoryMap(mockExporterFactory)
+	require.NoError(t, err)
+	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
+	require.NoError(t, err)
+	appSettings := service.AppSettings{
+		Factories: component.Factories{
+			Receivers:  receiverFactories,
+			Exporters:  exporterFactories,
+			Extensions: extensionFactories,
+		},
+		BuildInfo: component.BuildInfo{
+			Command:     "test",
+			Description: "test",
+			Version:     "test",
+		},
+		LoggingOptions: []zap.Option{
+			zap.ErrorOutput(&testingLogger{t}),
+			zap.IncreaseLevel(zap.WarnLevel),
+		},
+		ParserProvider: parserprovider.NewInMemory(strings.NewReader(otelcolConfig)),
+	}
+	otelcol, err := service.New(appSettings)
+	require.NoError(t, err)
+
+	done := make(chan struct{})
+	go func() {
+		err := otelcol.Run()
+		assert.NoError(t, err)
+		close(done)
+	}()
+	t.Cleanup(otelcol.Shutdown)
+
+	go func() {
+		select {
+		case <-done:
+			return
+		case <-time.NewTimer(time.Second).C:
+			t.Log("test timed out")
+			t.Fail()
+		}
+	}()
+
+	for { // Wait for health check to be green
+		response, _ := http.Get(fmt.Sprintf("http://%s", otelcolHealthCheckAddress))
+		if response != nil && response.StatusCode/100 == 2 {
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-done:
+			return "", nil
+		default:
+		}
+	}
+
+	return otelcolReceiverAddress, mockExporterFactory
+}
+
+type testingLogger struct {
+	tb testing.TB
+}
+
+func (w *testingLogger) Write(p []byte) (int, error) {
+	w.tb.Logf("%s", bytes.TrimSpace(p))
+	return len(p), nil
+}
+
+func (w testingLogger) Sync() error {
+	return nil
+}
+
+var _ component.ExporterFactory = (*mockExporterFactory)(nil)
+
+type mockExporterFactory struct {
+	*mockMetricsExporter
+}
+
+func (m mockExporterFactory) Type() config.Type {
+	return "mock"
+}
+
+type mockExporterConfig struct {
+	config.ExporterSettings `mapstructure:",squash"`
+}
+
+func (m mockExporterFactory) CreateDefaultConfig() config.Exporter {
+	return &mockExporterConfig{
+		ExporterSettings: config.NewExporterSettings(config.NewID("mock")),
+	}
+}
+
+func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.MetricsExporter, error) {
+	if m.mockMetricsExporter == nil {
+		m.mockMetricsExporter = new(mockMetricsExporter)
+	}
+	return m.mockMetricsExporter, nil
+}
+
+func (m mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.LogsExporter, error) {
+	panic("not implemented")
+}
+
+func (m mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.TracesExporter, error) {
+	panic("not implemented")
+}
+
+var _ component.MetricsExporter = (*mockMetricsExporter)(nil)
+
+type mockMetricsExporter struct {
+	resourceMetrics []*otlpmetrics.ResourceMetrics
+}
+
+func (m mockMetricsExporter) Start(ctx context.Context, host component.Host) error {
+	return nil
+}
+
+func (m mockMetricsExporter) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (m mockMetricsExporter) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: false,
+	}
+}
+
+func (m *mockMetricsExporter) ConsumeMetrics(ctx context.Context, md pdata.Metrics) error {
+	b, err := md.ToOtlpProtoBytes()
+	if err != nil {
+		return err
+	}
+	var req otlpcollectormetrics.ExportMetricsServiceRequest
+	err = proto.Unmarshal(b, &req)
+	if err != nil {
+		return err
+	}
+	m.resourceMetrics = append(m.resourceMetrics, req.ResourceMetrics...)
+
 	return nil
 }
