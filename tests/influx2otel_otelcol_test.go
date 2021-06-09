@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/influxdata/influxdb-observability/common"
 	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
@@ -56,7 +55,7 @@ http_request_duration_seconds,region=eu 0.05=24054,0.1=33444,0.2=100392,0.5=1293
 	if !assert.Len(t, mockExporterFactory.resourceMetrics, 1) {
 		return
 	}
-	common.SortResourceMetrics(mockExporterFactory.resourceMetrics)
+	sortResourceMetrics(mockExporterFactory.resourceMetrics)
 
 	expect := []*otlpmetrics.ResourceMetrics{
 		{
@@ -115,7 +114,7 @@ http_request_duration_seconds,region=eu 0.05=24054,0.1=33444,0.2=100392,0.5=1293
 			},
 		},
 	}
-	common.SortResourceMetrics(expect)
+	sortResourceMetrics(expect)
 
 	assert.JSONEq(t, protojson.Format(expect[0]), protojson.Format(mockExporterFactory.resourceMetrics[0]))
 }

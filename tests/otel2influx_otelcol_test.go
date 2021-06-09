@@ -283,20 +283,13 @@ func TestOtel2Influx_otelcol_logs(t *testing.T) {
 	err = mockReceiverFactory.nextLogsConsumer.ConsumeLogs(context.Background(), requestPdata)
 	require.NoError(t, err)
 
-	var gotBytes []byte
-	select {
-	case gotBytes = <-mockReceiverFactory.payloads:
-	case <-time.NewTimer(time.Second).C:
-		t.Log("test timed out")
-		t.Fail()
-		return
-	}
+	got := mockReceiverFactory.lineprotocol(t)
 
 	expect := `
 logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",k=true,otel.span.dropped_attributes_count=5u,name="cpu_temp",severity_number=9i,severity_text="info" 1622848686000000000
 `
 
-	assertLineprotocolEqual(t, expect, string(gotBytes))
+	assertLineprotocolEqual(t, expect, got)
 }
 
 func assertLineprotocolEqual(t *testing.T, expect, got string) bool {
@@ -305,12 +298,17 @@ func assertLineprotocolEqual(t *testing.T, expect, got string) bool {
 }
 
 func cleanupLP(s string) []string {
-	lines := strings.Split(strings.TrimSpace(s), "\n")
-	for i, line := range lines {
-		lines[i] = sortFields(strings.TrimSpace(line))
+	lines := strings.Split(s, "\n")
+	var cleanLines []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		cleanLines = append(cleanLines, sortFields(line))
 	}
-	sort.Strings(lines)
-	return lines
+	sort.Strings(cleanLines)
+	return cleanLines
 }
 
 func sortFields(line string) string {
@@ -355,9 +353,7 @@ service:
       exporters: [influxdb]
 `
 
-	mockReceiverFactory := &mockReceiverFactory{
-		payloads: make(chan []byte, 10),
-	}
+	mockReceiverFactory := newMockReceiverFactory()
 	mockTelegrafService := httptest.NewServer(mockReceiverFactory)
 	mockTelegrafEndpoint := mockTelegrafService.URL
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
@@ -438,6 +434,12 @@ type mockReceiverFactory struct {
 	payloads            chan []byte
 }
 
+func newMockReceiverFactory() *mockReceiverFactory {
+	return &mockReceiverFactory{
+		payloads: make(chan []byte, 10),
+	}
+}
+
 func (m mockReceiverFactory) Type() config.Type {
 	return "mock"
 }
@@ -490,6 +492,18 @@ func (m *mockReceiverFactory) ServeHTTP(writer http.ResponseWriter, request *htt
 	}
 
 	m.payloads <- payload
+}
+
+func (m *mockReceiverFactory) lineprotocol(t *testing.T) string {
+	var gotBytes []byte
+	select {
+	case gotBytes = <-m.payloads:
+	case <-time.NewTimer(time.Second).C:
+		t.Log("test timed out")
+		t.Fail()
+		return ""
+	}
+	return string(gotBytes)
 }
 
 var (
