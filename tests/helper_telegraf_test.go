@@ -8,10 +8,6 @@ import (
 	"testing"
 	"time"
 
-	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
@@ -26,89 +22,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestOtel2Influx_telegraf(t *testing.T) {
-	otelReceiverAddress, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-
-	request := &otlpcollectormetrics.ExportMetricsServiceRequest{
-		ResourceMetrics: []*otlpmetrics.ResourceMetrics{
-			{
-				Resource: &otlpresource.Resource{},
-				InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-					{
-						InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{},
-						Metrics: []*otlpmetrics.Metric{
-							{
-								Name: "cpu_temp",
-								Data: &otlpmetrics.Metric_DoubleGauge{DoubleGauge: &otlpmetrics.DoubleGauge{DataPoints: []*otlpmetrics.DoubleDataPoint{
-									{
-										Labels:       []*otlpcommon.StringKeyValue{{Key: "foo", Value: "bar"}},
-										TimeUnixNano: 1622848686000000000,
-										Value:        87.332,
-									},
-								}}},
-							},
-							{
-								Name: "http_requests_total",
-								Data: &otlpmetrics.Metric_DoubleSum{DoubleSum: &otlpmetrics.DoubleSum{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									IsMonotonic:            true,
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels:       []*otlpcommon.StringKeyValue{{Key: "method", Value: "post"}, {Key: "code", Value: "200"}},
-											TimeUnixNano: 1622848686000000000,
-											Value:        1027,
-										},
-										{
-											Labels:       []*otlpcommon.StringKeyValue{{Key: "method", Value: "post"}, {Key: "code", Value: "400"}},
-											TimeUnixNano: 1622848686000000000,
-											Value:        3,
-										},
-									},
-								}},
-							},
-							{
-								Name: "http_request_duration_seconds",
-								Data: &otlpmetrics.Metric_DoubleHistogram{DoubleHistogram: &otlpmetrics.DoubleHistogram{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
-										{
-											Labels:         []*otlpcommon.StringKeyValue{{Key: "region", Value: "eu"}},
-											TimeUnixNano:   1622848686000000000,
-											Count:          144320,
-											Sum:            53423,
-											ExplicitBounds: []float64{0.05, 0.1, 0.2, 0.5, 1},
-											BucketCounts:   []uint64{24054, 33444, 100392, 129389, 133988, 144320},
-										},
-									},
-								}},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	cc, err := grpc.Dial(otelReceiverAddress, grpc.WithInsecure())
-	require.NoError(t, err)
-	client := otlpcollectormetrics.NewMetricsServiceClient(cc)
-
-	_, err = client.Export(context.Background(), request)
-	require.NoError(t, err)
-
-	stopTelegraf() // flush telegraf buffers
-	got := mockOutputPlugin.lineprotocol(t)
-
-	expect := `
-cpu_temp,foo=bar gauge=87.332 1622848686000000000
-http_request_duration_seconds,region=eu count=144320,sum=53423,0.05=24054,0.1=33444,0.2=100392,0.5=129389,1=133988 1622848686000000000
-http_requests_total,code=200,method=post counter=1027 1622848686000000000
-http_requests_total,code=400,method=post counter=3 1622848686000000000
-`
-
-	assertLineprotocolEqual(t, expect, got)
-}
-
-func setupTelegrafOpenTelemetryInput(t *testing.T) (string, *mockOutputPlugin, context.CancelFunc) {
+func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutputPlugin, context.CancelFunc) {
 	t.Helper()
 
 	telegrafConfig := config.NewConfig()
@@ -171,12 +85,15 @@ func setupTelegrafOpenTelemetryInput(t *testing.T) (string, *mockOutputPlugin, c
 		time.Sleep(10 * time.Millisecond)
 		select {
 		case <-agentDone:
-			return "", nil, nil
+			return nil, nil, nil
 		default:
 		}
 	}
 
-	return otelInputAddress, mockOutputPlugin, stopAgent
+	clientConn, err := grpc.Dial(otelInputAddress, grpc.WithInsecure())
+	require.NoError(t, err)
+
+	return clientConn, mockOutputPlugin, stopAgent
 }
 
 var _ telegraf.Output = (*mockOutputPlugin)(nil)
