@@ -4,8 +4,8 @@ go 1.16
 
 require (
 	github.com/containerd/containerd v1.5.2 // indirect
-	github.com/influxdata/influxdb-observability/common v0.0.0-20210605003714-a868e4b21ba8
-	github.com/influxdata/influxdb-observability/otlp v0.0.0-20210605003714-a868e4b21ba8
+	github.com/influxdata/influxdb-observability/common v0.1.0
+	github.com/influxdata/influxdb-observability/otlp v0.1.0
 	github.com/influxdata/line-protocol/v2 v2.0.0-20210428091617-0567a5134992
 	github.com/influxdata/telegraf v1.18.3
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20210607140028-439ff5f266ab
