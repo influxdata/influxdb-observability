@@ -1,0 +1,20 @@
+receivers:
+  influxdb:
+    endpoint: 0.0.0.0:8086
+    metrics_schema: telegraf-prometheus-v1
+
+processors:
+
+exporters:
+  file:
+    path: /dev/stdout
+
+extensions:
+
+service:
+  extensions: []
+  pipelines:
+    metrics:
+      receivers: [influxdb]
+      processors: []
+      exporters: [file]

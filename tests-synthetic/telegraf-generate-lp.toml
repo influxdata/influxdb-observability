@@ -1,0 +1,8 @@
+[[inputs.prometheus]]
+urls = ["http://generate-metrics:9090/metrics"]
+metric_version = 1
+
+[[outputs.influxdb_v2]]
+urls = ["http://opentelemetry-collector:8086"]
+organization = "my-org"
+bucket = "my-bucket"

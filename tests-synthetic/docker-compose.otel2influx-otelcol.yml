@@ -1,0 +1,74 @@
+# Convert OTLP to line protocol in otelcol exporter.
+# Prints line protocol.
+
+services:
+
+  hotrod:
+    # Example web app that generates traces.
+    image: jaegertracing/example-hotrod:1.22.0
+    environment:
+      JAEGER_AGENT_HOST: opentelemetry-collector
+      JAEGER_AGENT_PORT: 6831
+    stop_grace_period: 1s
+    ports:
+    - "8000:8080" # HTTP UI
+    links:
+    - opentelemetry-collector
+
+  generate-traces-tracegen:
+    # Tool included with otelcol.
+    build:
+      dockerfile: Dockerfile.tracegen
+    image: tracegen:local
+    command: /tracegen -duration 168h -otlp-endpoint opentelemetry-collector:4317 -otlp-insecure true
+    stop_grace_period: 1s
+    links:
+    - opentelemetry-collector
+
+  generate-traces-omnition:
+    # https://github.com/Omnition/synthetic-load-generator
+    build:
+      dockerfile: Dockerfile.omnition-synthetic-load
+    image: omnition/synthetic-load-generator:latest
+    environment:
+    - JAEGER_COLLECTOR_URL=http://opentelemetry-collector:14268
+    command: java -jar synthetic-load-generator.jar --paramsFile ./topologies/hipster-shop.json --jaegerCollectorUrl http://opentelemetry-collector:14268 --flushIntervalMillis 1000 --logLevel 1
+    stop_grace_period: 1s
+    links:
+    - opentelemetry-collector
+
+  generate-metrics:
+    # https://github.com/open-fresh/avalanche
+    # Prometheus metrics at http://localhost:9090/metrics
+    image: quay.io/freshtracks.io/avalanche:latest
+    command: --port 9090 --value-interval=9 --series-interval=600 --metric-interval=3600
+    stop_grace_period: 1s
+    links:
+    - opentelemetry-collector
+
+  generate-logs:
+    # Configuration in fluent-bit.conf
+    image: fluent/fluent-bit:1.7
+    stop_grace_period: 1s
+    volumes:
+    - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    links:
+    - opentelemetry-collector
+
+  opentelemetry-collector:
+    # Configuration in otelcol-generate-export-otlp.yaml
+    image: otel/opentelemetry-collector-contrib:0.28.0
+    command: /otelcolcontrib --config /config.yaml --log-level INFO
+    stop_grace_period: 1s
+    volumes:
+    - ./otelcol-generate-export-lp.yaml:/config.yaml:ro
+    links:
+    - telegraf
+
+  telegraf:
+    build:
+      dockerfile: Dockerfile.telegraf
+    image: telegraf:local
+    command: /telegraf
+    volumes:
+    - ./telegraf-input-print-lp.toml:/etc/telegraf/telegraf.conf:ro
