@@ -1,0 +1,17 @@
+FROM openjdk:8-jdk-alpine AS builder
+
+RUN apk add git maven make
+RUN git clone https://github.com/Omnition/synthetic-load-generator
+WORKDIR /synthetic-load-generator
+RUN make java-jars
+
+FROM openjdk:8-jre-alpine
+
+RUN mkdir -p /opt/omnition/topologies
+COPY --from=builder /synthetic-load-generator/target/SyntheticLoadGenerator-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/omnition/synthetic-load-generator.jar
+COPY --from=builder /synthetic-load-generator/topologies/* /opt/omnition/topologies/
+COPY --from=builder /synthetic-load-generator/start.sh /opt/omnition/
+RUN chmod +x /opt/omnition/start.sh
+WORKDIR /opt/omnition/
+
+CMD ["./start.sh"]

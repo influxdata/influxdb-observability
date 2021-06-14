@@ -37,7 +37,11 @@ used in at least two of the above-mentioned packages.
 
 This package is only intended for use by packages within this repository.
 
-## `tests`
+## `tests-integration`
 
 The golang package `tests` contains integration tests.
 These tests exercise the above packages against OpenTelemetry Collector and Telegraf.
+
+## `tests-synthetic`
+
+This is a Docker Compose that generates synthetic signals, for testing.
