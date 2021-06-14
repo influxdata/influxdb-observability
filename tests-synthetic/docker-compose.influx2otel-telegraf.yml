@@ -1,0 +1,32 @@
+# Convert line protocol to OTLP in Telegraf output plugin.
+# Prints OTLP in JSON format.
+
+services:
+
+  generate-metrics:
+    # https://github.com/open-fresh/avalanche
+    # Prometheus metrics at http://localhost:9090/metrics
+    image: quay.io/freshtracks.io/avalanche:latest
+    command: --port 9090 --value-interval=9 --series-interval=600 --metric-interval=3600
+    stop_grace_period: 1s
+    links:
+    - telegraf
+
+  telegraf:
+    # Configuration in telegraf-output-influx2otel.toml
+    build:
+      dockerfile: Dockerfile.telegraf
+    image: telegraf:local
+    command: /telegraf
+    volumes:
+    - ./telegraf-output-influx2otel.toml:/etc/telegraf/telegraf.conf:ro
+    links:
+    - opentelemetry-collector
+
+  opentelemetry-collector:
+    # Configuration in otelcol-receive-print-otlp.yaml
+    image: otel/opentelemetry-collector-contrib:0.28.0
+    command: /otelcolcontrib --config /config.yaml --log-level INFO
+    stop_grace_period: 1s
+    volumes:
+    - ./otelcol-receive-print-otlp.yaml:/config.yaml:ro

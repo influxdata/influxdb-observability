@@ -1,0 +1,7 @@
+[[inputs.prometheus]]
+urls = ["http://generate-metrics:9090/metrics"]
+metric_version = 1
+
+[[outputs.opentelemetry]]
+service_address = "opentelemetry-collector:4317"
+metrics_schema = "prometheus-v1"

@@ -1,6 +1,10 @@
+# Convert OTLP to line protocol in Telegraf input plugin.
+# Prints line protocol.
+
 services:
 
   hotrod:
+    # Example web app that generates traces.
     image: jaegertracing/example-hotrod:1.22.0
     environment:
       JAEGER_AGENT_HOST: opentelemetry-collector
@@ -12,6 +16,7 @@ services:
     - opentelemetry-collector
 
   generate-traces-tracegen:
+    # Tool included with otelcol.
     build:
       dockerfile: Dockerfile.tracegen
     image: tracegen:local
@@ -51,12 +56,12 @@ services:
     - opentelemetry-collector
 
   opentelemetry-collector:
-    # Configuration in opentelemetry-collector-config.yaml
+    # Configuration in otelcol-generate-export-otlp.yaml
     image: otel/opentelemetry-collector-contrib:0.28.0
     command: /otelcolcontrib --config /config.yaml --log-level INFO
     stop_grace_period: 1s
     volumes:
-    - ./otelcol.yaml:/config.yaml:ro
+    - ./otelcol-generate-export-otlp.yaml:/config.yaml:ro
     links:
     - telegraf
 
@@ -66,4 +71,4 @@ services:
     image: telegraf:local
     command: /telegraf
     volumes:
-    - ./telegraf.toml:/etc/telegraf/telegraf.conf:ro
+    - ./telegraf-input-otel2influx.toml:/etc/telegraf/telegraf.conf:ro

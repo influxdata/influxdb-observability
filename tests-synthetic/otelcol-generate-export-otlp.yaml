@@ -29,26 +29,6 @@ receivers:
 processors:
 
 exporters:
-#  influxdb/iox:
-#    org: "myorg"
-#    bucket: "mybucket"
-#    protocol: "line-protocol"
-#    line_protocol_server_url: "http://influxdb-iox:8080"
-#    line_protocol_auth_token: "my-token"
-#    timeout: 10s
-
-#  influxdb/stdout: # accepts InfluxDB writes, dumps to stdout
-#    endpoint: "http://http-stdout:8000"
-#    org: my-org
-#    bucket: my-bucket
-#    metrics_schema: telegraf-prometheus-v1
-
-  logging:
-    loglevel: info
-
-  file:
-    path: /dev/stdout
-
   otlp:
     endpoint: telegraf:4317
     insecure: true
@@ -62,16 +42,13 @@ service:
       receivers: [otlp, jaeger]
       processors: []
       exporters: [otlp]
-#      exporters: [influxdb/iox, influxdb/stdout]
 
     metrics:
       receivers: [prometheus]
       processors: []
       exporters: [otlp]
-#      exporters: [influxdb/iox, influxdb/stdout]
 
     logs:
       receivers: [fluentforward]
       processors: []
       exporters: [otlp]
-#      exporters: [influxdb/iox, influxdb/stdout]
