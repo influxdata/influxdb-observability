@@ -157,19 +157,19 @@ func (b *metricsBatchPrometheusV1) lookupMetric(metricName string, rAttributes [
 		switch m.Data.(type) {
 		case *otlpmetrics.Metric_DoubleGauge:
 			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
+				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
 			}
 		case *otlpmetrics.Metric_DoubleSum:
 			if vType != common.InfluxMetricValueTypeSum {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s", metricName, common.InfluxMetricValueTypeSum, vType)
+				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
 			}
 		case *otlpmetrics.Metric_DoubleHistogram:
 			if vType != common.InfluxMetricValueTypeHistogram {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s", metricName, common.InfluxMetricValueTypeHistogram, vType)
+				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
 			}
 		case *otlpmetrics.Metric_DoubleSummary:
 			if vType != common.InfluxMetricValueTypeSummary {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s", metricName, common.InfluxMetricValueTypeSummary, vType)
+				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
 		default:
 			return nil, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
