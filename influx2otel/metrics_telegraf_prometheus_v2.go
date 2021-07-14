@@ -9,71 +9,19 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
 	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
-	"google.golang.org/protobuf/proto"
 )
 
-type metricsBatchPrometheusV2 struct {
-	rmByAttributes map[string]*otlpmetrics.ResourceMetrics
-	// TODO convert some of these maps from string:foo to pointer:foo
-	ilmByRMAttributesAndIL    map[string]map[string]*otlpmetrics.InstrumentationLibraryMetrics
-	metricByRMIL              map[string]map[string]map[string]*otlpmetrics.Metric
-	histogramDataPointsByMDPK map[*otlpmetrics.Metric]map[dataPointKey]*otlpmetrics.DoubleHistogramDataPoint
-	summaryDataPointsByMDPK   map[*otlpmetrics.Metric]map[dataPointKey]*otlpmetrics.DoubleSummaryDataPoint
-
-	logger common.Logger
-}
-
-func newmetricsBatchPrometheusV2(logger common.Logger) MetricsBatch {
-	return &metricsBatchPrometheusV2{
-		rmByAttributes:            make(map[string]*otlpmetrics.ResourceMetrics),
-		ilmByRMAttributesAndIL:    make(map[string]map[string]*otlpmetrics.InstrumentationLibraryMetrics),
-		metricByRMIL:              make(map[string]map[string]map[string]*otlpmetrics.Metric),
-		histogramDataPointsByMDPK: make(map[*otlpmetrics.Metric]map[dataPointKey]*otlpmetrics.DoubleHistogramDataPoint),
-		summaryDataPointsByMDPK:   make(map[*otlpmetrics.Metric]map[dataPointKey]*otlpmetrics.DoubleSummaryDataPoint),
-
-		logger: logger,
-	}
-}
-
-func (b *metricsBatchPrometheusV2) ToProto() []*otlpmetrics.ResourceMetrics {
-	var resourceMetricss []*otlpmetrics.ResourceMetrics
-	for _, resourceMetrics := range b.rmByAttributes {
-
-		// Ensure that the extra bucket counts have been added.
-		for _, ilMetrics := range resourceMetrics.InstrumentationLibraryMetrics {
-			for _, metric := range ilMetrics.Metrics {
-				if histogram, ok := metric.Data.(*otlpmetrics.Metric_DoubleHistogram); ok {
-					for _, dp := range histogram.DoubleHistogram.DataPoints {
-						if len(dp.BucketCounts) == len(dp.ExplicitBounds) {
-							dp.BucketCounts = append(dp.BucketCounts, dp.Count)
-						}
-					}
-				}
-			}
-		}
-
-		resourceMetricss = append(resourceMetricss, resourceMetrics)
-	}
-	return resourceMetricss
-}
-
-func (b *metricsBatchPrometheusV2) ToProtoBytes() ([]byte, error) {
-	req := otlpcollectormetrics.ExportMetricsServiceRequest{
-		ResourceMetrics: b.ToProto(),
-	}
-	return proto.Marshal(&req)
-}
-
-func (b *metricsBatchPrometheusV2) AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
+func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
 	if measurement != common.MeasurementPrometheus {
 		return fmt.Errorf("unexpected measurement name '%s'", measurement)
 	}
 
-	vType = b.inferMetricValueType(vType, tags, fields)
+	vType = b.inferMetricValueTypeV2(vType, tags, fields)
+	if vType == common.InfluxMetricValueTypeUntyped {
+		return errValueTypeUnknown
+	}
 
 	metricName, err := b.getMetricName(vType, tags, fields)
 	if err != nil {
@@ -106,36 +54,35 @@ func (b *metricsBatchPrometheusV2) AddPoint(measurement string, tags map[string]
 	return err
 }
 
-func (b *metricsBatchPrometheusV2) inferMetricValueType(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) common.InfluxMetricValueType {
-	if vType == common.InfluxMetricValueTypeUntyped {
-		for k := range tags {
-			if k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2 {
-				vType = common.InfluxMetricValueTypeHistogram
-				break
-			}
+func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) common.InfluxMetricValueType {
+	if vType != common.InfluxMetricValueTypeUntyped {
+		return vType
+	}
+	for k := range tags {
+		if k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2 {
+			return common.InfluxMetricValueTypeHistogram
 		}
 	}
-	if vType == common.InfluxMetricValueTypeUntyped {
-		for k := range fields {
-			if strings.HasSuffix(k, common.MetricHistogramCountSuffix) || strings.HasSuffix(k, common.MetricHistogramSumSuffix) {
-				vType = common.InfluxMetricValueTypeHistogram
-				break
-			}
+	for k := range fields {
+		if strings.HasSuffix(k, common.MetricHistogramCountSuffix) || strings.HasSuffix(k, common.MetricHistogramSumSuffix) {
+			return common.InfluxMetricValueTypeHistogram
 		}
 	}
-	if vType == common.InfluxMetricValueTypeUntyped {
-		vType = common.InfluxMetricValueTypeGauge
+	if len(fields) == 1 {
+		return common.InfluxMetricValueTypeGauge
 	}
-	return vType
+	return common.InfluxMetricValueTypeUntyped
 }
 
-func (b *metricsBatchPrometheusV2) getMetricName(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) (metricName string, err error) {
+func (b *MetricsBatch) getMetricName(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) (metricName string, err error) {
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:
 		if len(fields) != 1 {
 			return "", fmt.Errorf("gauge metric should have 1 field, found %d", len(fields))
 		}
-		fallthrough
+		for k := range fields {
+			metricName = k
+		}
 
 	case common.InfluxMetricValueTypeSum:
 		if len(fields) != 1 {
@@ -206,148 +153,6 @@ func (b *metricsBatchPrometheusV2) getMetricName(vType common.InfluxMetricValueT
 	return
 }
 
-// unpackTags extracts resource attributes and instrumentation library name and version from tags.
-// Return values are (metric name, resource attributes, IL name, IL version, labels).
-func (b *metricsBatchPrometheusV2) unpackTags(tags map[string]string) (rAttributes []*otlpcommon.KeyValue, ilName string, ilVersion string, labels []*otlpcommon.StringKeyValue) {
-	attributeKeys := make(map[string]struct{})
-	for k, v := range tags {
-		switch {
-		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
-			continue
-		case k == common.AttributeInstrumentationLibraryName:
-			ilName = v
-		case k == common.AttributeInstrumentationLibraryVersion:
-			ilVersion = v
-		case common.ResourceNamespace.MatchString(k):
-			rAttributes = append(rAttributes, &otlpcommon.KeyValue{
-				Key:   k,
-				Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: v}},
-			})
-			attributeKeys[k] = struct{}{}
-		default:
-			labels = append(labels, &otlpcommon.StringKeyValue{
-				Key:   k,
-				Value: v,
-			})
-		}
-	}
-
-	sort.Slice(rAttributes, func(i, j int) bool {
-		return rAttributes[i].Key < rAttributes[j].Key
-	})
-
-	return
-}
-
-func (b *metricsBatchPrometheusV2) lookupMetric(metricName string, rAttributes []*otlpcommon.KeyValue, ilName, ilVersion string, vType common.InfluxMetricValueType) (*otlpmetrics.Metric, error) {
-	rKey := common.ResourceAttributesToKey(rAttributes)
-	var resourceMetrics *otlpmetrics.ResourceMetrics
-	if rm, found := b.rmByAttributes[rKey]; found {
-		resourceMetrics = rm
-	} else {
-		resourceMetrics = &otlpmetrics.ResourceMetrics{
-			Resource: &otlpresource.Resource{
-				Attributes: rAttributes,
-			},
-		}
-		b.rmByAttributes[rKey] = resourceMetrics
-		b.ilmByRMAttributesAndIL[rKey] = make(map[string]*otlpmetrics.InstrumentationLibraryMetrics)
-		b.metricByRMIL[rKey] = make(map[string]map[string]*otlpmetrics.Metric)
-	}
-
-	ilmKey := ilName + ":" + ilVersion
-	var ilMetrics *otlpmetrics.InstrumentationLibraryMetrics
-	if ilm, found := b.ilmByRMAttributesAndIL[rKey][ilmKey]; found {
-		ilMetrics = ilm
-	} else {
-		ilMetrics = &otlpmetrics.InstrumentationLibraryMetrics{
-			InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-				Name:    ilName,
-				Version: ilVersion,
-			},
-		}
-		resourceMetrics.InstrumentationLibraryMetrics = append(resourceMetrics.InstrumentationLibraryMetrics, ilMetrics)
-		b.ilmByRMAttributesAndIL[rKey][ilmKey] = ilMetrics
-		b.metricByRMIL[rKey][ilmKey] = make(map[string]*otlpmetrics.Metric)
-	}
-
-	var metric *otlpmetrics.Metric
-	if m, found := b.metricByRMIL[rKey][ilmKey][metricName]; found {
-		switch m.Data.(type) {
-		case *otlpmetrics.Metric_DoubleGauge:
-			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
-			}
-		case *otlpmetrics.Metric_DoubleSum:
-			if vType != common.InfluxMetricValueTypeSum {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
-			}
-		case *otlpmetrics.Metric_DoubleHistogram:
-			if vType != common.InfluxMetricValueTypeHistogram {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
-			}
-		case *otlpmetrics.Metric_DoubleSummary:
-			if vType != common.InfluxMetricValueTypeSummary {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
-			}
-		default:
-			return nil, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
-		}
-		metric = m
-
-	} else {
-		switch vType {
-		case common.InfluxMetricValueTypeGauge:
-			metric = &otlpmetrics.Metric{
-				Name: metricName,
-				Data: &otlpmetrics.Metric_DoubleGauge{
-					DoubleGauge: &otlpmetrics.DoubleGauge{
-						DataPoints: make([]*otlpmetrics.DoubleDataPoint, 0, 1),
-					},
-				},
-			}
-		case common.InfluxMetricValueTypeSum:
-			metric = &otlpmetrics.Metric{
-				Name: metricName,
-				Data: &otlpmetrics.Metric_DoubleSum{
-					DoubleSum: &otlpmetrics.DoubleSum{
-						DataPoints:             make([]*otlpmetrics.DoubleDataPoint, 0, 1),
-						AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-						IsMonotonic:            true,
-					},
-				},
-			}
-		case common.InfluxMetricValueTypeHistogram:
-			metric = &otlpmetrics.Metric{
-				Name: metricName,
-				Data: &otlpmetrics.Metric_DoubleHistogram{
-					DoubleHistogram: &otlpmetrics.DoubleHistogram{
-						DataPoints:             make([]*otlpmetrics.DoubleHistogramDataPoint, 0, 1),
-						AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-					},
-				},
-			}
-		case common.InfluxMetricValueTypeSummary:
-			metric = &otlpmetrics.Metric{
-				Name: metricName,
-				Data: &otlpmetrics.Metric_DoubleSummary{
-					DoubleSummary: &otlpmetrics.DoubleSummary{
-						DataPoints: make([]*otlpmetrics.DoubleSummaryDataPoint, 0, 1),
-					},
-				},
-			}
-		default:
-			return nil, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
-		}
-		b.ilmByRMAttributesAndIL[rKey][ilmKey].Metrics = append(b.ilmByRMAttributesAndIL[rKey][ilmKey].Metrics, metric)
-		b.metricByRMIL[rKey][ilmKey][metricName] = metric
-		b.histogramDataPointsByMDPK[metric] = make(map[dataPointKey]*otlpmetrics.DoubleHistogramDataPoint)
-		b.summaryDataPointsByMDPK[metric] = make(map[dataPointKey]*otlpmetrics.DoubleSummaryDataPoint)
-	}
-
-	return metric, nil
-}
-
 type dataPointKey string
 
 func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) dataPointKey {
@@ -362,7 +167,7 @@ func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) data
 	return dataPointKey(strings.Join(components, ":"))
 }
 
-func (b *metricsBatchPrometheusV2) convertGauge(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertGauge(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
 	var gauge float64
 	foundGauge := false
 	for k, vi := range fields {
@@ -393,7 +198,7 @@ func (b *metricsBatchPrometheusV2) convertGauge(metric *otlpmetrics.Metric, labe
 	return nil
 }
 
-func (b *metricsBatchPrometheusV2) convertSum(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSum(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
 	var counter float64
 	foundCounter := false
 	for k, vi := range fields {
@@ -424,7 +229,7 @@ func (b *metricsBatchPrometheusV2) convertSum(metric *otlpmetrics.Metric, labels
 	return nil
 }
 
-func (b *metricsBatchPrometheusV2) convertHistogram(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertHistogram(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var dataPoint *otlpmetrics.DoubleHistogramDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
@@ -504,7 +309,7 @@ func (b *metricsBatchPrometheusV2) convertHistogram(metric *otlpmetrics.Metric, 
 	return nil
 }
 
-func (b *metricsBatchPrometheusV2) convertSummary(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSummary(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var dataPoint *otlpmetrics.DoubleSummaryDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
