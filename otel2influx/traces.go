@@ -142,7 +142,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		case otlptrace.Status_STATUS_CODE_ERROR:
 			fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
 		default:
-			c.logger.Debug("status code not recognized: %q", status.Code)
+			c.logger.Debug("status code not recognized", "code", status.Code)
 		}
 
 		if message := status.Message; message != "" {

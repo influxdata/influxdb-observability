@@ -245,11 +245,6 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	rAttributes, ilName, ilVersion, labels := b.unpackTags(tags)
 
 	for k, v := range fields {
-		measurement := fmt.Sprintf("%s:%s", measurement, k)
-		metric, err := b.lookupMetric(measurement, rAttributes, ilName, ilVersion, common.InfluxMetricValueTypeGauge)
-		if err != nil {
-			return err
-		}
 		dataPoint := &otlpmetrics.DoubleDataPoint{
 			Labels:       labels,
 			TimeUnixNano: uint64(ts.UnixNano()),
@@ -262,7 +257,14 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		case uint64:
 			dataPoint.Value = float64(vv)
 		default:
-			return fmt.Errorf("unsupported field value type %T", v)
+			b.logger.Debug("field has unsupported type", "measurement", measurement, "field", k, "type", fmt.Sprintf("%T", v))
+			continue
+		}
+
+		metricName := fmt.Sprintf("%s:%s", measurement, k)
+		metric, err := b.lookupMetric(metricName, rAttributes, ilName, ilVersion, common.InfluxMetricValueTypeGauge)
+		if err != nil {
+			return err
 		}
 		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
 			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,

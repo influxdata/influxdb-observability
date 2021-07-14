@@ -42,6 +42,14 @@ This package is only intended for use by packages within this repository.
 The golang package `tests` contains integration tests.
 These tests exercise the above packages against OpenTelemetry Collector and Telegraf.
 
+To run these tests:
+```console
+$ cd tests-integration
+$ go test
+```
+
 ## `tests-synthetic`
 
 This is a Docker Compose that generates synthetic signals, for testing.
+(It is not a pass-fail test.)
+For more information see [tests-synthetic/README.md](tests-synthetic/README.md).

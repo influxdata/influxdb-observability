@@ -83,7 +83,7 @@ func (b *MetricsBatch) convertGaugeV1(metric *otlpmetrics.Metric, labels []*otlp
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized gauge field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized gauge field", "field", k, "value", vi)
 		}
 	}
 	if !foundGauge {
@@ -114,7 +114,7 @@ func (b *MetricsBatch) convertSumV1(metric *otlpmetrics.Metric, labels []*otlpco
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized counter field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized counter field", "field", k, "value", vi)
 		}
 	}
 	if !foundCounter {
@@ -166,7 +166,7 @@ func (b *MetricsBatch) convertHistogramV1(metric *otlpmetrics.Metric, labels []*
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized histogram field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized histogram field", "field", k, "value", vi)
 		}
 	}
 	if !foundCount {
@@ -227,7 +227,7 @@ func (b *MetricsBatch) convertSummaryV1(metric *otlpmetrics.Metric, labels []*ot
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized summary field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized summary field", "field", k, "value", vi)
 		}
 	}
 	if !foundCount {

@@ -179,7 +179,7 @@ func (b *MetricsBatch) convertGauge(metric *otlpmetrics.Metric, labels []*otlpco
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized gauge field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized gauge field", "field", k, "value", vi)
 		}
 	}
 	if !foundGauge {
@@ -210,7 +210,7 @@ func (b *MetricsBatch) convertSum(metric *otlpmetrics.Metric, labels []*otlpcomm
 			}
 
 		} else {
-			b.logger.Debug("skipping unrecognized counter field '%s'=%q", k, vi)
+			b.logger.Debug("skipping unrecognized counter field", "field", k, "value", vi)
 		}
 	}
 	if !foundCounter {

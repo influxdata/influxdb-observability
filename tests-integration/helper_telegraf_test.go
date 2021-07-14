@@ -187,7 +187,6 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	otelOutputAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelOutputPlugin := &oteloutput.OpenTelemetry{
 		ServiceAddress: otelOutputAddress,
-		MetricsSchema:  "prometheus-v1",
 		Log:            zaptest.NewLogger(t, zaptest.Level(zapcore.InfoLevel)).Sugar(),
 	}
 	otelOutputConfig := &models.OutputConfig{
