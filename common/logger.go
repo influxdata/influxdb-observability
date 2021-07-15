@@ -32,4 +32,3 @@ func (e *ErrorLogger) Debug(msg string, kv ...interface{}) {
 	}
 	e.Logger.Debug(msg, kv...)
 }
-
