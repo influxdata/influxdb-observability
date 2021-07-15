@@ -6,15 +6,18 @@ import (
 	"net"
 	"net/http"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
 	"github.com/influxdata/telegraf/config"
+	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/models"
 	otelinput "github.com/influxdata/telegraf/plugins/inputs/opentelemetry"
 	"github.com/influxdata/telegraf/plugins/outputs/health"
@@ -25,6 +28,47 @@ import (
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
 )
+
+func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect *otlpcollectormetrics.ExportMetricsServiceRequest) {
+	mockInputPlugin, mockOtelService, stopTelegraf := setupTelegrafOpenTelemetryOutput(t)
+	t.Cleanup(stopTelegraf)
+
+	lpdec := lineprotocol.NewDecoder(strings.NewReader(lp))
+	for lpdec.Next() {
+		name, err := lpdec.Measurement()
+		require.NoError(t, err)
+		tags := make(map[string]string)
+		for k, v, _ := lpdec.NextTag(); k != nil; k, v, _ = lpdec.NextTag() {
+			tags[string(k)] = string(v)
+		}
+		fields := make(map[string]interface{})
+		for k, v, _ := lpdec.NextField(); k != nil; k, v, _ = lpdec.NextField() {
+			fields[string(k)] = v.Interface()
+		}
+		ts, err := lpdec.Time(lineprotocol.Nanosecond, time.Now())
+		require.NoError(t, err)
+
+		m := metric.New(string(name), tags, fields, ts, telegrafValueType)
+		mockInputPlugin.accumulator.AddMetric(m)
+	}
+	require.NoError(t, lpdec.Err())
+
+	stopTelegraf()
+
+	got := new(otlpcollectormetrics.ExportMetricsServiceRequest)
+	select {
+	case rm := <-mockOtelService.metrics:
+		got.ResourceMetrics = rm
+	case <-time.NewTimer(time.Second).C:
+		t.Log("test timed out")
+		t.Fail()
+		return
+	}
+	common.SortResourceMetrics(expect.ResourceMetrics)
+	common.SortResourceMetrics(got.ResourceMetrics)
+
+	assertProtosEqual(t, expect, got)
+}
 
 func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutputPlugin, context.CancelFunc) {
 	t.Helper()

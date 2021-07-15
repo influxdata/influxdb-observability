@@ -1,7 +1,6 @@
 package influx2otel
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -23,35 +22,22 @@ func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map
 		return errValueTypeUnknown
 	}
 
-	metricName, err := b.getMetricNameV2(vType, tags, fields)
-	if err != nil {
-		return err
-	}
-
-	rAttributes, ilName, ilVersion, labels := b.unpackTags(tags)
-
-	metric, err := b.lookupMetric(metricName, rAttributes, ilName, ilVersion, vType)
-	if err != nil {
-		return err
-	}
 	if ts.IsZero() {
 		ts = time.Now()
 	}
 
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:
-		err = b.convertGaugeV2(metric, labels, fields, ts)
+		return b.convertGaugeV2(tags, fields, ts)
 	case common.InfluxMetricValueTypeSum:
-		err = b.convertSumV2(metric, labels, fields, ts)
+		return b.convertSumV2(tags, fields, ts)
 	case common.InfluxMetricValueTypeHistogram:
-		err = b.convertHistogramV2(metric, labels, tags, fields, ts)
+		return b.convertHistogramV2(tags, fields, ts)
 	case common.InfluxMetricValueTypeSummary:
-		err = b.convertSummaryV2(metric, labels, tags, fields, ts)
+		return b.convertSummaryV2(tags, fields, ts)
 	default:
-		err = fmt.Errorf("impossible InfluxMetricValueType %d", vType)
+		return fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 	}
-
-	return err
 }
 
 func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) common.InfluxMetricValueType {
@@ -74,85 +60,6 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 	return common.InfluxMetricValueTypeUntyped
 }
 
-func (b *MetricsBatch) getMetricNameV2(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) (metricName string, err error) {
-	switch vType {
-	case common.InfluxMetricValueTypeGauge:
-		if len(fields) != 1 {
-			return "", fmt.Errorf("gauge metric should have 1 field, found %d", len(fields))
-		}
-		for k := range fields {
-			metricName = k
-		}
-
-	case common.InfluxMetricValueTypeSum:
-		if len(fields) != 1 {
-			return "", fmt.Errorf("sum metric should have 1 field, found %d", len(fields))
-		}
-		for k := range fields {
-			metricName = k
-		}
-
-	case common.InfluxMetricValueTypeHistogram:
-		if _, found := tags[common.MetricHistogramBoundKeyV2]; found {
-			if len(fields) != 1 {
-				return "", fmt.Errorf("histogram metric 'le' tagged line should have 1 field, found %d", len(fields))
-			}
-			for k := range fields {
-				metricName = strings.TrimSuffix(k, common.MetricHistogramBucketSuffix)
-			}
-		} else if _, found = tags[common.MetricSummaryQuantileKeyV2]; found {
-			if len(fields) != 1 {
-				return "", fmt.Errorf("summary metric (interpreted as histogram) 'quantile' tagged line should have 1 field, found %d", len(fields))
-			}
-			for k := range fields {
-				metricName = k
-			}
-		} else {
-			if len(fields) != 2 {
-				return "", fmt.Errorf("histogram metric count+sum fields should have two values, found %d", len(fields))
-			}
-			for k := range fields {
-				if strings.HasSuffix(k, common.MetricHistogramCountSuffix) {
-					metricName = strings.TrimSuffix(k, common.MetricHistogramCountSuffix)
-				} else if strings.HasSuffix(k, common.MetricHistogramSumSuffix) {
-					metricName = strings.TrimSuffix(k, common.MetricHistogramSumSuffix)
-				} else {
-					return "", fmt.Errorf("histogram count+sum field lacks _count or _sum suffix, found '%s'", k)
-				}
-			}
-		}
-
-	case common.InfluxMetricValueTypeSummary:
-		if _, found := tags[common.MetricSummaryQuantileKeyV2]; found {
-			if len(fields) != 1 {
-				return "", fmt.Errorf("summary metric 'quantile' tagged line should have 1 field, found %d", len(fields))
-			}
-			for k := range fields {
-				metricName = k
-			}
-		} else {
-			if len(fields) != 2 {
-				return "", fmt.Errorf("summary metric count+sum fields should have two values, found %d", len(fields))
-			}
-			for k := range fields {
-				if strings.HasSuffix(k, common.MetricSummaryCountSuffix) {
-					metricName = strings.TrimSuffix(k, common.MetricSummaryCountSuffix)
-				} else if strings.HasSuffix(k, common.MetricSummarySumSuffix) {
-					metricName = strings.TrimSuffix(k, common.MetricSummarySumSuffix)
-				} else {
-					return "", fmt.Errorf("summary count+sum field lacks _count or _sum suffix, found '%s'", k)
-				}
-			}
-		}
-	}
-
-	if metricName == "" {
-		return "", errors.New("metric name not found, not sure why")
-	}
-
-	return
-}
-
 type dataPointKey string
 
 func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) dataPointKey {
@@ -167,29 +74,35 @@ func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) data
 	return dataPointKey(strings.Join(components, ":"))
 }
 
-func (b *MetricsBatch) convertGaugeV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
-	var gauge float64
-	foundGauge := false
-	for k, vi := range fields {
-		if k == metric.Name {
-			foundGauge = true
-			var ok bool
-			if gauge, ok = vi.(float64); !ok {
-				return fmt.Errorf("unsupported gauge value type %T", vi)
-			}
+func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	if len(fields) != 1 {
+		return fmt.Errorf("gauge metric should have 1 field, found %d", len(fields))
+	}
 
-		} else {
-			b.logger.Debug("skipping unrecognized gauge field", "field", k, "value", vi)
+	var metricName string
+	var floatValue float64
+	for k, fieldValue := range fields {
+		metricName = k
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
 	}
-	if !foundGauge {
-		return fmt.Errorf("gauge field not found")
-	}
 
+	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
+	if err != nil {
+		return err
+	}
 	dataPoint := &otlpmetrics.DoubleDataPoint{
 		Labels:       labels,
 		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        gauge,
+		Value:        floatValue,
 	}
 	metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
 		append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
@@ -198,29 +111,35 @@ func (b *MetricsBatch) convertGaugeV2(metric *otlpmetrics.Metric, labels []*otlp
 	return nil
 }
 
-func (b *MetricsBatch) convertSumV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
-	var counter float64
-	foundCounter := false
-	for k, vi := range fields {
-		if k == metric.Name {
-			foundCounter = true
-			var ok bool
-			if counter, ok = vi.(float64); !ok {
-				return fmt.Errorf("unsupported counter value type %T", vi)
-			}
+func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	if len(fields) != 1 {
+		return fmt.Errorf("sum metric should have 1 field, found %d", len(fields))
+	}
 
-		} else {
-			b.logger.Debug("skipping unrecognized counter field", "field", k, "value", vi)
+	var metricName string
+	var floatValue float64
+	for k, fieldValue := range fields {
+		metricName = k
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			return fmt.Errorf("unsupported counter value type %T", fieldValue)
 		}
 	}
-	if !foundCounter {
-		return fmt.Errorf("counter field not found")
-	}
 
+	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
+	if err != nil {
+		return err
+	}
 	dataPoint := &otlpmetrics.DoubleDataPoint{
 		Labels:       labels,
 		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        counter,
+		Value:        floatValue,
 	}
 	metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
 		append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
@@ -229,7 +148,42 @@ func (b *MetricsBatch) convertSumV2(metric *otlpmetrics.Metric, labels []*otlpco
 	return nil
 }
 
-func (b *MetricsBatch) convertHistogramV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	var metricName string
+	if _, found := tags[common.MetricHistogramBoundKeyV2]; found {
+		if len(fields) != 1 {
+			return fmt.Errorf("histogram metric 'le' tagged line should have 1 field, found %d", len(fields))
+		}
+		for k := range fields {
+			metricName = strings.TrimSuffix(k, common.MetricHistogramBucketSuffix)
+		}
+	} else if _, found = tags[common.MetricSummaryQuantileKeyV2]; found {
+		if len(fields) != 1 {
+			return fmt.Errorf("summary metric (interpreted as histogram) 'quantile' tagged line should have 1 field, found %d", len(fields))
+		}
+		for k := range fields {
+			metricName = k
+		}
+	} else {
+		if len(fields) != 2 {
+			return fmt.Errorf("histogram metric count+sum fields should have two values, found %d", len(fields))
+		}
+		for k := range fields {
+			if strings.HasSuffix(k, common.MetricHistogramCountSuffix) {
+				metricName = strings.TrimSuffix(k, common.MetricHistogramCountSuffix)
+			} else if strings.HasSuffix(k, common.MetricHistogramSumSuffix) {
+				metricName = strings.TrimSuffix(k, common.MetricHistogramSumSuffix)
+			} else {
+				return fmt.Errorf("histogram count+sum field lacks _count or _sum suffix, found '%s'", k)
+			}
+		}
+	}
+
+	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeHistogram)
+	if err != nil {
+		return err
+	}
+
 	var dataPoint *otlpmetrics.DoubleHistogramDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
@@ -309,7 +263,35 @@ func (b *MetricsBatch) convertHistogramV2(metric *otlpmetrics.Metric, labels []*
 	return nil
 }
 
-func (b *MetricsBatch) convertSummaryV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	var metricName string
+	if _, found := tags[common.MetricSummaryQuantileKeyV2]; found {
+		if len(fields) != 1 {
+			return fmt.Errorf("summary metric 'quantile' tagged line should have 1 field, found %d", len(fields))
+		}
+		for k := range fields {
+			metricName = k
+		}
+	} else {
+		if len(fields) != 2 {
+			return fmt.Errorf("summary metric count+sum fields should have two values, found %d", len(fields))
+		}
+		for k := range fields {
+			if strings.HasSuffix(k, common.MetricSummaryCountSuffix) {
+				metricName = strings.TrimSuffix(k, common.MetricSummaryCountSuffix)
+			} else if strings.HasSuffix(k, common.MetricSummarySumSuffix) {
+				metricName = strings.TrimSuffix(k, common.MetricSummarySumSuffix)
+			} else {
+				return fmt.Errorf("summary count+sum field lacks _count or _sum suffix, found '%s'", k)
+			}
+		}
+	}
+
+	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSummary)
+	if err != nil {
+		return err
+	}
+
 	var dataPoint *otlpmetrics.DoubleSummaryDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
@@ -366,7 +348,7 @@ func (b *MetricsBatch) convertSummaryV2(metric *otlpmetrics.Metric, labels []*ot
 		} else {
 			return fmt.Errorf("summary count has no matching sum")
 		}
-	} else if _, found = fields[metric.Name+common.MetricHistogramSumSuffix]; found {
+	} else if _, found = fields[metric.Name+common.MetricSummarySumSuffix]; found {
 		return fmt.Errorf("summary sum has no matching count")
 	}
 

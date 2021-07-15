@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
 	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 )
 
@@ -16,30 +15,22 @@ func (b *MetricsBatch) addPointTelegrafPrometheusV1(measurement string, tags map
 		return errValueTypeUnknown
 	}
 
-	rAttributes, ilName, ilVersion, labels := b.unpackTags(tags)
-
-	metric, err := b.lookupMetric(measurement, rAttributes, ilName, ilVersion, vType)
-	if err != nil {
-		return err
-	}
 	if ts.IsZero() {
 		ts = time.Now()
 	}
 
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:
-		err = b.convertGaugeV1(metric, labels, fields, ts)
+		return b.convertGaugeV1(measurement, tags, fields, ts)
 	case common.InfluxMetricValueTypeSum:
-		err = b.convertSumV1(metric, labels, fields, ts)
+		return b.convertSumV1(measurement, tags, fields, ts)
 	case common.InfluxMetricValueTypeHistogram:
-		err = b.convertHistogramV1(metric, labels, fields, ts)
+		return b.convertHistogramV1(measurement, tags, fields, ts)
 	case common.InfluxMetricValueTypeSummary:
-		err = b.convertSummaryV1(metric, labels, fields, ts)
+		return b.convertSummaryV1(measurement, tags, fields, ts)
 	default:
-		err = fmt.Errorf("impossible InfluxMetricValueType %d", vType)
+		return fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 	}
-
-	return err
 }
 
 // inferMetricValueTypeV1 attempts to derive a metric value type
@@ -71,69 +62,129 @@ func isStringNumeric(s string) bool {
 	return err == nil
 }
 
-func (b *MetricsBatch) convertGaugeV1(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
-	var gauge float64
-	foundGauge := false
-	for k, vi := range fields {
-		if k == common.MetricGaugeFieldKey {
-			foundGauge = true
-			var ok bool
-			if gauge, ok = vi.(float64); !ok {
-				return fmt.Errorf("unsupported gauge value type %T", vi)
-			}
-
-		} else {
-			b.logger.Debug("skipping unrecognized gauge field", "field", k, "value", vi)
+func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	if fieldValue, found := fields[common.MetricGaugeFieldKey]; found {
+		var floatValue float64
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
-	}
-	if !foundGauge {
-		return fmt.Errorf("gauge field not found")
+
+		metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeGauge)
+		if err != nil {
+			return err
+		}
+		dataPoint := &otlpmetrics.DoubleDataPoint{
+			Labels:       labels,
+			TimeUnixNano: uint64(ts.UnixNano()),
+			Value:        floatValue,
+		}
+		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
+			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
+				dataPoint)
+		return nil
 	}
 
-	dataPoint := &otlpmetrics.DoubleDataPoint{
-		Labels:       labels,
-		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        gauge,
+	for k, fieldValue := range fields {
+		var floatValue float64
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			b.logger.Debug("unsupported gauge value type", "type", fmt.Sprintf("%T", fieldValue))
+			continue
+		}
+
+		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
+		if err != nil {
+			return err
+		}
+		dataPoint := &otlpmetrics.DoubleDataPoint{
+			Labels:       labels,
+			TimeUnixNano: uint64(ts.UnixNano()),
+			Value:        floatValue,
+		}
+		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
+			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
+				dataPoint)
 	}
-	metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
-			dataPoint)
 
 	return nil
 }
 
-func (b *MetricsBatch) convertSumV1(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
-	var counter float64
-	foundCounter := false
-	for k, vi := range fields {
-		if k == common.MetricCounterFieldKey {
-			foundCounter = true
-			var ok bool
-			if counter, ok = vi.(float64); !ok {
-				return fmt.Errorf("unsupported counter value type %T", vi)
-			}
-
-		} else {
-			b.logger.Debug("skipping unrecognized counter field", "field", k, "value", vi)
+func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+	if fieldValue, found := fields[common.MetricCounterFieldKey]; found {
+		var floatValue float64
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			return fmt.Errorf("unsupported counter value type %T", fieldValue)
 		}
-	}
-	if !foundCounter {
-		return fmt.Errorf("counter field not found")
+
+		metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSum)
+		if err != nil {
+			return err
+		}
+		dataPoint := &otlpmetrics.DoubleDataPoint{
+			Labels:       labels,
+			TimeUnixNano: uint64(ts.UnixNano()),
+			Value:        floatValue,
+		}
+		metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
+			append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
+				dataPoint)
+		return nil
 	}
 
-	dataPoint := &otlpmetrics.DoubleDataPoint{
-		Labels:       labels,
-		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        counter,
+	for k, fieldValue := range fields {
+		var floatValue float64
+		switch typedValue := fieldValue.(type) {
+		case float64:
+			floatValue = typedValue
+		case int64:
+			floatValue = float64(typedValue)
+		case uint64:
+			floatValue = float64(typedValue)
+		default:
+			b.logger.Debug("unsupported counter value type", "type", fmt.Sprintf("%T", fieldValue))
+			continue
+		}
+
+		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
+		if err != nil {
+			return err
+		}
+		dataPoint := &otlpmetrics.DoubleDataPoint{
+			Labels:       labels,
+			TimeUnixNano: uint64(ts.UnixNano()),
+			Value:        floatValue,
+		}
+		metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
+			append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
+				dataPoint)
 	}
-	metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
-			dataPoint)
 
 	return nil
 }
 
-func (b *MetricsBatch) convertHistogramV1(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var count uint64
 	foundCount := false
 	var sum float64
@@ -178,6 +229,10 @@ func (b *MetricsBatch) convertHistogramV1(metric *otlpmetrics.Metric, labels []*
 
 	bucketCounts = append(bucketCounts, count)
 
+	metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeHistogram)
+	if err != nil {
+		return err
+	}
 	dataPoint := &otlpmetrics.DoubleHistogramDataPoint{
 		Labels:         labels,
 		TimeUnixNano:   uint64(ts.UnixNano()),
@@ -193,7 +248,7 @@ func (b *MetricsBatch) convertHistogramV1(metric *otlpmetrics.Metric, labels []*
 	return nil
 }
 
-func (b *MetricsBatch) convertSummaryV1(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var count uint64
 	foundCount := false
 	var sum float64
@@ -237,6 +292,10 @@ func (b *MetricsBatch) convertSummaryV1(metric *otlpmetrics.Metric, labels []*ot
 		return fmt.Errorf("summary sum not found")
 	}
 
+	metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSummary)
+	if err != nil {
+		return err
+	}
 	dataPoint := &otlpmetrics.DoubleSummaryDataPoint{
 		Labels:         labels,
 		TimeUnixNano:   uint64(ts.UnixNano()),

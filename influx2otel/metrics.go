@@ -66,10 +66,11 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 
 var errValueTypeUnknown = errors.New("value type unknown")
 
-// unpackTags extracts resource attributes and instrumentation library name and version from tags.
-// Return values are (metric name, resource attributes, IL name, IL version, labels).
-func (b *MetricsBatch) unpackTags(tags map[string]string) (rAttributes []*otlpcommon.KeyValue, ilName string, ilVersion string, labels []*otlpcommon.StringKeyValue) {
+func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (*otlpmetrics.Metric, []*otlpcommon.StringKeyValue, error) {
 	attributeKeys := make(map[string]struct{})
+	var ilName, ilVersion string
+	var rAttributes []*otlpcommon.KeyValue
+	var labels []*otlpcommon.StringKeyValue
 	for k, v := range tags {
 		switch {
 		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
@@ -96,10 +97,6 @@ func (b *MetricsBatch) unpackTags(tags map[string]string) (rAttributes []*otlpco
 		return rAttributes[i].Key < rAttributes[j].Key
 	})
 
-	return
-}
-
-func (b *MetricsBatch) lookupMetric(metricName string, rAttributes []*otlpcommon.KeyValue, ilName, ilVersion string, vType common.InfluxMetricValueType) (*otlpmetrics.Metric, error) {
 	rKey := common.ResourceAttributesToKey(rAttributes)
 	var resourceMetrics *otlpmetrics.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
@@ -136,22 +133,22 @@ func (b *MetricsBatch) lookupMetric(metricName string, rAttributes []*otlpcommon
 		switch m.Data.(type) {
 		case *otlpmetrics.Metric_DoubleGauge:
 			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
+				return nil, nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
 			}
 		case *otlpmetrics.Metric_DoubleSum:
 			if vType != common.InfluxMetricValueTypeSum {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
+				return nil, nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
 			}
 		case *otlpmetrics.Metric_DoubleHistogram:
 			if vType != common.InfluxMetricValueTypeHistogram {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
+				return nil, nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
 			}
 		case *otlpmetrics.Metric_DoubleSummary:
 			if vType != common.InfluxMetricValueTypeSummary {
-				return nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
+				return nil, nil, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
 		default:
-			return nil, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
+			return nil, nil, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 		}
 		metric = m
 
@@ -197,7 +194,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, rAttributes []*otlpcommon
 				},
 			}
 		default:
-			return nil, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
+			return nil, nil, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
 		}
 		b.ilmByRMAttributesAndIL[rKey][ilmKey].Metrics = append(b.ilmByRMAttributesAndIL[rKey][ilmKey].Metrics, metric)
 		b.metricByRMIL[rKey][ilmKey][metricName] = metric
@@ -205,7 +202,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, rAttributes []*otlpcommon
 		b.summaryDataPointsByMDPK[metric] = make(map[dataPointKey]*otlpmetrics.DoubleSummaryDataPoint)
 	}
 
-	return metric, nil
+	return metric, labels, nil
 }
 
 func (b *MetricsBatch) ToProto() []*otlpmetrics.ResourceMetrics {
@@ -242,29 +239,29 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		ts = time.Now()
 	}
 
-	rAttributes, ilName, ilVersion, labels := b.unpackTags(tags)
-
 	for k, v := range fields {
-		dataPoint := &otlpmetrics.DoubleDataPoint{
-			Labels:       labels,
-			TimeUnixNano: uint64(ts.UnixNano()),
-		}
+		var floatValue float64
 		switch vv := v.(type) {
-		case int64:
-			dataPoint.Value = float64(vv)
 		case float64:
-			dataPoint.Value = vv
+			floatValue = vv
+		case int64:
+			floatValue = float64(vv)
 		case uint64:
-			dataPoint.Value = float64(vv)
+			floatValue = float64(vv)
 		default:
 			b.logger.Debug("field has unsupported type", "measurement", measurement, "field", k, "type", fmt.Sprintf("%T", v))
 			continue
 		}
 
 		metricName := fmt.Sprintf("%s_%s", measurement, k)
-		metric, err := b.lookupMetric(metricName, rAttributes, ilName, ilVersion, common.InfluxMetricValueTypeGauge)
+		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
+		}
+		dataPoint := &otlpmetrics.DoubleDataPoint{
+			Labels:       labels,
+			TimeUnixNano: uint64(ts.UnixNano()),
+			Value:        floatValue,
 		}
 		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
 			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
