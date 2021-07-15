@@ -12,7 +12,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.0.0-20210607140028-439ff5f266ab
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.7.0
-	go.opentelemetry.io/collector v0.28.0
+	go.opentelemetry.io/collector v0.29.0
 	go.uber.org/zap v1.17.0
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0

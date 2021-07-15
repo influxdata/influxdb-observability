@@ -75,7 +75,7 @@ service:
 	require.NoError(t, err)
 	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
-	appSettings := service.AppSettings{
+	appSettings := service.CollectorSettings{
 		Factories: component.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
@@ -238,7 +238,6 @@ func setupOtelcolInfluxDBReceiver(t *testing.T) (string, *mockExporterFactory) {
 receivers:
   influxdb:
     endpoint: ADDRESS_INFLUXDB
-    metrics_schema: SCHEMA
 
 exporters:
   mock:
@@ -258,7 +257,6 @@ service:
 	otelcolReceiverAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelcolConfig := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
-	otelcolConfig = strings.ReplaceAll(otelcolConfig, "SCHEMA", "telegraf-prometheus-v1")
 	otelcolConfig = strings.ReplaceAll(otelcolConfig, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(influxdbreceiver.NewFactory())
@@ -268,7 +266,7 @@ service:
 	require.NoError(t, err)
 	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
-	appSettings := service.AppSettings{
+	appSettings := service.CollectorSettings{
 		Factories: component.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
