@@ -41,7 +41,7 @@ func TestUnknownSchema(t *testing.T) {
 					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{},
 					Metrics: []*otlpmetrics.Metric{
 						{
-							Name: "cpu:usage_user",
+							Name: "cpu_usage_user",
 							Data: &otlpmetrics.Metric_DoubleGauge{
 								DoubleGauge: &otlpmetrics.DoubleGauge{
 									DataPoints: []*otlpmetrics.DoubleDataPoint{
@@ -58,7 +58,7 @@ func TestUnknownSchema(t *testing.T) {
 							},
 						},
 						{
-							Name: "cpu:usage_system",
+							Name: "cpu_usage_system",
 							Data: &otlpmetrics.Metric_DoubleGauge{
 								DoubleGauge: &otlpmetrics.DoubleGauge{
 									DataPoints: []*otlpmetrics.DoubleDataPoint{
@@ -75,7 +75,7 @@ func TestUnknownSchema(t *testing.T) {
 							},
 						},
 						{
-							Name: "cpu:usage_iowait",
+							Name: "cpu_usage_iowait",
 							Data: &otlpmetrics.Metric_DoubleGauge{
 								DoubleGauge: &otlpmetrics.DoubleGauge{
 									DataPoints: []*otlpmetrics.DoubleDataPoint{

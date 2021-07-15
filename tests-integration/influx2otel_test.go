@@ -156,7 +156,7 @@ cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.302
 							InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{},
 							Metrics: []*otlpmetrics.Metric{
 								{
-									Name: "cpu:usage_user",
+									Name: "cpu_usage_user",
 									Data: &otlpmetrics.Metric_DoubleGauge{
 										DoubleGauge: &otlpmetrics.DoubleGauge{
 											DataPoints: []*otlpmetrics.DoubleDataPoint{
@@ -173,7 +173,7 @@ cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.302
 									},
 								},
 								{
-									Name: "cpu:usage_system",
+									Name: "cpu_usage_system",
 									Data: &otlpmetrics.Metric_DoubleGauge{
 										DoubleGauge: &otlpmetrics.DoubleGauge{
 											DataPoints: []*otlpmetrics.DoubleDataPoint{
@@ -190,7 +190,7 @@ cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.302
 									},
 								},
 								{
-									Name: "cpu:usage_iowait",
+									Name: "cpu_usage_iowait",
 									Data: &otlpmetrics.Metric_DoubleGauge{
 										DoubleGauge: &otlpmetrics.DoubleGauge{
 											DataPoints: []*otlpmetrics.DoubleDataPoint{
