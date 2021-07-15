@@ -23,7 +23,7 @@ func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map
 		return errValueTypeUnknown
 	}
 
-	metricName, err := b.getMetricName(vType, tags, fields)
+	metricName, err := b.getMetricNameV2(vType, tags, fields)
 	if err != nil {
 		return err
 	}
@@ -40,13 +40,13 @@ func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map
 
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:
-		err = b.convertGauge(metric, labels, fields, ts)
+		err = b.convertGaugeV2(metric, labels, fields, ts)
 	case common.InfluxMetricValueTypeSum:
-		err = b.convertSum(metric, labels, fields, ts)
+		err = b.convertSumV2(metric, labels, fields, ts)
 	case common.InfluxMetricValueTypeHistogram:
-		err = b.convertHistogram(metric, labels, tags, fields, ts)
+		err = b.convertHistogramV2(metric, labels, tags, fields, ts)
 	case common.InfluxMetricValueTypeSummary:
-		err = b.convertSummary(metric, labels, tags, fields, ts)
+		err = b.convertSummaryV2(metric, labels, tags, fields, ts)
 	default:
 		err = fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 	}
@@ -74,7 +74,7 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 	return common.InfluxMetricValueTypeUntyped
 }
 
-func (b *MetricsBatch) getMetricName(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) (metricName string, err error) {
+func (b *MetricsBatch) getMetricNameV2(vType common.InfluxMetricValueType, tags map[string]string, fields map[string]interface{}) (metricName string, err error) {
 	switch vType {
 	case common.InfluxMetricValueTypeGauge:
 		if len(fields) != 1 {
@@ -167,7 +167,7 @@ func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) data
 	return dataPointKey(strings.Join(components, ":"))
 }
 
-func (b *MetricsBatch) convertGauge(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertGaugeV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
 	var gauge float64
 	foundGauge := false
 	for k, vi := range fields {
@@ -198,7 +198,7 @@ func (b *MetricsBatch) convertGauge(metric *otlpmetrics.Metric, labels []*otlpco
 	return nil
 }
 
-func (b *MetricsBatch) convertSum(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSumV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, fields map[string]interface{}, ts time.Time) error {
 	var counter float64
 	foundCounter := false
 	for k, vi := range fields {
@@ -229,7 +229,7 @@ func (b *MetricsBatch) convertSum(metric *otlpmetrics.Metric, labels []*otlpcomm
 	return nil
 }
 
-func (b *MetricsBatch) convertHistogram(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertHistogramV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var dataPoint *otlpmetrics.DoubleHistogramDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
@@ -309,7 +309,7 @@ func (b *MetricsBatch) convertHistogram(metric *otlpmetrics.Metric, labels []*ot
 	return nil
 }
 
-func (b *MetricsBatch) convertSummary(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
+func (b *MetricsBatch) convertSummaryV2(metric *otlpmetrics.Metric, labels []*otlpcommon.StringKeyValue, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var dataPoint *otlpmetrics.DoubleSummaryDataPoint
 	{
 		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
