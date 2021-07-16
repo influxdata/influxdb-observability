@@ -6,11 +6,8 @@ import (
 
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/influx2otel"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func TestAddPoint_v2_gauge(t *testing.T) {
@@ -28,7 +25,7 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 		map[string]interface{}{
 			"cache_age_seconds": float64(23.9),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeGauge)
 	require.NoError(t, err)
 
@@ -42,61 +39,29 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 		map[string]interface{}{
 			"cache_age_seconds": float64(11.9),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeGauge)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "cache_age_seconds",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "0"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        23.9,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "1"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        11.9,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "0")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(23.9)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "1")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(11.9)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_untypedGauge(t *testing.T) {
@@ -114,7 +79,7 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 		map[string]interface{}{
 			"cache_age_seconds": float64(23.9),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -128,61 +93,29 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 		map[string]interface{}{
 			"cache_age_seconds": float64(11.9),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "cache_age_seconds",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "0"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        23.9,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "1"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        11.9,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "0")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(23.9)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "1")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(11.9)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_sum(t *testing.T) {
@@ -220,61 +153,29 @@ func TestAddPoint_v2_sum(t *testing.T) {
 		common.InfluxMetricValueTypeSum)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "http_requests_total",
-							Data: &otlpmetrics.Metric_DoubleSum{
-								DoubleSum: &otlpmetrics.DoubleSum{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									IsMonotonic:            true,
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "200"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        1027,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "400"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        3,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total")
+	m.SetDataType(pdata.MetricDataTypeSum)
+	m.Sum().SetIsMonotonic(true)
+	m.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(1027)
+	dp = m.Sum().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "400")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(3)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_untypedSum(t *testing.T) {
@@ -293,7 +194,7 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 		map[string]interface{}{
 			"http_requests_total": float64(1027),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -308,63 +209,31 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 		map[string]interface{}{
 			"http_requests_total": float64(3),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "http_requests_total",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "200"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        1027,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "400"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        3,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(1027)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "400")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(3)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_histogram(t *testing.T) {
@@ -385,7 +254,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 			"http_request_duration_seconds_count": float64(144320),
 			"http_request_duration_seconds_sum":   float64(53423),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
@@ -401,7 +270,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(24054),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
@@ -417,7 +286,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(33444),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
@@ -433,7 +302,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(100392),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
@@ -449,7 +318,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(129389),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
@@ -465,59 +334,30 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(133988),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "http_request_duration_seconds",
-							Data: &otlpmetrics.Metric_DoubleHistogram{
-								DoubleHistogram: &otlpmetrics.DoubleHistogram{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "200"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano:   1395066363000000123,
-											Count:          144320,
-											Sum:            53423,
-											BucketCounts:   []uint64{24054, 33444, 100392, 129389, 133988, 144320},
-											ExplicitBounds: []float64{0.05, 0.1, 0.2, 0.5, 1},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.Histogram().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_untypedHistogram(t *testing.T) {
@@ -538,7 +378,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 			"http_request_duration_seconds_count": float64(144320),
 			"http_request_duration_seconds_sum":   float64(53423),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -554,7 +394,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(24054),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -570,7 +410,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(33444),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -586,7 +426,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(100392),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -602,7 +442,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(129389),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -618,59 +458,30 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 		map[string]interface{}{
 			"http_request_duration_seconds_bucket": float64(133988),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "http_request_duration_seconds",
-							Data: &otlpmetrics.Metric_DoubleHistogram{
-								DoubleHistogram: &otlpmetrics.DoubleHistogram{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "code", Value: "200"},
-												{Key: "method", Value: "post"},
-											},
-											TimeUnixNano:   1395066363000000123,
-											Count:          144320,
-											Sum:            53423,
-											BucketCounts:   []uint64{24054, 33444, 100392, 129389, 133988, 144320},
-											ExplicitBounds: []float64{0.05, 0.1, 0.2, 0.5, 1},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.Histogram().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_summary(t *testing.T) {
@@ -691,7 +502,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 			"rpc_duration_seconds_count": float64(2693),
 			"rpc_duration_seconds_sum":   float64(17560473),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
@@ -707,7 +518,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(3102),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
@@ -723,7 +534,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(3272),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
@@ -739,7 +550,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(4773),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
@@ -755,7 +566,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(9001),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
@@ -771,63 +582,42 @@ func TestAddPoint_v2_summary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(76656),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "rpc_duration_seconds",
-							Data: &otlpmetrics.Metric_DoubleSummary{
-								DoubleSummary: &otlpmetrics.DoubleSummary{
-									DataPoints: []*otlpmetrics.DoubleSummaryDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "200"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Count:        2693,
-											Sum:          17560473,
-											QuantileValues: []*otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile{
-												{Quantile: 0.01, Value: 3102},
-												{Quantile: 0.05, Value: 3272},
-												{Quantile: 0.5, Value: 4773},
-												{Quantile: 0.9, Value: 9001},
-												{Quantile: 0.99, Value: 76656},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("rpc_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeSummary)
+	dp := m.Summary().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(2693)
+	dp.SetSum(17560473)
+	qv := dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.01)
+	qv.SetValue(3102)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.05)
+	qv.SetValue(3272)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.5)
+	qv.SetValue(4773)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.9)
+	qv.SetValue(9001)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.99)
+	qv.SetValue(76656)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }
 
 func TestAddPoint_v2_untypedSummary(t *testing.T) {
@@ -848,7 +638,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 			"rpc_duration_seconds_count": float64(2693),
 			"rpc_duration_seconds_sum":   float64(17560473),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -864,7 +654,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(3102),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -880,7 +670,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(3272),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -896,7 +686,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(4773),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -912,7 +702,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(9001),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
@@ -928,57 +718,28 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 		map[string]interface{}{
 			"rpc_duration_seconds": float64(76656),
 		},
-		time.Unix(0, 1395066363000000123),
+		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_StringValue{StringValue: "42"}},
-					},
-				},
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "rpc_duration_seconds",
-							Data: &otlpmetrics.Metric_DoubleHistogram{
-								DoubleHistogram: &otlpmetrics.DoubleHistogram{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "200"},
-											},
-											TimeUnixNano:   1395066363000000123,
-											Count:          2693,
-											Sum:            17560473,
-											BucketCounts:   []uint64{3102, 3272, 4773, 9001, 76656, 2693},
-											ExplicitBounds: []float64{0.01, 0.05, 0.5, 0.9, 0.99},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("rpc_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.Histogram().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetCount(2693)
+	dp.SetSum(17560473)
+	dp.SetBucketCounts([]uint64{3102, 3272, 4773, 9001, 76656, 2693})
+	dp.SetExplicitBounds([]float64{0.01, 0.05, 0.5, 0.9, 0.99})
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }

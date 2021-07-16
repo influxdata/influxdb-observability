@@ -3,71 +3,68 @@ package common
 import (
 	"sort"
 
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
-func SortResourceMetrics(rm []*otlpmetrics.ResourceMetrics) {
-	for _, r := range rm {
-		for _, il := range r.InstrumentationLibraryMetrics {
-			for _, m := range il.Metrics {
-				switch data := m.Data.(type) {
-				case *otlpmetrics.Metric_DoubleGauge:
-					for _, d := range data.DoubleGauge.DataPoints {
-						sort.Slice(d.Labels, func(i, j int) bool {
-							return d.Labels[i].Key < d.Labels[j].Key
-						})
+func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
+	for i := 0; i < rm.Len(); i++ {
+		r := rm.At(i)
+		for j := 0; j < r.InstrumentationLibraryMetrics().Len(); j++ {
+			il := r.InstrumentationLibraryMetrics().At(j)
+			for k := 0; k < il.Metrics().Len(); k++ {
+				m := il.Metrics().At(k)
+				switch m.DataType() {
+				case pdata.MetricDataTypeGauge:
+					for l := 0; l < m.Gauge().DataPoints().Len(); l++ {
+						m.Gauge().DataPoints().At(l).LabelsMap().Sort()
 					}
-				case *otlpmetrics.Metric_DoubleSum:
-					for _, d := range data.DoubleSum.DataPoints {
-						sort.Slice(d.Labels, func(i, j int) bool {
-							return d.Labels[i].Key < d.Labels[j].Key
-						})
+				case pdata.MetricDataTypeSum:
+					for l := 0; l < m.Sum().DataPoints().Len(); l++ {
+						m.Sum().DataPoints().At(l).LabelsMap().Sort()
 					}
-				case *otlpmetrics.Metric_DoubleHistogram:
-					for _, d := range data.DoubleHistogram.DataPoints {
-						sortBuckets(d.BucketCounts, d.ExplicitBounds)
-						sort.Slice(d.Labels, func(i, j int) bool {
-							return d.Labels[i].Key < d.Labels[j].Key
-						})
+				case pdata.MetricDataTypeHistogram:
+					for l := 0; l < m.Histogram().DataPoints().Len(); l++ {
+						sortBuckets(m.Histogram().DataPoints().At(l))
+						m.Histogram().DataPoints().At(l).LabelsMap().Sort()
 					}
-				case *otlpmetrics.Metric_DoubleSummary:
-					for _, d := range data.DoubleSummary.DataPoints {
-						sort.Slice(d.Labels, func(i, j int) bool {
-							return d.Labels[i].Key < d.Labels[j].Key
-						})
-						sort.Slice(d.QuantileValues, func(i, j int) bool {
-							return d.QuantileValues[i].Quantile < d.QuantileValues[j].Quantile
-						})
+				case pdata.MetricDataTypeSummary:
+					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
+						m.Summary().DataPoints().At(l).LabelsMap().Sort()
+						// TODO sort QuantileValues by Quantile
+						// sort.Slice(d.QuantileValues, func(i, j int) bool {
+						// 	return d.QuantileValues[i].Quantile < d.QuantileValues[j].Quantile
+						// })
 					}
 				}
 			}
-			sort.Slice(il.Metrics, func(i, j int) bool {
-				return il.Metrics[i].Name < il.Metrics[j].Name
-			})
+			// TODO sort metrics by name
+			// sort.Slice(il.Metrics, func(i, j int) bool {
+			// 	return il.Metrics[i].Name < il.Metrics[j].Name
+			// })
 		}
-		sort.Slice(r.InstrumentationLibraryMetrics, func(i, j int) bool {
-			if r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name == r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name {
-				return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Version < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Version
-			}
-			return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name
-		})
-		sort.Slice(r.Resource.Attributes, func(i, j int) bool {
-			return r.Resource.Attributes[i].Key < r.Resource.Attributes[j].Key
-		})
+		// TODO sort ILMs by name,version
+		// sort.Slice(r.InstrumentationLibraryMetrics, func(i, j int) bool {
+		// 	if r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name == r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name {
+		// 		return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Version < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Version
+		// 	}
+		// 	return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name
+		// })
+		r.Resource().Attributes().Sort()
 	}
-	sort.Slice(rm, func(i, j int) bool {
-		return ResourceAttributesToKey(rm[i].Resource.Attributes) < ResourceAttributesToKey(rm[j].Resource.Attributes)
-	})
+	// TODO sort resource attributes by attribute key
+	// sort.Slice(rm, func(i, j int) bool {
+	// 	return ResourceAttributesToKey(rm[i].Resource.Attributes) < ResourceAttributesToKey(rm[j].Resource.Attributes)
+	// })
 }
 
-func sortBuckets(bucketCounts []uint64, explicitBounds []float64) {
-	buckets := make(sortableBuckets, len(explicitBounds))
-	for i := range explicitBounds {
-		buckets[i] = sortableBucket{bucketCounts[i], explicitBounds[i]}
+func sortBuckets(hdp pdata.HistogramDataPoint) {
+	buckets := make(sortableBuckets, len(hdp.ExplicitBounds()))
+	for i := range hdp.ExplicitBounds() {
+		buckets[i] = sortableBucket{hdp.BucketCounts()[i], hdp.ExplicitBounds()[i]}
 	}
 	sort.Sort(buckets)
 	for i, bucket := range buckets {
-		bucketCounts[i], explicitBounds[i] = bucket.count, bucket.bound
+		hdp.BucketCounts()[i], hdp.ExplicitBounds()[i] = bucket.count, bucket.bound
 	}
 }
 

@@ -6,100 +6,53 @@ import (
 
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/influx2otel"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func TestUnknownSchema(t *testing.T) {
 	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
 	require.NoError(t, err)
 
-	// cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.3027245206862381,usage_iowait=0 1395066363000000123
 	b := c.NewBatch()
 	err = b.AddPoint("cpu",
 		map[string]string{
-			"cpu":  "cpu4",
-			"host": "777348dc6343",
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"cpu":                  "cpu4",
+			"host":                 "777348dc6343",
 		},
 		map[string]interface{}{
 			"usage_user":   0.10090817356207936,
 			"usage_system": 0.3027245206862381,
-			"usage_iowait": 0.0,
 		},
 		time.Unix(0, 1395066363000000123),
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name: "cpu_usage_user",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "cpu", Value: "cpu4"},
-												{Key: "host", Value: "777348dc6343"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        0.10090817356207936,
-										},
-									},
-								},
-							},
-						},
-						{
-							Name: "cpu_usage_system",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "cpu", Value: "cpu4"},
-												{Key: "host", Value: "777348dc6343"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        0.3027245206862381,
-										},
-									},
-								},
-							},
-						},
-						{
-							Name: "cpu_usage_iowait",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "cpu", Value: "cpu4"},
-												{Key: "host", Value: "777348dc6343"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        0,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	expect := pdata.NewResourceMetricsSlice()
+	rm := expect.AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu_usage_user")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("cpu", "cpu4")
+	dp.LabelsMap().Insert("host", "777348dc6343")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(0.10090817356207936)
+	m = ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu_usage_system")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("cpu", "cpu4")
+	dp.LabelsMap().Insert("host", "777348dc6343")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetValue(0.3027245206862381)
 
-	common.SortResourceMetrics(expect)
-	got := b.ToProto()
-	common.SortResourceMetrics(got)
-
-	assert.Equal(t, expect, got)
+	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
 }

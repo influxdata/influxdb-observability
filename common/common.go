@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 // https://github.com/open-telemetry/opentelemetry-specification/tree/v1.0.1/specification/resource/semantic_conventions
@@ -62,11 +62,12 @@ const (
 	AttributeBody                           = "body"
 )
 
-func ResourceAttributesToKey(rAttributes []*otlpcommon.KeyValue) string {
+func ResourceAttributesToKey(rAttributes pdata.AttributeMap) string {
 	var key strings.Builder
-	for _, kv := range rAttributes {
-		key.WriteString(kv.Key)
+	rAttributes.Range(func(k string, v pdata.AttributeValue) bool {
+		key.WriteString(k)
 		key.WriteByte(':')
-	}
+		return true
+	})
 	return key.String()
 }

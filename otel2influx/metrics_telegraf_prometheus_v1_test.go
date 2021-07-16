@@ -7,68 +7,36 @@ import (
 
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/otel2influx"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func TestWriteMetric_v1_gauge(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	rm := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
-					},
-				},
-				DroppedAttributesCount: 1,
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name:        "cache_age_seconds",
-							Description: "Age in seconds of the current cache",
-							Data: &otlpmetrics.Metric_DoubleGauge{
-								DoubleGauge: &otlpmetrics.DoubleGauge{
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "0"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        23.9,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "engine_id", Value: "1"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        11.9,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds")
+	m.SetDescription("Age in seconds of the current cache")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "0")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetValue(23.9)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("engine_id", "1")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetValue(11.9)
 
 	w := new(MockInfluxWriter)
-
-	err = c.WriteMetrics(context.Background(), rm, w)
+	err = c.WriteMetrics(context.Background(), metrics, w)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -83,7 +51,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"gauge": float64(23.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 		{
@@ -97,7 +65,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				"gauge": float64(11.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 	}
@@ -109,61 +77,32 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	rm := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
-					},
-				},
-				DroppedAttributesCount: 1,
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name:        "http_requests_total",
-							Description: "The total number of HTTP requests.",
-							Data: &otlpmetrics.Metric_DoubleSum{
-								DoubleSum: &otlpmetrics.DoubleSum{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									IsMonotonic:            true,
-									DataPoints: []*otlpmetrics.DoubleDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "200"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        1027,
-										},
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "400"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Value:        3,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total")
+	m.SetDescription("The total number of HTTP requests")
+	m.SetDataType(pdata.MetricDataTypeSum)
+	m.Sum().SetIsMonotonic(true)
+	m.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetValue(1027)
+	dp = m.Sum().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "400")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetValue(3)
 
 	w := new(MockInfluxWriter)
 
-	err = c.WriteMetrics(context.Background(), rm, w)
+	err = c.WriteMetrics(context.Background(), metrics, w)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -179,7 +118,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"counter": float64(1027),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSum,
 		},
 		{
@@ -194,7 +133,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				"counter": float64(3),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSum,
 		},
 	}
@@ -206,55 +145,29 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	rm := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
-					},
-				},
-				DroppedAttributesCount: 1,
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name:        "http_request_duration_seconds",
-							Description: "A histogram of the request duration",
-							Data: &otlpmetrics.Metric_DoubleHistogram{
-								DoubleHistogram: &otlpmetrics.DoubleHistogram{
-									AggregationTemporality: otlpmetrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-									DataPoints: []*otlpmetrics.DoubleHistogramDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "200"},
-											},
-											TimeUnixNano:   1395066363000000123,
-											Count:          144320,
-											Sum:            53423,
-											BucketCounts:   []uint64{24054, 33444, 100392, 129389, 133988, 144320},
-											ExplicitBounds: []float64{0.05, 0.1, 0.2, 0.5, 1},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.SetDescription("A histogram of the request duration")
+	m.Histogram().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 	w := new(MockInfluxWriter)
 
-	err = c.WriteMetrics(context.Background(), rm, w)
+	err = c.WriteMetrics(context.Background(), metrics, w)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -276,7 +189,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 				"0.5":   float64(129389),
 				"1":     float64(133988),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 	}
@@ -288,59 +201,41 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	rm := []*otlpmetrics.ResourceMetrics{
-		{
-			Resource: &otlpresource.Resource{
-				Attributes: []*otlpcommon.KeyValue{
-					{
-						Key:   "container.name",
-						Value: &otlpcommon.AnyValue{Value: &otlpcommon.AnyValue_IntValue{IntValue: 42}},
-					},
-				},
-				DroppedAttributesCount: 1,
-			},
-			InstrumentationLibraryMetrics: []*otlpmetrics.InstrumentationLibraryMetrics{
-				{
-					InstrumentationLibrary: &otlpcommon.InstrumentationLibrary{
-						Name:    "My Library",
-						Version: "latest",
-					},
-					Metrics: []*otlpmetrics.Metric{
-						{
-							Name:        "rpc_duration_seconds",
-							Description: "A summary of the RPC duration in seconds.",
-							Data: &otlpmetrics.Metric_DoubleSummary{
-								DoubleSummary: &otlpmetrics.DoubleSummary{
-									DataPoints: []*otlpmetrics.DoubleSummaryDataPoint{
-										{
-											Labels: []*otlpcommon.StringKeyValue{
-												{Key: "method", Value: "post"},
-												{Key: "code", Value: "200"},
-											},
-											TimeUnixNano: 1395066363000000123,
-											Count:        2693,
-											Sum:          17560473,
-											QuantileValues: []*otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile{
-												{Quantile: 0.01, Value: 3102},
-												{Quantile: 0.05, Value: 3272},
-												{Quantile: 0.5, Value: 4773},
-												{Quantile: 0.9, Value: 9001},
-												{Quantile: 0.99, Value: 76656},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("container.name", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("rpc_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeSummary)
+	m.SetDescription("A summary of the RPC duration in seconds")
+	dp := m.Summary().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("code", "200")
+	dp.LabelsMap().Insert("method", "post")
+	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(2693)
+	dp.SetSum(17560473)
+	qv := dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.01)
+	qv.SetValue(3102)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.05)
+	qv.SetValue(3272)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.5)
+	qv.SetValue(4773)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.9)
+	qv.SetValue(9001)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.99)
+	qv.SetValue(76656)
 
 	w := new(MockInfluxWriter)
 
-	err = c.WriteMetrics(context.Background(), rm, w)
+	err = c.WriteMetrics(context.Background(), metrics, w)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -362,7 +257,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"0.9":   float64(9001),
 				"0.99":  float64(76656),
 			},
-			ts:    time.Unix(0, 1395066363000000123),
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 	}

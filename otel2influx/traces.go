@@ -2,17 +2,12 @@ package otel2influx
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcollectortrace "github.com/influxdata/influxdb-observability/otlp/collector/trace/v1"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
-	otlptrace "github.com/influxdata/influxdb-observability/otlp/trace/v1"
-	"google.golang.org/protobuf/proto"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type OtelTracesToLineProtocol struct {
@@ -25,22 +20,14 @@ func NewOtelTracesToLineProtocol(logger common.Logger) *OtelTracesToLineProtocol
 	}
 }
 
-func (c *OtelTracesToLineProtocol) WriteTracesFromRequestBytes(ctx context.Context, b []byte, w InfluxWriter) error {
-	var req otlpcollectortrace.ExportTraceServiceRequest
-	err := proto.Unmarshal(b, &req)
-	if err != nil {
-		return err
-	}
-	return c.WriteTraces(ctx, req.ResourceSpans, w)
-}
-
-func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, resourceSpanss []*otlptrace.ResourceSpans, w InfluxWriter) error {
-	for _, resourceSpans := range resourceSpanss {
-		resource := resourceSpans.Resource
-		for _, ilSpans := range resourceSpans.InstrumentationLibrarySpans {
-			instrumentationLibrary := ilSpans.InstrumentationLibrary
-			for _, span := range ilSpans.Spans {
-				if err := c.writeSpan(ctx, resource, instrumentationLibrary, span, w); err != nil {
+func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td pdata.Traces, w InfluxWriter) error {
+	for i := 0; i < td.ResourceSpans().Len(); i++ {
+		resourceSpans := td.ResourceSpans().At(i)
+		for j := 0; j < resourceSpans.InstrumentationLibrarySpans().Len(); j++ {
+			ilSpans := resourceSpans.InstrumentationLibrarySpans().At(j)
+			for k := 0; k < ilSpans.Spans().Len(); k++ {
+				span := ilSpans.Spans().At(k)
+				if err := c.writeSpan(ctx, resourceSpans.Resource(), ilSpans.InstrumentationLibrary(), span, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
 				}
 			}
@@ -49,7 +36,7 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, resourceSpan
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, span *otlptrace.Span, w InfluxWriter) error {
+func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, span pdata.Span, w InfluxWriter) error {
 	measurement := common.MeasurementSpans
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
@@ -57,59 +44,61 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
-	traceID := hex.EncodeToString(span.TraceId)
-	if len(traceID) == 0 {
+	traceID := span.TraceID()
+	if traceID.IsEmpty() {
 		return errors.New("span has no trace ID")
 	}
-	tags[common.AttributeTraceID] = traceID
+	tags[common.AttributeTraceID] = traceID.HexString()
 
-	spanID := hex.EncodeToString(span.SpanId)
-	if len(spanID) == 0 {
+	spanID := span.SpanID()
+	if spanID.IsEmpty() {
 		return errors.New("span has no span ID")
 	}
-	tags[common.AttributeSpanID] = spanID
+	tags[common.AttributeSpanID] = spanID.HexString()
 
-	if span.TraceState != "" {
-		tags[common.AttributeTraceState] = span.TraceState
+	if span.TraceState() != pdata.TraceStateEmpty {
+		tags[common.AttributeTraceState] = string(span.TraceState())
 	}
-	if len(span.ParentSpanId) > 0 {
-		tags[common.AttributeParentSpanID] = hex.EncodeToString(span.ParentSpanId)
+	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
+		tags[common.AttributeParentSpanID] = parentSpanID.HexString()
 	}
-	if span.Name != "" {
-		tags[common.AttributeName] = span.Name
+	if name := span.Name(); name != "" {
+		tags[common.AttributeName] = name
 	}
-	if otlptrace.Span_SPAN_KIND_UNSPECIFIED != span.Kind {
-		tags[common.AttributeSpanKind] = span.Kind.String()
+	if kind := span.Kind(); kind != pdata.SpanKindUnspecified {
+		tags[common.AttributeSpanKind] = kind.String()
 	}
 
-	ts := time.Unix(0, int64(span.StartTimeUnixNano))
+	ts := span.StartTimestamp().AsTime()
 	if ts.IsZero() {
 		return errors.New("span has no timestamp")
 	}
 
-	if endTime := time.Unix(0, int64(span.EndTimeUnixNano)); !endTime.IsZero() {
+	if endTime := span.EndTimestamp().AsTime(); !endTime.IsZero() {
 		fields[common.AttributeEndTimeUnixNano] = endTime.UnixNano()
 		fields[common.AttributeDurationNano] = endTime.Sub(ts).Nanoseconds()
 	}
 
-	droppedAttributesCount := uint64(span.DroppedAttributesCount)
-	for _, attribute := range span.Attributes {
-		if k := attribute.Key; k == "" {
+	droppedAttributesCount := uint64(span.DroppedAttributesCount())
+	span.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(attribute.Value); err != nil {
+		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span attribute value", "key", k, err)
 		} else {
 			fields[k] = v
 		}
-	}
+		return true
+	})
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
 
-	droppedEventsCount := uint64(span.DroppedEventsCount)
-	for _, event := range span.Events {
+	droppedEventsCount := uint64(span.DroppedEventsCount())
+	for i := 0; i < span.Events().Len(); i++ {
+		event := span.Events().At(i)
 		if measurement, tags, fields, ts, err := c.spanEventToLP(traceID, spanID, resource, instrumentationLibrary, event); err != nil {
 			droppedEventsCount++
 			c.logger.Debug("invalid span event", err)
@@ -121,8 +110,9 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		fields[common.AttributeDroppedEventsCount] = droppedEventsCount
 	}
 
-	droppedLinksCount := uint64(span.DroppedLinksCount)
-	for _, link := range span.Links {
+	droppedLinksCount := uint64(span.DroppedLinksCount())
+	for i := 0; i < span.Links().Len(); i++ {
+		link := span.Links().At(i)
 		if measurement, tags, fields, err := c.spanLinkToLP(traceID, spanID, link); err != nil {
 			droppedLinksCount++
 			c.logger.Debug("invalid span link", err)
@@ -134,20 +124,18 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 		fields[common.AttributeDroppedLinksCount] = droppedLinksCount
 	}
 
-	if status := span.Status; status != nil {
-		switch status.Code {
-		case otlptrace.Status_STATUS_CODE_UNSET:
-		case otlptrace.Status_STATUS_CODE_OK:
-			fields[common.AttributeStatusCode] = common.AttributeStatusCodeOK
-		case otlptrace.Status_STATUS_CODE_ERROR:
-			fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
-		default:
-			c.logger.Debug("status code not recognized", "code", status.Code)
-		}
-
-		if message := status.Message; message != "" {
-			fields[common.AttributeStatusMessage] = message
-		}
+	status := span.Status()
+	switch status.Code() {
+	case pdata.StatusCodeUnset:
+	case pdata.StatusCodeOk:
+		fields[common.AttributeStatusCode] = common.AttributeStatusCodeOK
+	case pdata.StatusCodeError:
+		fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
+	default:
+		c.logger.Debug("status code not recognized", "code", status.Code())
+	}
+	if message := status.Message(); message != "" {
+		fields[common.AttributeStatusMessage] = message
 	}
 
 	if err := w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
@@ -157,7 +145,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource *otlp
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, spanEvent *otlptrace.Span_Event) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID pdata.SpanID, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, spanEvent pdata.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
@@ -165,24 +153,25 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resourc
 	tags = resourceToTags(c.logger, resource, tags)
 	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
 
-	tags[common.AttributeTraceID] = traceID
-	tags[common.AttributeSpanID] = spanID
-	if name := spanEvent.Name; name != "" {
+	tags[common.AttributeTraceID] = traceID.HexString()
+	tags[common.AttributeSpanID] = spanID.HexString()
+	if name := spanEvent.Name(); name != "" {
 		tags[common.AttributeName] = name
 	}
 
-	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount)
-	for _, attribute := range spanEvent.Attributes {
-		if k := attribute.Key; k == "" {
+	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
+	spanEvent.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span event attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(attribute.Value); err != nil {
+		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span event attribute value", err)
 		} else {
 			fields[k] = v
 		}
-	}
+		return true
+	})
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedEventAttributesCount] = droppedAttributesCount
 	}
@@ -192,7 +181,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resourc
 		fields["count"] = uint64(1)
 	}
 
-	ts = time.Unix(0, int64(spanEvent.TimeUnixNano))
+	ts = spanEvent.Timestamp().AsTime()
 	if ts.IsZero() {
 		err = errors.New("span event has no timestamp")
 		return
@@ -201,44 +190,45 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID, spanID string, resourc
 	return
 }
 
-func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID, spanID string, spanLink *otlptrace.Span_Link) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
+func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pdata.TraceID, spanID pdata.SpanID, spanLink pdata.SpanLink) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
 	measurement = common.MeasurementSpanLinks
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	tags[common.AttributeTraceID] = traceID
-	tags[common.AttributeSpanID] = spanID
+	tags[common.AttributeTraceID] = traceID.HexString()
+	tags[common.AttributeSpanID] = spanID.HexString()
 
-	if linkedTraceID := hex.EncodeToString(spanLink.TraceId); len(linkedTraceID) == 0 {
+	if linkedTraceID := spanLink.TraceID(); linkedTraceID.IsEmpty() {
 		err = errors.New("span link has no trace ID")
 		return
 	} else {
-		tags[common.AttributeLinkedTraceID] = linkedTraceID
+		tags[common.AttributeLinkedTraceID] = linkedTraceID.HexString()
 	}
 
-	if linkedSpanID := hex.EncodeToString(spanLink.SpanId); len(linkedSpanID) == 0 {
+	if linkedSpanID := spanLink.SpanID(); linkedSpanID.IsEmpty() {
 		err = errors.New("span link has no span ID")
 		return
 	} else {
-		tags[common.AttributeLinkedSpanID] = linkedSpanID
+		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
 	}
 
-	if traceState := spanLink.TraceState; traceState != "" {
-		tags[common.AttributeTraceState] = traceState
+	if traceState := spanLink.TraceState(); traceState != pdata.TraceStateEmpty {
+		tags[common.AttributeTraceState] = string(traceState)
 	}
 
-	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount)
-	for _, attribute := range spanLink.Attributes {
-		if k := attribute.Key; k == "" {
+	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
+	spanLink.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span link attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(attribute.Value); err != nil {
+		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span link attribute value", err)
 		} else {
 			fields[k] = v
 		}
-	}
+		return true
+	})
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedLinkAttributesCount] = droppedAttributesCount
 	}

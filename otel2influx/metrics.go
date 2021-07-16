@@ -5,15 +5,11 @@ import (
 	"fmt"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
-	otlpresource "github.com/influxdata/influxdb-observability/otlp/resource/v1"
-	"google.golang.org/protobuf/proto"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type metricWriter interface {
-	writeMetric(ctx context.Context, resource *otlpresource.Resource, instrumentationLibrary *otlpcommon.InstrumentationLibrary, metric *otlpmetrics.Metric, w InfluxWriter) error
+	writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, metric pdata.Metric, w InfluxWriter) error
 }
 
 type OtelMetricsToLineProtocol struct {
@@ -39,22 +35,14 @@ func NewOtelMetricsToLineProtocol(logger common.Logger, schema common.MetricsSch
 	}, nil
 }
 
-func (c *OtelMetricsToLineProtocol) WriteMetricsFromRequestBytes(ctx context.Context, b []byte, w InfluxWriter) error {
-	var req otlpcollectormetrics.ExportMetricsServiceRequest
-	err := proto.Unmarshal(b, &req)
-	if err != nil {
-		return err
-	}
-	return c.WriteMetrics(ctx, req.ResourceMetrics, w)
-}
-
-func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, resourceMetricss []*otlpmetrics.ResourceMetrics, w InfluxWriter) error {
-	for _, resourceMetrics := range resourceMetricss {
-		resource := resourceMetrics.Resource
-		for _, ilMetrics := range resourceMetrics.InstrumentationLibraryMetrics {
-			instrumentationLibrary := ilMetrics.InstrumentationLibrary
-			for _, metric := range ilMetrics.Metrics {
-				if err := c.writer.writeMetric(ctx, resource, instrumentationLibrary, metric, w); err != nil {
+func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pdata.Metrics, w InfluxWriter) error {
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.InstrumentationLibraryMetrics().Len(); j++ {
+			ilMetrics := resourceMetrics.InstrumentationLibraryMetrics().At(j)
+			for k := 0; k < ilMetrics.Metrics().Len(); k++ {
+				metric := ilMetrics.Metrics().At(k)
+				if err := c.writer.writeMetric(ctx, resourceMetrics.Resource(), ilMetrics.InstrumentationLibrary(), metric, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP metric to line protocol: %w", err)
 				}
 			}

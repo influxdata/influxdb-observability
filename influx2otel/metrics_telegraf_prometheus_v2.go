@@ -2,14 +2,12 @@ package influx2otel
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcommon "github.com/influxdata/influxdb-observability/otlp/common/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
@@ -62,15 +60,15 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 
 type dataPointKey string
 
-func newDataPointKey(unixNanos uint64, labels []*otlpcommon.StringKeyValue) dataPointKey {
-	sort.Slice(labels, func(i, j int) bool {
-		return labels[i].Key < labels[j].Key
-	})
-	components := make([]string, 0, len(labels)*2+1)
+func newDataPointKey(unixNanos uint64, labels pdata.StringMap) dataPointKey {
+	labels.Sort()
+	components := make([]string, 0, labels.Len()*2+1)
+	// TODO consider base 32 because it is a power of 2
 	components = append(components, strconv.FormatUint(unixNanos, 36))
-	for _, label := range labels {
-		components = append(components, label.Key, label.Value)
-	}
+	labels.Range(func(k string, v string) bool {
+		components = append(components, k, v)
+		return true
+	})
 	return dataPointKey(strings.Join(components, ":"))
 }
 
@@ -99,15 +97,10 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	if err != nil {
 		return err
 	}
-	dataPoint := &otlpmetrics.DoubleDataPoint{
-		Labels:       labels,
-		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        floatValue,
-	}
-	metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
-			dataPoint)
-
+	dataPoint := metric.Gauge().DataPoints().AppendEmpty()
+	labels.CopyTo(dataPoint.LabelsMap())
+	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetValue(floatValue)
 	return nil
 }
 
@@ -136,15 +129,10 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	if err != nil {
 		return err
 	}
-	dataPoint := &otlpmetrics.DoubleDataPoint{
-		Labels:       labels,
-		TimeUnixNano: uint64(ts.UnixNano()),
-		Value:        floatValue,
-	}
-	metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
-			dataPoint)
-
+	dataPoint := metric.Sum().DataPoints().AppendEmpty()
+	labels.CopyTo(dataPoint.LabelsMap())
+	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetValue(floatValue)
 	return nil
 }
 
@@ -184,24 +172,17 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 		return err
 	}
 
-	var dataPoint *otlpmetrics.DoubleHistogramDataPoint
-	{
-		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
-		var found bool
-		if dataPoint, found = b.histogramDataPointsByMDPK[metric][dpk]; !found {
-			dataPoint = &otlpmetrics.DoubleHistogramDataPoint{
-				Labels:       labels,
-				TimeUnixNano: uint64(ts.UnixNano()),
-			}
-			b.histogramDataPointsByMDPK[metric][dpk] = dataPoint
-			metric.Data.(*otlpmetrics.Metric_DoubleHistogram).DoubleHistogram.DataPoints =
-				append(metric.Data.(*otlpmetrics.Metric_DoubleHistogram).DoubleHistogram.DataPoints,
-					dataPoint)
-		}
+	dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
+	dataPoint, found := b.histogramDataPointsByMDPK[metric][dpk]
+	if !found {
+		dataPoint = metric.Histogram().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		b.histogramDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 
 	if sExplicitBound, found := tags[common.MetricHistogramBoundKeyV2]; found {
-		if iBucketCount, found := fields[metric.Name+common.MetricHistogramBucketSuffix]; found {
+		if iBucketCount, found := fields[metric.Name()+common.MetricHistogramBucketSuffix]; found {
 			explicitBound, err := strconv.ParseFloat(sExplicitBound, 64)
 			if err != nil {
 				return fmt.Errorf("invalid value for histogram bucket bound: '%s'", sExplicitBound)
@@ -210,18 +191,17 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for histogram bucket count: %q", iBucketCount, iBucketCount)
 			}
-
-			dataPoint.ExplicitBounds = append(dataPoint.ExplicitBounds, explicitBound)
-			dataPoint.BucketCounts = append(dataPoint.BucketCounts, uint64(bucketCount))
+			dataPoint.SetExplicitBounds(append(dataPoint.ExplicitBounds(), explicitBound))
+			dataPoint.SetBucketCounts(append(dataPoint.BucketCounts(), uint64(bucketCount)))
 		} else {
 			return fmt.Errorf("histogram bucket bound has no matching count")
 		}
-	} else if _, found = fields[metric.Name+common.MetricHistogramBucketSuffix]; found {
+	} else if _, found = fields[metric.Name()+common.MetricHistogramBucketSuffix]; found {
 		return fmt.Errorf("histogram bucket count has no matching bound")
 	}
 
 	if sQuantile, found := tags[common.MetricSummaryQuantileKeyV2]; found {
-		if iValue, found := fields[metric.Name]; found {
+		if iValue, found := fields[metric.Name()]; found {
 			quantile, err := strconv.ParseFloat(sQuantile, 64)
 			if err != nil {
 				return fmt.Errorf("invalid value for summary (interpreted as histogram) quantile: '%s'", sQuantile)
@@ -230,18 +210,17 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for summary (interpreted as histogram) quantile value: %q", iValue, iValue)
 			}
-
-			dataPoint.ExplicitBounds = append(dataPoint.ExplicitBounds, quantile)
-			dataPoint.BucketCounts = append(dataPoint.BucketCounts, uint64(value))
+			dataPoint.SetExplicitBounds(append(dataPoint.ExplicitBounds(), quantile))
+			dataPoint.SetBucketCounts(append(dataPoint.BucketCounts(), uint64(value)))
 		} else {
 			return fmt.Errorf("summary (interpreted as histogram) quantile has no matching value")
 		}
-	} else if _, found = fields[metric.Name]; found {
+	} else if _, found = fields[metric.Name()]; found {
 		return fmt.Errorf("summary (interpreted as histogram) quantile value has no matching quantile")
 	}
 
-	if iCount, found := fields[metric.Name+common.MetricHistogramCountSuffix]; found {
-		if iSum, found := fields[metric.Name+common.MetricHistogramSumSuffix]; found {
+	if iCount, found := fields[metric.Name()+common.MetricHistogramCountSuffix]; found {
+		if iSum, found := fields[metric.Name()+common.MetricHistogramSumSuffix]; found {
 			count, ok := iCount.(float64)
 			if !ok {
 				return fmt.Errorf("invalid value type %T for histogram count %q", iCount, iCount)
@@ -251,12 +230,12 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 				return fmt.Errorf("invalid value type %T for histogram sum %q", iSum, iSum)
 			}
 
-			dataPoint.Count = uint64(count)
-			dataPoint.Sum = sum
+			dataPoint.SetCount(uint64(count))
+			dataPoint.SetSum(sum)
 		} else {
 			return fmt.Errorf("histogram count has no matching sum")
 		}
-	} else if _, found = fields[metric.Name+common.MetricHistogramSumSuffix]; found {
+	} else if _, found = fields[metric.Name()+common.MetricHistogramSumSuffix]; found {
 		return fmt.Errorf("histogram sum has no matching count")
 	}
 
@@ -292,24 +271,17 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 		return err
 	}
 
-	var dataPoint *otlpmetrics.DoubleSummaryDataPoint
-	{
-		dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
-		var found bool
-		if dataPoint, found = b.summaryDataPointsByMDPK[metric][dpk]; !found {
-			dataPoint = &otlpmetrics.DoubleSummaryDataPoint{
-				Labels:       labels,
-				TimeUnixNano: uint64(ts.UnixNano()),
-			}
-			b.summaryDataPointsByMDPK[metric][dpk] = dataPoint
-			metric.Data.(*otlpmetrics.Metric_DoubleSummary).DoubleSummary.DataPoints =
-				append(metric.Data.(*otlpmetrics.Metric_DoubleSummary).DoubleSummary.DataPoints,
-					dataPoint)
-		}
+	dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
+	dataPoint, found := b.summaryDataPointsByMDPK[metric][dpk]
+	if !found {
+		dataPoint = metric.Summary().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		b.summaryDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 
 	if sQuantile, found := tags[common.MetricSummaryQuantileKeyV2]; found {
-		if iValue, found := fields[metric.Name]; found {
+		if iValue, found := fields[metric.Name()]; found {
 			quantile, err := strconv.ParseFloat(sQuantile, 64)
 			if err != nil {
 				return fmt.Errorf("invalid value for summary quantile: '%s'", sQuantile)
@@ -318,22 +290,18 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 			if !ok {
 				return fmt.Errorf("invalid value type %T for summary quantile value: %q", iValue, iValue)
 			}
-
-			dataPoint.QuantileValues =
-				append(dataPoint.QuantileValues,
-					&otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile{
-						Quantile: quantile,
-						Value:    value,
-					})
+			valueAtQuantile := dataPoint.QuantileValues().AppendEmpty()
+			valueAtQuantile.SetQuantile(quantile)
+			valueAtQuantile.SetValue(value)
 		} else {
 			return fmt.Errorf("summary quantile has no matching value")
 		}
-	} else if _, found = fields[metric.Name]; found {
+	} else if _, found = fields[metric.Name()]; found {
 		return fmt.Errorf("summary quantile value has no matching quantile")
 	}
 
-	if iCount, found := fields[metric.Name+common.MetricSummaryCountSuffix]; found {
-		if iSum, found := fields[metric.Name+common.MetricSummarySumSuffix]; found {
+	if iCount, found := fields[metric.Name()+common.MetricSummaryCountSuffix]; found {
+		if iSum, found := fields[metric.Name()+common.MetricSummarySumSuffix]; found {
 			count, ok := iCount.(float64)
 			if !ok {
 				return fmt.Errorf("invalid value type %T for summary count %q", iCount, iCount)
@@ -343,12 +311,12 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 				return fmt.Errorf("invalid value type %T for summary sum %q", iSum, iSum)
 			}
 
-			dataPoint.Count = uint64(count)
-			dataPoint.Sum = sum
+			dataPoint.SetCount(uint64(count))
+			dataPoint.SetSum(sum)
 		} else {
 			return fmt.Errorf("summary count has no matching sum")
 		}
-	} else if _, found = fields[metric.Name+common.MetricSummarySumSuffix]; found {
+	} else if _, found = fields[metric.Name()+common.MetricSummarySumSuffix]; found {
 		return fmt.Errorf("summary sum has no matching count")
 	}
 

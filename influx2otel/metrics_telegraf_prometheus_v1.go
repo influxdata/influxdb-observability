@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
+	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func (b *MetricsBatch) addPointTelegrafPrometheusV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
@@ -80,14 +80,10 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		if err != nil {
 			return err
 		}
-		dataPoint := &otlpmetrics.DoubleDataPoint{
-			Labels:       labels,
-			TimeUnixNano: uint64(ts.UnixNano()),
-			Value:        floatValue,
-		}
-		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
-			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
-				dataPoint)
+		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetValue(floatValue)
 		return nil
 	}
 
@@ -110,14 +106,10 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		if err != nil {
 			return err
 		}
-		dataPoint := &otlpmetrics.DoubleDataPoint{
-			Labels:       labels,
-			TimeUnixNano: uint64(ts.UnixNano()),
-			Value:        floatValue,
-		}
-		metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints =
-			append(metric.Data.(*otlpmetrics.Metric_DoubleGauge).DoubleGauge.DataPoints,
-				dataPoint)
+		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetValue(floatValue)
 	}
 
 	return nil
@@ -141,14 +133,10 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		if err != nil {
 			return err
 		}
-		dataPoint := &otlpmetrics.DoubleDataPoint{
-			Labels:       labels,
-			TimeUnixNano: uint64(ts.UnixNano()),
-			Value:        floatValue,
-		}
-		metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
-			append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
-				dataPoint)
+		dataPoint := metric.Sum().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetValue(floatValue)
 		return nil
 	}
 
@@ -171,14 +159,10 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		if err != nil {
 			return err
 		}
-		dataPoint := &otlpmetrics.DoubleDataPoint{
-			Labels:       labels,
-			TimeUnixNano: uint64(ts.UnixNano()),
-			Value:        floatValue,
-		}
-		metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints =
-			append(metric.Data.(*otlpmetrics.Metric_DoubleSum).DoubleSum.DataPoints,
-				dataPoint)
+		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
+		labels.CopyTo(dataPoint.LabelsMap())
+		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetValue(floatValue)
 	}
 
 	return nil
@@ -233,18 +217,13 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	if err != nil {
 		return err
 	}
-	dataPoint := &otlpmetrics.DoubleHistogramDataPoint{
-		Labels:         labels,
-		TimeUnixNano:   uint64(ts.UnixNano()),
-		Count:          count,
-		Sum:            sum,
-		BucketCounts:   bucketCounts,
-		ExplicitBounds: explicitBounds,
-	}
-	metric.Data.(*otlpmetrics.Metric_DoubleHistogram).DoubleHistogram.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleHistogram).DoubleHistogram.DataPoints,
-			dataPoint)
-
+	dataPoint := metric.Histogram().DataPoints().AppendEmpty()
+	labels.CopyTo(dataPoint.LabelsMap())
+	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetCount(count)
+	dataPoint.SetSum(sum)
+	dataPoint.SetBucketCounts(bucketCounts)
+	dataPoint.SetExplicitBounds(explicitBounds)
 	return nil
 }
 
@@ -253,7 +232,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	foundCount := false
 	var sum float64
 	foundSum := false
-	var quantileValues []*otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile
+	quantileValues := pdata.NewValueAtQuantileSlice()
 
 	for k, vi := range fields {
 		if k == common.MetricSummaryCountFieldKey {
@@ -275,10 +254,9 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 			if value, ok := vi.(float64); !ok {
 				return fmt.Errorf("unsupported summary bucket bound value type %T", vi)
 			} else {
-				quantileValues = append(quantileValues, &otlpmetrics.DoubleSummaryDataPoint_ValueAtQuantile{
-					Quantile: quantile,
-					Value:    value,
-				})
+				valueAtQuantile := quantileValues.AppendEmpty()
+				valueAtQuantile.SetQuantile(quantile)
+				valueAtQuantile.SetValue(value)
 			}
 
 		} else {
@@ -296,16 +274,11 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	if err != nil {
 		return err
 	}
-	dataPoint := &otlpmetrics.DoubleSummaryDataPoint{
-		Labels:         labels,
-		TimeUnixNano:   uint64(ts.UnixNano()),
-		Count:          count,
-		Sum:            sum,
-		QuantileValues: quantileValues,
-	}
-	metric.Data.(*otlpmetrics.Metric_DoubleSummary).DoubleSummary.DataPoints =
-		append(metric.Data.(*otlpmetrics.Metric_DoubleSummary).DoubleSummary.DataPoints,
-			dataPoint)
-
+	dataPoint := metric.Summary().DataPoints().AppendEmpty()
+	labels.CopyTo(dataPoint.LabelsMap())
+	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetCount(count)
+	dataPoint.SetSum(sum)
+	quantileValues.MoveAndAppendTo(dataPoint.QuantileValues())
 	return nil
 }
