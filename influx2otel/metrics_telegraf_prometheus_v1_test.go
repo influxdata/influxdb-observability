@@ -43,8 +43,8 @@ func TestAddPoint_v1_gauge(t *testing.T) {
 		common.InfluxMetricValueTypeGauge)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -61,7 +61,7 @@ func TestAddPoint_v1_gauge(t *testing.T) {
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetValue(11.9)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_untypedGauge(t *testing.T) {
@@ -97,8 +97,8 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -115,7 +115,7 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetValue(11.9)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_sum(t *testing.T) {
@@ -153,8 +153,8 @@ func TestAddPoint_v1_sum(t *testing.T) {
 		common.InfluxMetricValueTypeSum)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -175,7 +175,7 @@ func TestAddPoint_v1_sum(t *testing.T) {
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetValue(3)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_untypedSum(t *testing.T) {
@@ -213,8 +213,8 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -235,7 +235,7 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetValue(3)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_histogram(t *testing.T) {
@@ -264,8 +264,8 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -283,7 +283,7 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
 	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_untypedHistogram(t *testing.T) {
@@ -312,8 +312,8 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -331,7 +331,7 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
 	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_summary(t *testing.T) {
@@ -360,8 +360,8 @@ func TestAddPoint_v1_summary(t *testing.T) {
 		common.InfluxMetricValueTypeSummary)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -391,7 +391,7 @@ func TestAddPoint_v1_summary(t *testing.T) {
 	qv.SetQuantile(0.99)
 	qv.SetValue(76656)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
 func TestAddPoint_v1_untypedSummary(t *testing.T) {
@@ -420,8 +420,8 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -439,5 +439,5 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 	dp.SetBucketCounts([]uint64{3102, 3272, 4773, 9001, 76656, 2693})
 	dp.SetExplicitBounds([]float64{0.01, 0.05, 0.5, 0.9, 0.99})
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }

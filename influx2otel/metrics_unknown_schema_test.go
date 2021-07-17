@@ -31,8 +31,8 @@ func TestUnknownSchema(t *testing.T) {
 		common.InfluxMetricValueTypeUntyped)
 	require.NoError(t, err)
 
-	expect := pdata.NewResourceMetricsSlice()
-	rm := expect.AppendEmpty()
+	expect := pdata.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
 	ilMetrics.InstrumentationLibrary().SetName("My Library")
@@ -54,5 +54,5 @@ func TestUnknownSchema(t *testing.T) {
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
 	dp.SetValue(0.3027245206862381)
 
-	assertResourceMetricsEqual(t, expect, b.GetResourceMetrics())
+	assertMetricsEqual(t, expect, b.GetMetrics())
 }

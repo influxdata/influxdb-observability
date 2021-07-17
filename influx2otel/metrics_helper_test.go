@@ -10,19 +10,15 @@ import (
 	"go.opentelemetry.io/collector/model/pdata"
 )
 
-func assertResourceMetricsEqual(t *testing.T, expect, got pdata.ResourceMetricsSlice) {
+func assertMetricsEqual(t *testing.T, expect, got pdata.Metrics) {
 	t.Helper()
 
-	common.SortResourceMetrics(expect)
-	expectMetrics := pdata.NewMetrics()
-	expect.CopyTo(expectMetrics.ResourceMetrics())
-	expectJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(expectMetrics)
+	common.SortResourceMetrics(expect.ResourceMetrics())
+	expectJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(expect)
 	require.NoError(t, err)
 
-	common.SortResourceMetrics(got)
-	gotMetrics := pdata.NewMetrics()
-	got.CopyTo(gotMetrics.ResourceMetrics())
-	gotJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(gotMetrics)
+	common.SortResourceMetrics(got.ResourceMetrics())
+	gotJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(got)
 	require.NoError(t, err)
 
 	assert.JSONEq(t, string(expectJSON), string(gotJSON))

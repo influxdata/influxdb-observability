@@ -158,9 +158,8 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 	return metric, labels, nil
 }
 
-func (b *MetricsBatch) GetResourceMetrics() pdata.ResourceMetricsSlice {
-	resourceMetricss := pdata.NewResourceMetricsSlice()
-
+func (b *MetricsBatch) GetMetrics() pdata.Metrics {
+	metrics := pdata.NewMetrics()
 	// Ensure that the extra bucket counts have been added.
 	for _, resourceMetrics := range b.rmByAttributes {
 		for i := 0; i < resourceMetrics.InstrumentationLibraryMetrics().Len(); i++ {
@@ -177,10 +176,9 @@ func (b *MetricsBatch) GetResourceMetrics() pdata.ResourceMetricsSlice {
 				}
 			}
 		}
-
-		resourceMetrics.CopyTo(resourceMetricss.AppendEmpty())
+		resourceMetrics.CopyTo(metrics.ResourceMetrics().AppendEmpty())
 	}
-	return resourceMetricss
+	return metrics
 }
 
 func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
