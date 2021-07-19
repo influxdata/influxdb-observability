@@ -159,7 +159,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		if err != nil {
 			return err
 		}
-		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
+		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		dataPoint.SetValue(floatValue)

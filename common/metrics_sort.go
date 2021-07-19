@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"sort"
 
 	"go.opentelemetry.io/collector/model/pdata"
@@ -30,31 +31,33 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 				case pdata.MetricDataTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
 						m.Summary().DataPoints().At(l).LabelsMap().Sort()
-						// TODO sort QuantileValues by Quantile
-						// sort.Slice(d.QuantileValues, func(i, j int) bool {
-						// 	return d.QuantileValues[i].Quantile < d.QuantileValues[j].Quantile
+						// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
+						// m.Summary().DataPoints().At(l).QuantileValues().Sort(func(i, j int) bool {
+						// 	left := m.Summary().DataPoints().At(l).QuantileValues().At(i)
+						// 	right := m.Summary().DataPoints().At(l).QuantileValues().At(j)
+						// 	return left.Quantile() < right.Quantile()
 						// })
 					}
+				default:
+					panic(fmt.Sprintf("unsupported metric data type %d", m.DataType()))
 				}
 			}
-			// TODO sort metrics by name
-			// sort.Slice(il.Metrics, func(i, j int) bool {
-			// 	return il.Metrics[i].Name < il.Metrics[j].Name
+			// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
+			// il.Metrics().Sort(func(i, j int) bool {
+			// 	return il.Metrics().At(i).Name() < il.Metrics().At(j).Name()
 			// })
 		}
-		// TODO sort ILMs by name,version
-		// sort.Slice(r.InstrumentationLibraryMetrics, func(i, j int) bool {
-		// 	if r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name == r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name {
-		// 		return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Version < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Version
+		// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
+		// r.InstrumentationLibraryMetrics().Sort(func(i, j int) bool {
+		// 	left := r.InstrumentationLibraryMetrics().At(i).InstrumentationLibrary()
+		// 	right := r.InstrumentationLibraryMetrics().At(j).InstrumentationLibrary()
+		// 	if left.Name() == right.Name() {
+		// 		return left.Version() < right.Version()
 		// 	}
-		// 	return r.InstrumentationLibraryMetrics[i].InstrumentationLibrary.Name < r.InstrumentationLibraryMetrics[j].InstrumentationLibrary.Name
+		// 	return left.Name() < right.Name()
 		// })
 		r.Resource().Attributes().Sort()
 	}
-	// TODO sort resource attributes by attribute key
-	// sort.Slice(rm, func(i, j int) bool {
-	// 	return ResourceAttributesToKey(rm[i].Resource.Attributes) < ResourceAttributesToKey(rm[j].Resource.Attributes)
-	// })
 }
 
 func sortBuckets(hdp pdata.HistogramDataPoint) {

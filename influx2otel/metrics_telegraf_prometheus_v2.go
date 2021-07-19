@@ -63,8 +63,7 @@ type dataPointKey string
 func newDataPointKey(unixNanos uint64, labels pdata.StringMap) dataPointKey {
 	labels.Sort()
 	components := make([]string, 0, labels.Len()*2+1)
-	// TODO consider base 32 because it is a power of 2
-	components = append(components, strconv.FormatUint(unixNanos, 36))
+	components = append(components, strconv.FormatUint(unixNanos, 32))
 	labels.Range(func(k string, v string) bool {
 		components = append(components, k, v)
 		return true

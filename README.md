@@ -20,16 +20,6 @@ and by [the (WIP) Telegraf OpenTelemetry output plugin](https://github.com/influ
 
 The [Jaeger Query Plugin for InfluxDB](jaeger-query-plugin) enables querying traces stored in InfluxDB/IOx via the Jaeger UI.
 
-## `otlp`
-
-The golang package `otlp` is the generated form of the [OpenTelemetry protobuf types](https://github.com/open-telemetry/opentelemetry-proto).
-To regenerate:
-```console
-$ ./gen-proto.sh
-```
-
-This package is only intended for use by packages within this repository.
-
 ## `common`
 
 The golang package `common` contains simple utilities and common string values,
