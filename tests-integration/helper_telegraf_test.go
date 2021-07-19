@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"sort"
@@ -11,27 +13,28 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
 	"github.com/influxdata/telegraf/config"
-	"github.com/influxdata/telegraf/metric"
+	telegrafmetric "github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/models"
 	otelinput "github.com/influxdata/telegraf/plugins/inputs/opentelemetry"
 	"github.com/influxdata/telegraf/plugins/outputs/health"
 	oteloutput "github.com/influxdata/telegraf/plugins/outputs/opentelemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/model/otlp"
+	"go.opentelemetry.io/collector/model/otlpgrpc"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
 )
 
-func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect *otlpcollectormetrics.ExportMetricsServiceRequest) {
+func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect pdata.Metrics) {
 	mockInputPlugin, mockOtelService, stopTelegraf := setupTelegrafOpenTelemetryOutput(t)
-	t.Cleanup(stopTelegraf)
+	// t.Cleanup(stopTelegraf)
 
 	lpdec := lineprotocol.NewDecoder(strings.NewReader(lp))
 	for lpdec.Next() {
@@ -48,26 +51,31 @@ func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegr
 		ts, err := lpdec.Time(lineprotocol.Nanosecond, time.Now())
 		require.NoError(t, err)
 
-		m := metric.New(string(name), tags, fields, ts, telegrafValueType)
+		m := telegrafmetric.New(string(name), tags, fields, ts, telegrafValueType)
 		mockInputPlugin.accumulator.AddMetric(m)
 	}
 	require.NoError(t, lpdec.Err())
 
 	stopTelegraf()
 
-	got := new(otlpcollectormetrics.ExportMetricsServiceRequest)
+	var got pdata.Metrics
 	select {
-	case rm := <-mockOtelService.metrics:
-		got.ResourceMetrics = rm
+	case got = <-mockOtelService.metricss:
 	case <-time.NewTimer(time.Second).C:
 		t.Log("test timed out")
 		t.Fail()
 		return
 	}
-	common.SortResourceMetrics(expect.ResourceMetrics)
-	common.SortResourceMetrics(got.ResourceMetrics)
 
-	assertProtosEqual(t, expect, got)
+	common.SortResourceMetrics(expect.ResourceMetrics())
+	expectJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(expect)
+	require.NoError(t, err)
+
+	common.SortResourceMetrics(got.ResourceMetrics())
+	gotJSON, err := otlp.NewJSONMetricsMarshaler().MarshalMetrics(got)
+	require.NoError(t, err)
+
+	assert.JSONEq(t, string(expectJSON), string(gotJSON))
 }
 
 func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutputPlugin, context.CancelFunc) {
@@ -220,7 +228,16 @@ func (m *mockOutputPlugin) lineprotocol(t *testing.T) string {
 func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtelService, context.CancelFunc) {
 	t.Helper()
 
+	logWriterToRestore := log.Writer()
+	log.SetOutput(ioutil.Discard)
+	t.Cleanup(func() {
+		log.SetOutput(logWriterToRestore)
+	})
 	telegrafConfig := config.NewConfig()
+	// telegrafConfig.Agent.Quiet = false
+	// telegrafConfig.Agent.Debug = true
+	// telegrafConfig.Agent.LogTarget = "file"
+	// telegrafConfig.Agent.Logfile = "/dev/null"
 
 	mockInputPlugin := new(mockInputPlugin)
 	mockInputConfig := &models.InputConfig{
@@ -231,7 +248,6 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	otelOutputAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelOutputPlugin := &oteloutput.OpenTelemetry{
 		ServiceAddress: otelOutputAddress,
-		Log:            zaptest.NewLogger(t, zaptest.Level(zapcore.InfoLevel)).Sugar(),
 	}
 	otelOutputConfig := &models.OutputConfig{
 		Name: "opentelemetry",
@@ -254,13 +270,13 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	require.NoError(t, err)
 	mockOtelService := newMockOtelService()
 	mockOtelServiceGrpcServer := grpc.NewServer()
-	otlpcollectormetrics.RegisterMetricsServiceServer(mockOtelServiceGrpcServer, mockOtelService)
+	otlpgrpc.RegisterMetricsServer(mockOtelServiceGrpcServer, mockOtelService)
 
 	go func() {
 		err := mockOtelServiceGrpcServer.Serve(mockOtelServiceListener)
 		assert.NoError(t, err)
 	}()
-	t.Cleanup(mockOtelServiceGrpcServer.Stop)
+	// t.Cleanup(mockOtelServiceGrpcServer.Stop)
 
 	agentDone := make(chan struct{})
 	go func(ctx context.Context) {
@@ -268,7 +284,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 		assert.NoError(t, err)
 		close(agentDone)
 	}(ctx)
-	t.Cleanup(stopAgent)
+	// t.Cleanup(stopAgent)
 
 	go func() {
 		select {
@@ -324,21 +340,19 @@ func (m mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
 	return nil
 }
 
-var _ otlpcollectormetrics.MetricsServiceServer = (*mockOtelService)(nil)
+var _ otlpgrpc.MetricsServer = (*mockOtelService)(nil)
 
 type mockOtelService struct {
-	otlpcollectormetrics.UnimplementedMetricsServiceServer
-
-	metrics chan []*otlpmetrics.ResourceMetrics
+	metricss chan pdata.Metrics
 }
 
 func newMockOtelService() *mockOtelService {
 	return &mockOtelService{
-		metrics: make(chan []*otlpmetrics.ResourceMetrics),
+		metricss: make(chan pdata.Metrics),
 	}
 }
 
-func (m *mockOtelService) Export(ctx context.Context, request *otlpcollectormetrics.ExportMetricsServiceRequest) (*otlpcollectormetrics.ExportMetricsServiceResponse, error) {
-	m.metrics <- request.ResourceMetrics
-	return &otlpcollectormetrics.ExportMetricsServiceResponse{}, nil
+func (m *mockOtelService) Export(ctx context.Context, request pdata.Metrics) (otlpgrpc.MetricsResponse, error) {
+	m.metricss <- request.Clone()
+	return otlpgrpc.MetricsResponse{}, nil
 }

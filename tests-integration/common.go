@@ -10,8 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 func findOpenTCPPort(t *testing.T) int {
@@ -21,10 +19,6 @@ func findOpenTCPPort(t *testing.T) int {
 	port := l.Addr().(*net.TCPAddr).Port
 	require.NoError(t, l.Close())
 	return port
-}
-
-func assertProtosEqual(t *testing.T, expect, got proto.Message) {
-	assert.JSONEq(t, protojson.Format(expect), protojson.Format(got))
 }
 
 func assertLineprotocolEqual(t *testing.T, expect, got string) bool {

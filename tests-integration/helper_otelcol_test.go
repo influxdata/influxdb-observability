@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	otlpcollectormetrics "github.com/influxdata/influxdb-observability/otlp/collector/metrics/v1"
-	otlpmetrics "github.com/influxdata/influxdb-observability/otlp/metrics/v1"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
 	"github.com/stretchr/testify/assert"
@@ -21,12 +19,11 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/consumer/pdata"
 	"go.opentelemetry.io/collector/extension/healthcheckextension"
+	"go.opentelemetry.io/collector/model/pdata"
 	"go.opentelemetry.io/collector/service"
 	"go.opentelemetry.io/collector/service/parserprovider"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory) {
@@ -356,7 +353,7 @@ func (m mockExporterFactory) CreateDefaultConfig() config.Exporter {
 
 func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.MetricsExporter, error) {
 	if m.mockMetricsExporter == nil {
-		m.mockMetricsExporter = new(mockMetricsExporter)
+		m.mockMetricsExporter = &mockMetricsExporter{}
 	}
 	return m.mockMetricsExporter, nil
 }
@@ -372,7 +369,7 @@ func (m mockExporterFactory) CreateTracesExporter(ctx context.Context, params co
 var _ component.MetricsExporter = (*mockMetricsExporter)(nil)
 
 type mockMetricsExporter struct {
-	resourceMetrics []*otlpmetrics.ResourceMetrics
+	consumedMetrics pdata.Metrics
 }
 
 func (m mockMetricsExporter) Start(ctx context.Context, host component.Host) error {
@@ -390,16 +387,6 @@ func (m mockMetricsExporter) Capabilities() consumer.Capabilities {
 }
 
 func (m *mockMetricsExporter) ConsumeMetrics(ctx context.Context, md pdata.Metrics) error {
-	b, err := md.ToOtlpProtoBytes()
-	if err != nil {
-		return err
-	}
-	var req otlpcollectormetrics.ExportMetricsServiceRequest
-	err = proto.Unmarshal(b, &req)
-	if err != nil {
-		return err
-	}
-	m.resourceMetrics = append(m.resourceMetrics, req.ResourceMetrics...)
-
+	m.consumedMetrics = md.Clone()
 	return nil
 }

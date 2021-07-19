@@ -31,31 +31,24 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 				case pdata.MetricDataTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
 						m.Summary().DataPoints().At(l).LabelsMap().Sort()
-						// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
-						// m.Summary().DataPoints().At(l).QuantileValues().Sort(func(i, j int) bool {
-						// 	left := m.Summary().DataPoints().At(l).QuantileValues().At(i)
-						// 	right := m.Summary().DataPoints().At(l).QuantileValues().At(j)
-						// 	return left.Quantile() < right.Quantile()
-						// })
+						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pdata.ValueAtQuantile) bool {
+							return a.Quantile() < b.Quantile()
+						})
 					}
 				default:
 					panic(fmt.Sprintf("unsupported metric data type %d", m.DataType()))
 				}
 			}
-			// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
-			// il.Metrics().Sort(func(i, j int) bool {
-			// 	return il.Metrics().At(i).Name() < il.Metrics().At(j).Name()
-			// })
+			il.Metrics().Sort(func(a, b pdata.Metric) bool {
+				return a.Name() < b.Name()
+			})
 		}
-		// TODO: Uncomment after https://github.com/open-telemetry/opentelemetry-collector/pull/3671
-		// r.InstrumentationLibraryMetrics().Sort(func(i, j int) bool {
-		// 	left := r.InstrumentationLibraryMetrics().At(i).InstrumentationLibrary()
-		// 	right := r.InstrumentationLibraryMetrics().At(j).InstrumentationLibrary()
-		// 	if left.Name() == right.Name() {
-		// 		return left.Version() < right.Version()
-		// 	}
-		// 	return left.Name() < right.Name()
-		// })
+		r.InstrumentationLibraryMetrics().Sort(func(a, b pdata.InstrumentationLibraryMetrics) bool {
+			if a.InstrumentationLibrary().Name() == b.InstrumentationLibrary().Name() {
+				return a.InstrumentationLibrary().Version() < b.InstrumentationLibrary().Version()
+			}
+			return a.InstrumentationLibrary().Name() < b.InstrumentationLibrary().Name()
+		})
 		r.Resource().Attributes().Sort()
 	}
 }
