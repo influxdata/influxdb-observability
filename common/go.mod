@@ -2,4 +2,4 @@ module github.com/influxdata/influxdb-observability/common
 
 go 1.16
 
-require go.opentelemetry.io/collector/model v0.30.0
+require go.opentelemetry.io/collector/model v0.0.0-20210721214806-6cce4224c6e7

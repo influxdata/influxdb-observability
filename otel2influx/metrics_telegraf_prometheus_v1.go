@@ -20,16 +20,10 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, reso
 	switch metric.DataType() {
 	case pdata.MetricDataTypeGauge:
 		return c.writeGauge(ctx, resource, instrumentationLibrary, metric.Name(), metric.Gauge(), w)
-	case pdata.MetricDataTypeIntGauge:
-		return c.writeIntGauge(ctx, resource, instrumentationLibrary, metric.Name(), metric.IntGauge(), w)
 	case pdata.MetricDataTypeSum:
 		return c.writeSum(ctx, resource, instrumentationLibrary, metric.Name(), metric.Sum(), w)
-	case pdata.MetricDataTypeIntSum:
-		return c.writeIntSum(ctx, resource, instrumentationLibrary, metric.Name(), metric.IntSum(), w)
 	case pdata.MetricDataTypeHistogram:
 		return c.writeHistogram(ctx, resource, instrumentationLibrary, metric.Name(), metric.Histogram(), w)
-	case pdata.MetricDataTypeIntHistogram:
-		return c.writeIntHistogram(ctx, resource, instrumentationLibrary, metric.Name(), metric.IntHistogram(), w)
 	case pdata.MetricDataTypeSummary:
 		return c.writeSummary(ctx, resource, instrumentationLibrary, metric.Name(), metric.Summary(), w)
 	default:
@@ -81,24 +75,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeIntGauge(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, gauge pdata.IntGauge, w InfluxWriter) error {
-	for i := 0; i < gauge.DataPoints().Len(); i++ {
-		dataPoint := gauge.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
-		if err != nil {
-			return err
-		}
-
-		fields[common.MetricGaugeFieldKey] = float64(dataPoint.Value())
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeGauge); err != nil {
-			return fmt.Errorf("failed to write point for gauge: %w", err)
-		}
-	}
-
-	return nil
-}
-
 func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
@@ -124,31 +100,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeIntSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.IntSum, w InfluxWriter) error {
-	if sum.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
-		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
-	}
-	if !sum.IsMonotonic() {
-		return fmt.Errorf("unsupported non-monotonic sum '%s'", measurement)
-	}
-
-	for i := 0; i < sum.DataPoints().Len(); i++ {
-		dataPoint := sum.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
-		if err != nil {
-			return err
-		}
-
-		fields[common.MetricCounterFieldKey] = float64(dataPoint.Value())
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeSum); err != nil {
-			return fmt.Errorf("failed to write point for sum: %w", err)
-		}
-	}
-
-	return nil
-}
-
 func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, histogram pdata.Histogram, w InfluxWriter) error {
 	if histogram.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
@@ -163,37 +114,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 
 		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
 		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum()
-		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
-		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
-			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
-		}
-		for i, explicitBound := range explicitBounds {
-			boundFieldKey := strconv.FormatFloat(explicitBound, 'f', -1, 64)
-			fields[boundFieldKey] = float64(bucketCounts[i])
-		} // Skip last bucket count - infinity not used in this schema
-
-		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeHistogram); err != nil {
-			return fmt.Errorf("failed to write point for histogram: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (c *metricWriterTelegrafPrometheusV1) writeIntHistogram(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, histogram pdata.IntHistogram, w InfluxWriter) error {
-	if histogram.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
-		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
-	}
-
-	for i := 0; i < histogram.DataPoints().Len(); i++ {
-		dataPoint := histogram.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
-		if err != nil {
-			return err
-		}
-
-		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
-		fields[common.MetricHistogramSumFieldKey] = float64(dataPoint.Sum())
 		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
 		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
