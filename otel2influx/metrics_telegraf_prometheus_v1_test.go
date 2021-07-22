@@ -29,11 +29,11 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "0")
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetValue(23.9)
+	dp.SetDoubleVal(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "1")
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetValue(11.9)
+	dp.SetDoubleVal(11.9)
 
 	w := new(MockInfluxWriter)
 	err = c.WriteMetrics(context.Background(), metrics, w)
@@ -93,12 +93,12 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	dp.LabelsMap().Insert("code", "200")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetValue(1027)
+	dp.SetDoubleVal(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("code", "400")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetValue(3)
+	dp.SetDoubleVal(3)
 
 	w := new(MockInfluxWriter)
 

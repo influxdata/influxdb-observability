@@ -44,7 +44,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp.LabelsMap().Insert("cpu", "cpu4")
 	dp.LabelsMap().Insert("host", "777348dc6343")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(0.10090817356207936)
+	dp.SetDoubleVal(0.10090817356207936)
 	m = ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cpu_usage_system")
 	m.SetDataType(pdata.MetricDataTypeGauge)
@@ -52,7 +52,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp.LabelsMap().Insert("cpu", "cpu4")
 	dp.LabelsMap().Insert("host", "777348dc6343")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(0.3027245206862381)
+	dp.SetDoubleVal(0.3027245206862381)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

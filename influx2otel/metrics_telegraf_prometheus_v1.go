@@ -64,14 +64,16 @@ func isStringNumeric(s string) bool {
 
 func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	if fieldValue, found := fields[common.MetricGaugeFieldKey]; found {
-		var floatValue float64
+		var floatValue *float64
+		var intValue *int64
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
 			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
@@ -83,19 +85,28 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetValue(floatValue)
+		if floatValue != nil {
+			dataPoint.SetDoubleVal(*floatValue)
+		} else if intValue != nil {
+			dataPoint.SetIntVal(*intValue)
+		} else {
+			panic("unreachable")
+		}
+
 		return nil
 	}
 
 	for k, fieldValue := range fields {
-		var floatValue float64
+		var floatValue *float64
+		var intValue *int64
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
 			b.logger.Debug("unsupported gauge value type", "type", fmt.Sprintf("%T", fieldValue))
 			continue
@@ -109,7 +120,13 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetValue(floatValue)
+		if floatValue != nil {
+			dataPoint.SetDoubleVal(*floatValue)
+		} else if intValue != nil {
+			dataPoint.SetIntVal(*intValue)
+		} else {
+			panic("unreachable")
+		}
 	}
 
 	return nil
@@ -117,14 +134,16 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 
 func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	if fieldValue, found := fields[common.MetricCounterFieldKey]; found {
-		var floatValue float64
+		var floatValue *float64
+		var intValue *int64
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
 			return fmt.Errorf("unsupported counter value type %T", fieldValue)
 		}
@@ -136,19 +155,28 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetValue(floatValue)
+		if floatValue != nil {
+			dataPoint.SetDoubleVal(*floatValue)
+		} else if intValue != nil {
+			dataPoint.SetIntVal(*intValue)
+		} else {
+			panic("unreachable")
+		}
+
 		return nil
 	}
 
 	for k, fieldValue := range fields {
-		var floatValue float64
+		var floatValue *float64
+		var intValue *int64
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
 			b.logger.Debug("unsupported counter value type", "type", fmt.Sprintf("%T", fieldValue))
 			continue
@@ -162,7 +190,13 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetValue(floatValue)
+		if floatValue != nil {
+			dataPoint.SetDoubleVal(*floatValue)
+		} else if intValue != nil {
+			dataPoint.SetIntVal(*intValue)
+		} else {
+			panic("unreachable")
+		}
 	}
 
 	return nil

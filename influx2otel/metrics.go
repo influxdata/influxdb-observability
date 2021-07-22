@@ -208,7 +208,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetValue(floatValue)
+		dataPoint.SetDoubleVal(floatValue)
 	}
 
 	return nil

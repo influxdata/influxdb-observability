@@ -55,11 +55,11 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "0")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(23.9)
+	dp.SetDoubleVal(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "1")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(11.9)
+	dp.SetDoubleVal(11.9)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -109,11 +109,11 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "0")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(23.9)
+	dp.SetDoubleVal(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("engine_id", "1")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(11.9)
+	dp.SetDoubleVal(11.9)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -168,12 +168,12 @@ func TestAddPoint_v2_sum(t *testing.T) {
 	dp.LabelsMap().Insert("code", "200")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(1027)
+	dp.SetDoubleVal(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("code", "400")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(3)
+	dp.SetDoubleVal(3)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -226,12 +226,12 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 	dp.LabelsMap().Insert("code", "200")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(1027)
+	dp.SetDoubleVal(1027)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.LabelsMap().Insert("code", "400")
 	dp.LabelsMap().Insert("method", "post")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
-	dp.SetValue(3)
+	dp.SetDoubleVal(3)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

@@ -77,16 +77,18 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	}
 
 	var metricName string
-	var floatValue float64
+	var floatValue *float64
+	var intValue *int64
 	for k, fieldValue := range fields {
 		metricName = k
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
 			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
@@ -99,7 +101,13 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 	labels.CopyTo(dataPoint.LabelsMap())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-	dataPoint.SetValue(floatValue)
+	if floatValue != nil {
+		dataPoint.SetDoubleVal(*floatValue)
+	} else if intValue != nil {
+		dataPoint.SetIntVal(*intValue)
+	} else {
+		panic("unreachable")
+	}
 	return nil
 }
 
@@ -109,18 +117,20 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	}
 
 	var metricName string
-	var floatValue float64
+	var floatValue *float64
+	var intValue *int64
 	for k, fieldValue := range fields {
 		metricName = k
 		switch typedValue := fieldValue.(type) {
 		case float64:
-			floatValue = typedValue
+			floatValue = &typedValue
 		case int64:
-			floatValue = float64(typedValue)
+			intValue = &typedValue
 		case uint64:
-			floatValue = float64(typedValue)
+			convertedTypedValue := int64(typedValue)
+			intValue = &convertedTypedValue
 		default:
-			return fmt.Errorf("unsupported counter value type %T", fieldValue)
+			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
 	}
 
@@ -131,7 +141,13 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	dataPoint := metric.Sum().DataPoints().AppendEmpty()
 	labels.CopyTo(dataPoint.LabelsMap())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-	dataPoint.SetValue(floatValue)
+	if floatValue != nil {
+		dataPoint.SetDoubleVal(*floatValue)
+	} else if intValue != nil {
+		dataPoint.SetIntVal(*intValue)
+	} else {
+		panic("unreachable")
+	}
 	return nil
 }
 

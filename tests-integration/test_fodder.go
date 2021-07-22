@@ -32,7 +32,7 @@ func init() {
 		dp := m.Gauge().DataPoints().AppendEmpty()
 		dp.LabelsMap().Insert("foo", "bar")
 		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
-		dp.SetValue(87.332)
+		dp.SetDoubleVal(87.332)
 		m = ilMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
 		m.SetDataType(pdata.MetricDataTypeHistogram)
@@ -53,12 +53,12 @@ func init() {
 		dp.LabelsMap().Insert("method", "post")
 		dp.LabelsMap().Insert("code", "200")
 		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
-		dp.SetValue(1027)
+		dp.SetDoubleVal(1027)
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.LabelsMap().Insert("method", "post")
 		dp.LabelsMap().Insert("code", "400")
 		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
-		dp.SetValue(3)
+		dp.SetDoubleVal(3)
 
 		metricTests = append(metricTests, struct {
 			otel pdata.Metrics
