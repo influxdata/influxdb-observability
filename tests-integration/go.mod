@@ -26,6 +26,6 @@ replace (
 	//github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver => ../../opentelemetry-collector-contrib/receiver/influxdbreceiver
 	//go.opentelemetry.io/collector => ../../opentelemetry-collector
 	//go.opentelemetry.io/collector/model => ../../opentelemetry-collector/model
-	go.opentelemetry.io/collector => go.opentelemetry.io/collector v0.0.0-20210722215046-85b2ac1326b4
-	go.opentelemetry.io/collector/model => go.opentelemetry.io/collector/model v0.0.0-20210722215046-85b2ac1326b4
+	go.opentelemetry.io/collector => go.opentelemetry.io/collector v0.0.0-20210723184018-3b7d6ce4830c
+	go.opentelemetry.io/collector/model => go.opentelemetry.io/collector/model v0.0.0-20210723184018-3b7d6ce4830c
 )
