@@ -187,14 +187,16 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	}
 
 	for k, v := range fields {
-		var floatValue float64
+		var floatValue *float64
+		var intValue *int64
 		switch vv := v.(type) {
 		case float64:
-			floatValue = vv
+			floatValue = &vv
 		case int64:
-			floatValue = float64(vv)
+			intValue = &vv
 		case uint64:
-			floatValue = float64(vv)
+			convertedTypedValue := int64(vv)
+			intValue = &convertedTypedValue
 		default:
 			b.logger.Debug("field has unsupported type", "measurement", measurement, "field", k, "type", fmt.Sprintf("%T", v))
 			continue
@@ -208,7 +210,13 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		labels.CopyTo(dataPoint.LabelsMap())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
-		dataPoint.SetDoubleVal(floatValue)
+		if floatValue != nil {
+			dataPoint.SetDoubleVal(*floatValue)
+		} else if intValue != nil {
+			dataPoint.SetIntVal(*intValue)
+		} else {
+			panic("unreachable")
+		}
 	}
 
 	return nil

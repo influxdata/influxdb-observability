@@ -26,6 +26,7 @@ func TestUnknownSchema(t *testing.T) {
 		map[string]interface{}{
 			"usage_user":   0.10090817356207936,
 			"usage_system": 0.3027245206862381,
+			"some_int_key": int64(7),
 		},
 		time.Unix(0, 1395066363000000123),
 		common.InfluxMetricValueTypeUntyped)
@@ -53,6 +54,14 @@ func TestUnknownSchema(t *testing.T) {
 	dp.LabelsMap().Insert("host", "777348dc6343")
 	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
 	dp.SetDoubleVal(0.3027245206862381)
+	m = ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu_some_int_key")
+	m.SetDataType(pdata.MetricDataTypeGauge)
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.LabelsMap().Insert("cpu", "cpu4")
+	dp.LabelsMap().Insert("host", "777348dc6343")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetIntVal(7)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
