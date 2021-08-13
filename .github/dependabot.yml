@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/common"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/influx2otel"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/otel2influx"
+    schedule:
+      interval: "weekly"
