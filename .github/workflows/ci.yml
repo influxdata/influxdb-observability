@@ -19,7 +19,10 @@ jobs:
         go-version: 1.16
 
     - name: Build
-      run: go build -v ./...
+      run: ./run-build.sh
+
+    - name: Lint
+      run: ./run-lint.sh
 
     - name: Test
-      run: go test -v ./...
+      run: ./run-tests.sh
