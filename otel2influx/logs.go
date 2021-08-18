@@ -49,8 +49,8 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 	fields := make(map[string]interface{})
 
 	// TODO handle logRecord.Flags()
-	tags = resourceToTags(c.logger, resource, tags)
-	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = ResourceToTags(c.logger, resource, tags)
+	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	if name := logRecord.Name(); name != "" {
 		fields[common.AttributeName] = name
@@ -68,7 +68,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 	if severityText := logRecord.SeverityText(); severityText != "" {
 		fields[common.AttributeSeverityText] = severityText
 	}
-	if v, err := otlpValueToInfluxFieldValue(logRecord.Body()); err != nil {
+	if v, err := AttributeValueToInfluxFieldValue(logRecord.Body()); err != nil {
 		c.logger.Debug("invalid log record body", err)
 		fields[common.AttributeBody] = nil
 	} else {
@@ -80,7 +80,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("log record attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
+		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid log record attribute value", err)
 		} else {

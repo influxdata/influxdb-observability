@@ -60,12 +60,18 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 
 type dataPointKey string
 
-func newDataPointKey(unixNanos uint64, labels pdata.StringMap) dataPointKey {
-	labels.Sort()
-	components := make([]string, 0, labels.Len()*2+1)
+func newDataPointKey(unixNanos uint64, attributes pdata.AttributeMap) dataPointKey {
+	attributes.Sort()
+	components := make([]string, 0, attributes.Len()*2+1)
 	components = append(components, strconv.FormatUint(unixNanos, 32))
-	labels.Range(func(k string, v string) bool {
-		components = append(components, k, v)
+	var err error
+	attributes.Range(func(k string, v pdata.AttributeValue) bool {
+		var vv string
+		vv, err = common.AttributeValueToInfluxTagValue(v)
+		if err != nil {
+			return false
+		}
+		components = append(components, k, vv)
 		return true
 	})
 	return dataPointKey(strings.Join(components, ":"))
@@ -94,12 +100,12 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 		}
 	}
 
-	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
+	metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 	if err != nil {
 		return err
 	}
 	dataPoint := metric.Gauge().DataPoints().AppendEmpty()
-	labels.CopyTo(dataPoint.LabelsMap())
+	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
@@ -134,12 +140,12 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 		}
 	}
 
-	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
+	metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
 	if err != nil {
 		return err
 	}
 	dataPoint := metric.Sum().DataPoints().AppendEmpty()
-	labels.CopyTo(dataPoint.LabelsMap())
+	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
@@ -182,16 +188,16 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 		}
 	}
 
-	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeHistogram)
+	metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeHistogram)
 	if err != nil {
 		return err
 	}
 
-	dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
+	dpk := newDataPointKey(uint64(ts.UnixNano()), attributes)
 	dataPoint, found := b.histogramDataPointsByMDPK[metric][dpk]
 	if !found {
 		dataPoint = metric.Histogram().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		b.histogramDataPointsByMDPK[metric][dpk] = dataPoint
 	}
@@ -281,16 +287,16 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 		}
 	}
 
-	metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSummary)
+	metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSummary)
 	if err != nil {
 		return err
 	}
 
-	dpk := newDataPointKey(uint64(ts.UnixNano()), labels)
+	dpk := newDataPointKey(uint64(ts.UnixNano()), attributes)
 	dataPoint, found := b.summaryDataPointsByMDPK[metric][dpk]
 	if !found {
 		dataPoint = metric.Summary().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		b.summaryDataPointsByMDPK[metric][dpk] = dataPoint
 	}

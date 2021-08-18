@@ -17,20 +17,20 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 				switch m.DataType() {
 				case pdata.MetricDataTypeGauge:
 					for l := 0; l < m.Gauge().DataPoints().Len(); l++ {
-						m.Gauge().DataPoints().At(l).LabelsMap().Sort()
+						m.Gauge().DataPoints().At(l).Attributes().Sort()
 					}
 				case pdata.MetricDataTypeSum:
 					for l := 0; l < m.Sum().DataPoints().Len(); l++ {
-						m.Sum().DataPoints().At(l).LabelsMap().Sort()
+						m.Sum().DataPoints().At(l).Attributes().Sort()
 					}
 				case pdata.MetricDataTypeHistogram:
 					for l := 0; l < m.Histogram().DataPoints().Len(); l++ {
 						sortBuckets(m.Histogram().DataPoints().At(l))
-						m.Histogram().DataPoints().At(l).LabelsMap().Sort()
+						m.Histogram().DataPoints().At(l).Attributes().Sort()
 					}
 				case pdata.MetricDataTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
-						m.Summary().DataPoints().At(l).LabelsMap().Sort()
+						m.Summary().DataPoints().At(l).Attributes().Sort()
 						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pdata.ValueAtQuantile) bool {
 							return a.Quantile() < b.Quantile()
 						})

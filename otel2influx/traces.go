@@ -41,8 +41,8 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
 
-	tags = resourceToTags(c.logger, resource, tags)
-	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = ResourceToTags(c.logger, resource, tags)
+	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	traceID := span.TraceID()
 	if traceID.IsEmpty() {
@@ -84,7 +84,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
+		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span attribute value", "key", k, err)
 		} else {
@@ -150,8 +150,8 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID p
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	tags = resourceToTags(c.logger, resource, tags)
-	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = ResourceToTags(c.logger, resource, tags)
+	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	tags[common.AttributeTraceID] = traceID.HexString()
 	tags[common.AttributeSpanID] = spanID.HexString()
@@ -164,7 +164,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID p
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span event attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
+		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span event attribute value", err)
 		} else {
@@ -221,7 +221,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pdata.TraceID, spanID pd
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span link attribute key is empty")
-		} else if v, err := otlpValueToInfluxFieldValue(v); err != nil {
+		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
 			droppedAttributesCount++
 			c.logger.Debug("invalid span link attribute value", err)
 		} else {

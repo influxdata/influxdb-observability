@@ -78,12 +78,12 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 			return fmt.Errorf("unsupported gauge value type %T", fieldValue)
 		}
 
-		metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeGauge)
+		metric, attributes, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
@@ -113,12 +113,12 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		}
 
 		metricName := fmt.Sprintf("%s_%s", measurement, k)
-		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
+		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
@@ -148,12 +148,12 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 			return fmt.Errorf("unsupported counter value type %T", fieldValue)
 		}
 
-		metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSum)
+		metric, attributes, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSum)
 		if err != nil {
 			return err
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
@@ -183,12 +183,12 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		}
 
 		metricName := fmt.Sprintf("%s_%s", measurement, k)
-		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
+		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
 		if err != nil {
 			return err
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
@@ -247,12 +247,12 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 
 	bucketCounts = append(bucketCounts, count)
 
-	metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeHistogram)
+	metric, attributes, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeHistogram)
 	if err != nil {
 		return err
 	}
 	dataPoint := metric.Histogram().DataPoints().AppendEmpty()
-	labels.CopyTo(dataPoint.LabelsMap())
+	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
@@ -304,12 +304,12 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 		return fmt.Errorf("summary sum not found")
 	}
 
-	metric, labels, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSummary)
+	metric, attributes, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeSummary)
 	if err != nil {
 		return err
 	}
 	dataPoint := metric.Summary().DataPoints().AppendEmpty()
-	labels.CopyTo(dataPoint.LabelsMap())
+	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)

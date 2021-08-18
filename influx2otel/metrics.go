@@ -3,6 +3,7 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -59,13 +60,22 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 	}
 }
 
+func resourceAttributesToKey(rAttributes pdata.AttributeMap) string {
+	var key strings.Builder
+	rAttributes.Range(func(k string, v pdata.AttributeValue) bool {
+		key.WriteString(k)
+		key.WriteByte(':')
+		return true
+	})
+	return key.String()
+}
+
 var errValueTypeUnknown = errors.New("value type unknown")
 
-func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (pdata.Metric, pdata.StringMap, error) {
-	attributeKeys := make(map[string]struct{})
+func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (pdata.Metric, pdata.AttributeMap, error) {
 	var ilName, ilVersion string
 	rAttributes := pdata.NewAttributeMap()
-	labels := pdata.NewStringMap()
+	mAttributes := pdata.NewAttributeMap()
 	for k, v := range tags {
 		switch {
 		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
@@ -76,15 +86,14 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
 			rAttributes.InsertString(k, v)
-			attributeKeys[k] = struct{}{}
 		default:
-			labels.Insert(k, v)
+			mAttributes.InsertString(k, v)
 		}
 	}
 
 	rAttributes.Sort()
 
-	rKey := common.ResourceAttributesToKey(rAttributes)
+	rKey := resourceAttributesToKey(rAttributes)
 	var resourceMetrics pdata.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
 		resourceMetrics = rm
@@ -113,22 +122,22 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		switch m.DataType() {
 		case pdata.MetricDataTypeGauge:
 			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
-				return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
+				return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
 			}
 		case pdata.MetricDataTypeSum:
 			if vType != common.InfluxMetricValueTypeSum {
-				return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
+				return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
 			}
 		case pdata.MetricDataTypeHistogram:
 			if vType != common.InfluxMetricValueTypeHistogram {
-				return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
+				return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
 			}
 		case pdata.MetricDataTypeSummary:
 			if vType != common.InfluxMetricValueTypeSummary {
-				return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
+				return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
 		default:
-			return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
+			return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 		}
 		metric = m
 
@@ -148,14 +157,14 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case common.InfluxMetricValueTypeSummary:
 			metric.SetDataType(pdata.MetricDataTypeSummary)
 		default:
-			return pdata.Metric{}, pdata.StringMap{}, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
+			return pdata.Metric{}, pdata.AttributeMap{}, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
 		}
 		b.metricByRMIL[rKey][ilmKey][metricName] = metric
 		b.histogramDataPointsByMDPK[metric] = make(map[dataPointKey]pdata.HistogramDataPoint)
 		b.summaryDataPointsByMDPK[metric] = make(map[dataPointKey]pdata.SummaryDataPoint)
 	}
 
-	return metric, labels, nil
+	return metric, mAttributes, nil
 }
 
 func (b *MetricsBatch) GetMetrics() pdata.Metrics {
@@ -203,12 +212,12 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		}
 
 		metricName := fmt.Sprintf("%s_%s", measurement, k)
-		metric, labels, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
+		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
-		labels.CopyTo(dataPoint.LabelsMap())
+		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
