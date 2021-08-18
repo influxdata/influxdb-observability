@@ -9,11 +9,11 @@ import (
 	"go.opentelemetry.io/collector/model/pdata"
 )
 
-func resourceToTags(logger common.Logger, resource pdata.Resource, tags map[string]string) (tagsAgain map[string]string) {
+func ResourceToTags(logger common.Logger, resource pdata.Resource, tags map[string]string) (tagsAgain map[string]string) {
 	resource.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
 		if k == "" {
 			logger.Debug("resource attribute key is empty")
-		} else if v, err := otlpValueToInfluxTagValue(v); err != nil {
+		} else if v, err := AttributeValueToInfluxTagValue(v); err != nil {
 			logger.Debug("invalid resource attribute value", "key", k, err)
 		} else {
 			tags[k] = v
@@ -23,7 +23,7 @@ func resourceToTags(logger common.Logger, resource pdata.Resource, tags map[stri
 	return tags
 }
 
-func instrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
+func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name() != "" {
 		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
 	}
@@ -33,7 +33,7 @@ func instrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationLi
 	return tags
 }
 
-func otlpValueToInfluxTagValue(value pdata.AttributeValue) (string, error) {
+func AttributeValueToInfluxTagValue(value pdata.AttributeValue) (string, error) {
 	switch value.Type() {
 	case pdata.AttributeValueTypeString:
 		return value.StringVal(), nil
@@ -62,7 +62,7 @@ func otlpValueToInfluxTagValue(value pdata.AttributeValue) (string, error) {
 	}
 }
 
-func otlpValueToInfluxFieldValue(value pdata.AttributeValue) (interface{}, error) {
+func AttributeValueToInfluxFieldValue(value pdata.AttributeValue) (interface{}, error) {
 	switch value.Type() {
 	case pdata.AttributeValueTypeString:
 		return value.StringVal(), nil

@@ -31,7 +31,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, reso
 	}
 }
 
-func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, timestamp pdata.Timestamp, labels pdata.StringMap) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, timestamp pdata.Timestamp, labels pdata.AttributeMap) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	ts = timestamp.AsTime()
 	ts.UTC()
 	if ts.IsZero() {
@@ -42,17 +42,26 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	labels.Range(func(k string, v string) bool {
+	labels.Range(func(k string, v pdata.AttributeValue) bool {
 		if k == "" {
 			c.logger.Debug("metric label key is empty")
 		} else {
-			tags[k] = v
+			var vv string
+			vv, err = common.AttributeValueToInfluxTagValue(v)
+			if err != nil {
+				return false
+			}
+			tags[k] = vv
 		}
 		return true
 	})
+	if err != nil {
+		err = fmt.Errorf("failed to convert attribute value to string: %w", err)
+		return
+	}
 
-	tags = resourceToTags(c.logger, resource, tags)
-	tags = instrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = ResourceToTags(c.logger, resource, tags)
+	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
 
 	return
 }
@@ -60,7 +69,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, gauge pdata.Gauge, w InfluxWriter) error {
 	for i := 0; i < gauge.DataPoints().Len(); i++ {
 		dataPoint := gauge.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
 		if err != nil {
 			return err
 		}
@@ -94,7 +103,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
 		dataPoint := sum.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
 		if err != nil {
 			return err
 		}
@@ -125,7 +134,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 
 	for i := 0; i < histogram.DataPoints().Len(); i++ {
 		dataPoint := histogram.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
 		if err != nil {
 			return err
 		}
@@ -152,7 +161,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 func (c *metricWriterTelegrafPrometheusV1) writeSummary(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, summary pdata.Summary, w InfluxWriter) error {
 	for i := 0; i < summary.DataPoints().Len(); i++ {
 		dataPoint := summary.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.LabelsMap())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
 		if err != nil {
 			return err
 		}
