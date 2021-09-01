@@ -598,7 +598,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 	dp := m.Summary().DataPoints().AppendEmpty()
 	dp.Attributes().InsertString("code", "200")
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.TimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
 	qv := dp.QuantileValues().AppendEmpty()

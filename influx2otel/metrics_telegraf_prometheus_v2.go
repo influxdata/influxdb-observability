@@ -106,7 +106,7 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	}
 	dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
 	} else if intValue != nil {
@@ -146,7 +146,7 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	}
 	dataPoint := metric.Sum().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
 	} else if intValue != nil {
@@ -198,7 +198,7 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 	if !found {
 		dataPoint = metric.Histogram().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
 		b.histogramDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 
@@ -297,7 +297,7 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 	if !found {
 		dataPoint = metric.Summary().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.TimestampFromTime(ts))
+		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
 		b.summaryDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 
