@@ -55,7 +55,7 @@ func AttributeValueToInfluxTagValue(value pdata.AttributeValue) (string, error) 
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeNull:
+	case pdata.AttributeValueTypeEmpty:
 		return "", nil
 	default:
 		return "", fmt.Errorf("unknown value type %d", value.Type())
@@ -84,7 +84,7 @@ func AttributeValueToInfluxFieldValue(value pdata.AttributeValue) (interface{}, 
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeNull:
+	case pdata.AttributeValueTypeEmpty:
 		return nil, nil
 	default:
 		return nil, fmt.Errorf("unknown value type %v", value)
@@ -107,7 +107,7 @@ func otlpKeyValueListToMap(kvList pdata.AttributeMap) map[string]interface{} {
 			m[k] = otlpKeyValueListToMap(v.MapVal())
 		case pdata.AttributeValueTypeArray:
 			m[k] = otlpArrayToSlice(v.ArrayVal())
-		case pdata.AttributeValueTypeNull:
+		case pdata.AttributeValueTypeEmpty:
 			m[k] = nil
 		default:
 			m[k] = fmt.Sprintf("<invalid map value> %v", v)
@@ -130,7 +130,7 @@ func otlpArrayToSlice(arr pdata.AnyValueArray) []interface{} {
 			s = append(s, v.DoubleVal())
 		case pdata.AttributeValueTypeBool:
 			s = append(s, v.BoolVal())
-		case pdata.AttributeValueTypeNull:
+		case pdata.AttributeValueTypeEmpty:
 			s = append(s, nil)
 		default:
 			s = append(s, fmt.Sprintf("<invalid array value> %v", v))
