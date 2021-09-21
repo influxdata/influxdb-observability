@@ -16,8 +16,7 @@ services:
     # Configuration in telegraf-generate-lp.toml
     build:
       dockerfile: Dockerfile.telegraf
-    image: telegraf:local
-    command: /telegraf
+#    image: telegraf:1.20-alpine
     volumes:
     - ./telegraf-generate-lp.toml:/etc/telegraf/telegraf.conf:ro
     links:
@@ -25,7 +24,7 @@ services:
 
   opentelemetry-collector:
     # Configuration in otelcol-receive-print-lp.yaml
-    image: otel/opentelemetry-collector-contrib:0.28.0
+    image: otel/opentelemetry-collector-contrib:0.35.0
     command: /otelcolcontrib --config /config.yaml --log-level INFO
     stop_grace_period: 1s
     volumes:
