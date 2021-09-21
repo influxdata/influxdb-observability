@@ -1,7 +1,7 @@
 FROM golang:1.16-alpine AS builder
 
 RUN apk add git
-RUN git clone --branch jgm-opentelemetry --depth 1 https://github.com/jacobmarble/telegraf
+RUN git clone --branch master --depth 1 https://github.com/influxdata/telegraf
 WORKDIR /go/telegraf
 
 RUN \
@@ -12,3 +12,4 @@ RUN \
 FROM scratch
 
 COPY --from=builder /go/bin/telegraf /
+CMD ["/telegraf"]
