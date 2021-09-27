@@ -93,7 +93,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeGauge(ctx context.Context, resou
 }
 
 func (c *metricWriterTelegrafPrometheusV2) writeSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
-	if sum.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
+	if sum.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
 	}
 	if !sum.IsMonotonic() {
@@ -127,7 +127,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeSum(ctx context.Context, resourc
 }
 
 func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, histogram pdata.Histogram, w InfluxWriter) error {
-	if histogram.AggregationTemporality() != pdata.AggregationTemporalityCumulative {
+	if histogram.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
 	}
 
