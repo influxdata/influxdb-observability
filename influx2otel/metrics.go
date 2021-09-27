@@ -150,10 +150,10 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case common.InfluxMetricValueTypeSum:
 			metric.SetDataType(pdata.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeHistogram:
 			metric.SetDataType(pdata.MetricDataTypeHistogram)
-			metric.Histogram().SetAggregationTemporality(pdata.AggregationTemporalityCumulative)
+			metric.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeSummary:
 			metric.SetDataType(pdata.MetricDataTypeSummary)
 		default:
