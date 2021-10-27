@@ -87,14 +87,14 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ParserProvider: parserprovider.NewInMemory(strings.NewReader(otelcolConfig)),
+		ConfigMapProvider: parserprovider.NewInMemoryMapProvider(strings.NewReader(otelcolConfig)),
 	}
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
-		err := otelcol.Run()
+		err := otelcol.Run(context.Background())
 		assert.NoError(t, err)
 		close(done)
 	}()
@@ -155,7 +155,7 @@ type mockReceiverConfig struct {
 
 func (m mockReceiverFactory) CreateDefaultConfig() config.Receiver {
 	return &mockReceiverConfig{
-		ReceiverSettings: config.NewReceiverSettings(config.NewID("mock")),
+		ReceiverSettings: config.NewReceiverSettings(config.NewComponentID("mock")),
 	}
 }
 
@@ -278,14 +278,14 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ParserProvider: parserprovider.NewInMemory(strings.NewReader(otelcolConfig)),
+		ConfigMapProvider: parserprovider.NewInMemoryMapProvider(strings.NewReader(otelcolConfig)),
 	}
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
-		err := otelcol.Run()
+		err := otelcol.Run(context.Background())
 		assert.NoError(t, err)
 		close(done)
 	}()
@@ -347,7 +347,7 @@ type mockExporterConfig struct {
 
 func (m mockExporterFactory) CreateDefaultConfig() config.Exporter {
 	return &mockExporterConfig{
-		ExporterSettings: config.NewExporterSettings(config.NewID("mock")),
+		ExporterSettings: config.NewExporterSettings(config.NewComponentID("mock")),
 	}
 }
 
