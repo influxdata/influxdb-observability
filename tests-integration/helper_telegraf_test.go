@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	lineprotocol "github.com/influxdata/line-protocol/v2/influxdata"
+	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
 	"github.com/influxdata/telegraf/config"
@@ -352,7 +352,7 @@ func newMockOtelService() *mockOtelService {
 	}
 }
 
-func (m *mockOtelService) Export(ctx context.Context, request pdata.Metrics) (otlpgrpc.MetricsResponse, error) {
-	m.metricss <- request.Clone()
-	return otlpgrpc.MetricsResponse{}, nil
+func (m *mockOtelService) Export(ctx context.Context, request otlpgrpc.MetricsRequest) (otlpgrpc.MetricsResponse, error) {
+	m.metricss <- request.Metrics().Clone()
+	return otlpgrpc.NewMetricsResponse(), nil
 }

@@ -32,7 +32,8 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					metricsClient := otlpgrpc.NewMetricsClient(clientConn)
 
-					request := mt.otel.Clone()
+					request := otlpgrpc.NewMetricsRequest()
+					request.SetMetrics(mt.otel.Clone())
 					_, err := metricsClient.Export(context.Background(), request)
 					if err != nil {
 						// TODO not sure why the service returns this error, but the data arrives as required by the test
@@ -71,7 +72,8 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					tracesClient := otlpgrpc.NewTracesClient(clientConn)
 
-					request := tt.otel.Clone()
+					request := otlpgrpc.NewTracesRequest()
+					request.SetTraces(tt.otel.Clone())
 					_, err := tracesClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
@@ -104,7 +106,8 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					logsClient := otlpgrpc.NewLogsClient(clientConn)
 
-					request := lt.otel.Clone()
+					request := otlpgrpc.NewLogsRequest()
+					request.SetLogs(lt.otel.Clone())
 					_, err := logsClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
