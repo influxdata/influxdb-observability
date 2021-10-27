@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	cloud.google.com/go/monitoring v1.1.0 // indirect
-	github.com/influxdata/influxdb-observability/common v0.2.7
+	github.com/influxdata/influxdb-observability/common v0.2.8
 	github.com/influxdata/line-protocol/v2 v2.2.0
 	github.com/influxdata/telegraf v1.20.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.37.0
