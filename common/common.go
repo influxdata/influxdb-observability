@@ -105,7 +105,7 @@ func AttributeValueToInfluxTagValue(value pdata.AttributeValue) (string, error) 
 			return string(jsonBytes), nil
 		}
 	case pdata.AttributeValueTypeArray:
-		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.ArrayVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
@@ -134,7 +134,7 @@ func AttributeValueToInfluxFieldValue(value pdata.AttributeValue) (interface{}, 
 			return string(jsonBytes), nil
 		}
 	case pdata.AttributeValueTypeArray:
-		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.ArrayVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
@@ -161,7 +161,7 @@ func otlpKeyValueListToMap(kvList pdata.AttributeMap) map[string]interface{} {
 		case pdata.AttributeValueTypeMap:
 			m[k] = otlpKeyValueListToMap(v.MapVal())
 		case pdata.AttributeValueTypeArray:
-			m[k] = otlpArrayToSlice(v.ArrayVal())
+			m[k] = otlpArrayToSlice(v.SliceVal())
 		case pdata.AttributeValueTypeEmpty:
 			m[k] = nil
 		default:
@@ -172,7 +172,7 @@ func otlpKeyValueListToMap(kvList pdata.AttributeMap) map[string]interface{} {
 	return m
 }
 
-func otlpArrayToSlice(arr pdata.AnyValueArray) []interface{} {
+func otlpArrayToSlice(arr pdata.AttributeValueSlice) []interface{} {
 	s := make([]interface{}, 0, arr.Len())
 	for i := 0; i < arr.Len(); i++ {
 		v := arr.At(i)
