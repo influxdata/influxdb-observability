@@ -57,7 +57,8 @@ services:
 
   opentelemetry-collector:
     # Configuration in otelcol-generate-export-otlp.yaml
-    image: otel/opentelemetry-collector-contrib:0.28.0
+#    image: otel/opentelemetry-collector-contrib:0.28.0
+    image: otelcontribcol:latest
     command: /otelcolcontrib --config /config.yaml --log-level INFO
     stop_grace_period: 1s
     volumes:
@@ -66,8 +67,8 @@ services:
     - telegraf
 
   telegraf:
-    build:
-      dockerfile: Dockerfile.telegraf
+#    build:
+#      dockerfile: Dockerfile.telegraf
     image: telegraf:local
     command: /telegraf
     volumes:

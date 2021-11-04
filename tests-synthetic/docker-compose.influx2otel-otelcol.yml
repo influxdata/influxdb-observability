@@ -24,8 +24,9 @@ services:
 
   opentelemetry-collector:
     # Configuration in otelcol-receive-print-lp.yaml
-    image: otel/opentelemetry-collector-contrib:0.35.0
-    command: /otelcolcontrib --config /config.yaml --log-level INFO
+#    image: otel/opentelemetry-collector-contrib:0.35.0
+    image: otelcontribcol:latest
+    command: /otelcolcontrib --config /config.yaml
     stop_grace_period: 1s
     volumes:
     - ./otelcol-receive-print-lp.yaml:/config.yaml:ro
