@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-hclog"
+	_ "github.com/influxdata/influxdb-iox-client-go"
 	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/config"
 	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/store"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc"
@@ -18,7 +19,7 @@ var configPath string
 
 func main() {
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:       "jaeger-influxdb",
+		Name:       "jaeger-query-influxdb",
 		Level:      hclog.Warn, // Jaeger only captures >= Warn, so don't bother logging below Warn
 		JSONFormat: true,
 	})

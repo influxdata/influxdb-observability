@@ -1,0 +1,57 @@
+#syntax=docker/dockerfile:1.2
+FROM rust:1.56-bullseye AS builder-rust
+
+RUN apt update \
+    && apt install --yes build-essential pkg-config libssl-dev clang \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}
+
+WORKDIR /
+RUN git clone https://github.com/influxdata/influxdb_iox --no-checkout
+WORKDIR /influxdb_iox
+ARG IOX_GIT_REF=81557477350831bffde17686a649fdd79f44fb14
+RUN git checkout ${IOX_GIT_REF}
+
+RUN cargo build --no-default-features --features=aws,gcp,azure
+# influxdb_iox is found at /influxdb_iox/target/debug/influxdb_iox
+
+FROM golang:1.17-bullseye AS builder-go
+
+ARG NODEJS_VERSION=16
+RUN \
+    curl -fsSL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x | bash - \
+    && apt update \
+    && apt install --yes nodejs \
+    && corepack enable \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}
+
+WORKDIR /go/src
+RUN git clone https://github.com/jaegertracing/jaeger --no-checkout
+WORKDIR /go/src/jaeger
+ARG JAEGER_GIT_REF=v1.28.0
+RUN \
+    git checkout ${JAEGER_GIT_REF} \
+    && git submodule update --init --recursive \
+    && make install-tools \
+    && make build-ui \
+    && go install -tags ui ./cmd/query
+# query is found at /go/bin/query
+
+ARG OPENTELEMETRY_VERSION=v0.39.0
+WORKDIR /go/src
+RUN git clone https://github.com/open-telemetry/opentelemetry-collector-contrib --depth 1 --branch ${OPENTELEMETRY_VERSION}
+WORKDIR /go/src/opentelemetry-collector-contrib
+RUN go install ./cmd/otelcontribcol
+# otelcontribcol is found at /go/bin/otelcontribcol
+
+COPY . /go/src/influxdb-observability
+WORKDIR /go/src/influxdb-observability/jaeger-query-plugin
+
+RUN go install ./cmd/jaeger-query-influxdb
+# jaeger-query-influxdb is found at /go/bin/jaeger-query-influxdb
+
+FROM debian:bullseye-slim
+
+COPY --from=builder-rust /influxdb_iox/target/debug/influxdb_iox /usr/bin/influxdb_iox
+COPY --from=builder-go /go/bin/query /usr/bin/jaeger-query
+COPY --from=builder-go /go/bin/otelcontribcol /usr/bin/otelcontribcol
+COPY --from=builder-go /go/bin/jaeger-query-influxdb /usr/bin/jaeger-query-influxdb
