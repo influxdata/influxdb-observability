@@ -34,7 +34,7 @@ import (
 
 func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect pdata.Metrics) {
 	mockInputPlugin, mockOtelService, stopTelegraf := setupTelegrafOpenTelemetryOutput(t)
-	// t.Cleanup(stopTelegraf)
+	t.Cleanup(stopTelegraf)
 
 	lpdec := lineprotocol.NewDecoder(strings.NewReader(lp))
 	for lpdec.Next() {
@@ -265,6 +265,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	ag, err := agent.NewAgent(telegrafConfig)
 	require.NoError(t, err)
 	ctx, stopAgent := context.WithCancel(context.Background())
+	t.Cleanup(stopAgent)
 
 	mockOtelServiceListener, err := net.Listen("tcp", otelOutputAddress)
 	require.NoError(t, err)
@@ -276,7 +277,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 		err := mockOtelServiceGrpcServer.Serve(mockOtelServiceListener)
 		assert.NoError(t, err)
 	}()
-	// t.Cleanup(mockOtelServiceGrpcServer.Stop)
+	t.Cleanup(mockOtelServiceGrpcServer.Stop)
 
 	agentDone := make(chan struct{})
 	go func(ctx context.Context) {
@@ -284,7 +285,6 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 		assert.NoError(t, err)
 		close(agentDone)
 	}(ctx)
-	// t.Cleanup(stopAgent)
 
 	go func() {
 		select {

@@ -20,6 +20,11 @@ if ! go build ; then
   fail=1
 fi
 
+cd "${BASEDIR}/tests-integration"
+if ! go build ; then
+  fail=1
+fi
+
 if [ -n "$fail" ] ; then
   exit 1
 fi
