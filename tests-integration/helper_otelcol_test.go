@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/collector/config/configmapprovider"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +23,6 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/model/pdata"
 	"go.opentelemetry.io/collector/service"
-	"go.opentelemetry.io/collector/service/parserprovider"
 	"go.uber.org/zap"
 )
 
@@ -60,11 +60,16 @@ service:
 
 	mockReceiverFactory := newMockReceiverFactory()
 	mockDestination := httptest.NewServer(mockReceiverFactory)
-	mockDestinationEndpoint := mockDestination.URL
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
-	otelcolConfig := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
-	otelcolConfig = strings.ReplaceAll(otelcolConfig, "SCHEMA", "telegraf-prometheus-v1")
-	otelcolConfig = strings.ReplaceAll(otelcolConfig, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
+
+	otelcolConfigProvider := func() service.ConfigProvider {
+		mockDestinationEndpoint := mockDestination.URL
+		configString := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
+		configString = strings.ReplaceAll(configString, "SCHEMA", "telegraf-prometheus-v1")
+		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
+		t.Setenv("test-env", configString)
+		return service.MustNewDefaultConfigProvider([]string{"env:test-env"}, nil)
+	}()
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(mockReceiverFactory)
 	require.NoError(t, err)
@@ -87,8 +92,10 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ConfigMapProvider: parserprovider.NewInMemoryMapProvider(strings.NewReader(otelcolConfig)),
+		ConfigProvider: otelcolConfigProvider,
 	}
+	configmapprovider.NewEnv()
+	configmapprovider.NewFile()
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
 
@@ -133,6 +140,7 @@ var (
 )
 
 type mockReceiverFactory struct {
+	component.ReceiverFactory
 	nextMetricsConsumer consumer.Metrics
 	nextTracesConsumer  consumer.Traces
 	nextLogsConsumer    consumer.Logs
@@ -253,8 +261,13 @@ service:
 
 	otelcolReceiverAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
-	otelcolConfig := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
-	otelcolConfig = strings.ReplaceAll(otelcolConfig, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
+
+	otelcolConfigProvider := func() service.ConfigProvider {
+		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
+		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
+		t.Setenv("test-env", configString)
+		return service.MustNewDefaultConfigProvider([]string{"env:test-env"}, nil)
+	}()
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(influxdbreceiver.NewFactory())
 	require.NoError(t, err)
@@ -278,7 +291,7 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ConfigMapProvider: parserprovider.NewInMemoryMapProvider(strings.NewReader(otelcolConfig)),
+		ConfigProvider: otelcolConfigProvider,
 	}
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
@@ -334,6 +347,7 @@ func (w testingLogger) Sync() error {
 var _ component.ExporterFactory = (*mockExporterFactory)(nil)
 
 type mockExporterFactory struct {
+	component.ExporterFactory
 	*mockMetricsExporter
 }
 

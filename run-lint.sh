@@ -20,7 +20,12 @@ if ! go vet ; then
   fail=1
 fi
 
-unformatted=$(gofmt -s -l "${BASEDIR}/common" "${BASEDIR}/influx2otel" "${BASEDIR}/otel2influx")
+cd "${BASEDIR}/tests-integration"
+if ! go vet ; then
+  fail=1
+fi
+
+unformatted=$(gofmt -s -l "${BASEDIR}/common" "${BASEDIR}/influx2otel" "${BASEDIR}/otel2influx" "${BASEDIR}/tests-integration")
 if [ ! -z "$unformatted" ] ; then
   for filename in $unformatted ; do
     gofmt -s -d "$filename"
