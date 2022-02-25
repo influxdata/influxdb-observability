@@ -134,7 +134,7 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 		logs := pdata.NewLogs()
 		rl := logs.ResourceLogs().AppendEmpty()
 		ilLog := rl.InstrumentationLibraryLogs().AppendEmpty()
-		log := ilLog.Logs().AppendEmpty()
+		log := ilLog.LogRecords().AppendEmpty()
 		log.SetName("cpu_temp")
 		log.SetTimestamp(pdata.Timestamp(1622848686000000000))
 		log.SetSeverityNumber(pdata.SeverityNumberINFO)

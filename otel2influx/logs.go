@@ -24,8 +24,8 @@ func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld pdata.Logs, w
 		resourceLogs := ld.ResourceLogs().At(i)
 		for j := 0; j < resourceLogs.InstrumentationLibraryLogs().Len(); j++ {
 			ilLogs := resourceLogs.InstrumentationLibraryLogs().At(j)
-			for k := 0; k < ilLogs.Logs().Len(); k++ {
-				logRecord := ilLogs.Logs().At(k)
+			for k := 0; k < ilLogs.LogRecords().Len(); k++ {
+				logRecord := ilLogs.LogRecords().At(k)
 				if err := c.writeLogRecord(ctx, resourceLogs.Resource(), ilLogs.InstrumentationLibrary(), logRecord, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP log record to line protocol: %w", err)
 				}
