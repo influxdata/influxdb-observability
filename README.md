@@ -29,7 +29,7 @@ This package is only intended for use by packages within this repository.
 
 ## `tests-integration`
 
-The golang package `tests` contains integration tests.
+The golang package `tests-integration` contains integration tests.
 These tests exercise the above packages against OpenTelemetry Collector and Telegraf.
 
 To run these tests:
