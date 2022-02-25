@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/credentials/insecure"
 	"io/ioutil"
 	"log"
 	"net"
@@ -146,7 +147,7 @@ func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutpu
 		}
 	}
 
-	clientConn, err := grpc.Dial(otelInputAddress, grpc.WithInsecure())
+	clientConn, err := grpc.Dial(otelInputAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 
 	return clientConn, mockOutputPlugin, stopAgent
