@@ -6,6 +6,7 @@ cd "$(dirname "$0")"
 BASEDIR=$(pwd)
 
 for package in common influx2otel otel2influx tests-integration; do
+  echo checking ${package}
   cd ${BASEDIR}/${package}
   if ! go build; then
     fail=1
@@ -13,16 +14,23 @@ for package in common influx2otel otel2influx tests-integration; do
   if ! go test; then
     fail=1
   fi
-  if [[ -z $(gofmt -s -l . | head -n 1) ]]; then
+  if [[ ! -z $(gofmt -s -l . | head -n 1) ]]; then
     fail=1
     gofmt -s -d .
   fi
   if ! go vet; then
     fail=1
   fi
-  staticcheck -f stylish
+  if ! staticcheck -f stylish; then
+    fail=1
+  fi
 done
 
+echo
+
 if [ -n "$fail" ]; then
+  echo "at least one check failed"
   exit 1
+else
+  echo "all checks OK"
 fi

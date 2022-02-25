@@ -9,7 +9,7 @@ type Logger interface {
 // NoopLogger is a no-op implementation of Logger.
 type NoopLogger struct{}
 
-func (_ NoopLogger) Debug(_ string, _ ...interface{}) {}
+func (NoopLogger) Debug(_ string, _ ...interface{}) {}
 
 // ErrorLogger intercepts log entries emitted by this package,
 // adding key "error" before any error type value.
