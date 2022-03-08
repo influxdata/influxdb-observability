@@ -21,7 +21,10 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, reso
 	case pdata.MetricDataTypeGauge:
 		return c.writeGauge(ctx, resource, instrumentationLibrary, metric.Name(), metric.Gauge(), w)
 	case pdata.MetricDataTypeSum:
-		return c.writeSum(ctx, resource, instrumentationLibrary, metric.Name(), metric.Sum(), w)
+		if metric.Sum().IsMonotonic() {
+			return c.writeSum(ctx, resource, instrumentationLibrary, metric.Name(), metric.Sum(), w)
+		}
+		return c.writeGaugeFromSum(ctx, resource, instrumentationLibrary, metric.Name(), metric.Sum(), w)
 	case pdata.MetricDataTypeHistogram:
 		return c.writeHistogram(ctx, resource, instrumentationLibrary, metric.Name(), metric.Histogram(), w)
 	case pdata.MetricDataTypeSummary:
@@ -93,12 +96,40 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 	return nil
 }
 
+func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
+	if sum.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
+		return fmt.Errorf("unsupported sum (as gauge) aggregation temporality %q", sum.AggregationTemporality())
+	}
+
+	for i := 0; i < sum.DataPoints().Len(); i++ {
+		dataPoint := sum.DataPoints().At(i)
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		if err != nil {
+			return err
+		}
+
+		switch dataPoint.ValueType() {
+		case pdata.MetricValueTypeNone:
+			continue
+		case pdata.MetricValueTypeDouble:
+			fields[common.MetricGaugeFieldKey] = dataPoint.DoubleVal()
+		case pdata.MetricValueTypeInt:
+			fields[common.MetricGaugeFieldKey] = dataPoint.IntVal()
+		default:
+			return fmt.Errorf("unsupported sum (as gauge) data point type %d", dataPoint.ValueType())
+		}
+
+		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeGauge); err != nil {
+			return fmt.Errorf("failed to write point for sum (as gauge): %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
-	}
-	if !sum.IsMonotonic() {
-		return fmt.Errorf("unsupported non-monotonic sum '%s'", measurement)
 	}
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
