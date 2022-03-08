@@ -74,6 +74,70 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 	assert.EqualValues(t, expected, w.points)
 }
 
+func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
+	require.NoError(t, err)
+
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("node", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds")
+	m.SetDescription("Age in seconds of the current cache")
+	m.SetDataType(pdata.MetricDataTypeSum)
+	m.Sum().SetIsMonotonic(false)
+	m.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().InsertInt("engine_id", 0)
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetDoubleVal(23.9)
+	dp = m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().InsertInt("engine_id", 1)
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetDoubleVal(11.9)
+
+	w := new(MockInfluxWriter)
+
+	err = c.WriteMetrics(context.Background(), metrics, w)
+	require.NoError(t, err)
+
+	expected := []mockPoint{
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"engine_id":            "0",
+			},
+			fields: map[string]interface{}{
+				"cache_age_seconds": float64(23.9),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeGauge,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"engine_id":            "1",
+			},
+			fields: map[string]interface{}{
+				"cache_age_seconds": float64(11.9),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeGauge,
+		},
+	}
+
+	assert.EqualValues(t, expected, w.points)
+}
+
 func TestWriteMetric_v2_sum(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
