@@ -337,6 +337,137 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 	assert.Equal(t, expected, w.points)
 }
 
+func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
+	require.NoError(t, err)
+
+	metrics := pdata.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().InsertString("node", "42")
+	ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+	ilMetrics.InstrumentationLibrary().SetName("My Library")
+	ilMetrics.InstrumentationLibrary().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.SetDescription("A histogram of the request duration")
+	m.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.Attributes().InsertInt("code", 200)
+	dp.Attributes().InsertString("method", "post")
+	dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988})
+	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
+
+	w := new(MockInfluxWriter)
+
+	err = c.WriteMetrics(context.Background(), metrics, w)
+	require.NoError(t, err)
+
+	expected := []mockPoint{
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_count": float64(144320),
+				"http_request_duration_seconds_sum":   float64(53423),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.05",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket": float64(24054),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.1",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket": float64(33444),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.2",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket": float64(100392),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "0.5",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket": float64(129389),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+		{
+			measurement: "prometheus",
+			tags: map[string]string{
+				"node":                 "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
+				"le":                   "1",
+			},
+			fields: map[string]interface{}{
+				"http_request_duration_seconds_bucket": float64(133988),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeHistogram,
+		},
+	}
+
+	assert.Equal(t, expected, w.points)
+}
+
 func TestWriteMetric_v2_summary(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV2)
 	require.NoError(t, err)
