@@ -184,7 +184,11 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 		}
 
 		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
-		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
+		if len(bucketCounts) > 0 &&
+			len(bucketCounts) != len(explicitBounds) &&
+			len(bucketCounts) != len(explicitBounds)+1 {
+			// The infinity bucket is not used in this schema,
+			// so accept input if that particular bucket is missing.
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
 		}
 
@@ -205,7 +209,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, common.InfluxMetricValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
-		} // Skip last bucket count - infinity not used in this schema
+		}
 	}
 
 	return nil

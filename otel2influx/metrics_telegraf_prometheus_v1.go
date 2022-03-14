@@ -173,13 +173,17 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
 		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum()
 		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
-		if len(bucketCounts) > 0 && len(bucketCounts) != len(explicitBounds)+1 {
+		if len(bucketCounts) > 0 &&
+			len(bucketCounts) != len(explicitBounds) &&
+			len(bucketCounts) != len(explicitBounds)+1 {
+			// The infinity bucket is not used in this schema,
+			// so accept input if that particular bucket is missing.
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
 		}
 		for i, explicitBound := range explicitBounds {
 			boundFieldKey := strconv.FormatFloat(explicitBound, 'f', -1, 64)
 			fields[boundFieldKey] = float64(bucketCounts[i])
-		} // Skip last bucket count - infinity not used in this schema
+		}
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeHistogram); err != nil {
 			return fmt.Errorf("failed to write point for histogram: %w", err)
