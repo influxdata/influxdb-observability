@@ -135,7 +135,6 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 		rl := logs.ResourceLogs().AppendEmpty()
 		ilLog := rl.InstrumentationLibraryLogs().AppendEmpty()
 		log := ilLog.LogRecords().AppendEmpty()
-		log.SetName("cpu_temp")
 		log.SetTimestamp(pdata.Timestamp(1622848686000000000))
 		log.SetSeverityNumber(pdata.SeverityNumberINFO)
 		log.SetSeverityText("info")
@@ -151,7 +150,7 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 		}{
 			otel: logs,
 			lp: `
-logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",k=true,otel.span.dropped_attributes_count=5u,name="cpu_temp",severity_number=9i,severity_text="info" 1622848686000000000
+logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",k=true,otel.span.dropped_attributes_count=5u,severity_number=9i,severity_text="info" 1622848686000000000
 `,
 		})
 	}
