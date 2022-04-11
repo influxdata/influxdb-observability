@@ -22,11 +22,11 @@ func NewOtelLogsToLineProtocol(logger common.Logger) *OtelLogsToLineProtocol {
 func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld pdata.Logs, w InfluxWriter) error {
 	for i := 0; i < ld.ResourceLogs().Len(); i++ {
 		resourceLogs := ld.ResourceLogs().At(i)
-		for j := 0; j < resourceLogs.InstrumentationLibraryLogs().Len(); j++ {
-			ilLogs := resourceLogs.InstrumentationLibraryLogs().At(j)
+		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
+			ilLogs := resourceLogs.ScopeLogs().At(j)
 			for k := 0; k < ilLogs.LogRecords().Len(); k++ {
 				logRecord := ilLogs.LogRecords().At(k)
-				if err := c.writeLogRecord(ctx, resourceLogs.Resource(), ilLogs.InstrumentationLibrary(), logRecord, w); err != nil {
+				if err := c.writeLogRecord(ctx, resourceLogs.Resource(), ilLogs.Scope(), logRecord, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP log record to line protocol: %w", err)
 				}
 			}
@@ -35,7 +35,7 @@ func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld pdata.Logs, w
 	return nil
 }
 
-func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, logRecord pdata.LogRecord, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, logRecord pdata.LogRecord, w InfluxWriter) error {
 	ts := logRecord.Timestamp().AsTime()
 	if ts.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
@@ -73,7 +73,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 	}
 
 	droppedAttributesCount := uint64(logRecord.DroppedAttributesCount())
-	logRecord.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+	logRecord.Attributes().Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("log record attribute key is empty")

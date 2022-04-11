@@ -60,12 +60,12 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 
 type dataPointKey string
 
-func newDataPointKey(unixNanos uint64, attributes pdata.AttributeMap) dataPointKey {
+func newDataPointKey(unixNanos uint64, attributes pdata.Map) dataPointKey {
 	attributes.Sort()
 	components := make([]string, 0, attributes.Len()*2+1)
 	components = append(components, strconv.FormatUint(unixNanos, 32))
 	var err error
-	attributes.Range(func(k string, v pdata.AttributeValue) bool {
+	attributes.Range(func(k string, v pdata.Value) bool {
 		var vv string
 		vv, err = common.AttributeValueToInfluxTagValue(v)
 		if err != nil {

@@ -25,7 +25,7 @@ func init() {
 	{
 		metrics := pdata.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
-		ilMetrics := rm.InstrumentationLibraryMetrics().AppendEmpty()
+		ilMetrics := rm.ScopeMetrics().AppendEmpty()
 		m := ilMetrics.Metrics().AppendEmpty()
 		m.SetName("cpu_temp")
 		m.SetDataType(pdata.MetricDataTypeGauge)
@@ -77,7 +77,7 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 	{
 		traces := pdata.NewTraces()
 		rs := traces.ResourceSpans().AppendEmpty()
-		ilSpan := rs.InstrumentationLibrarySpans().AppendEmpty()
+		ilSpan := rs.ScopeSpans().AppendEmpty()
 		span := ilSpan.Spans().AppendEmpty()
 		span.SetName("cpu_temp")
 		span.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
@@ -133,7 +133,7 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 	{
 		logs := pdata.NewLogs()
 		rl := logs.ResourceLogs().AppendEmpty()
-		ilLog := rl.InstrumentationLibraryLogs().AppendEmpty()
+		ilLog := rl.ScopeLogs().AppendEmpty()
 		log := ilLog.LogRecords().AppendEmpty()
 		log.SetTimestamp(pdata.Timestamp(1622848686000000000))
 		log.SetSeverityNumber(pdata.SeverityNumberINFO)
