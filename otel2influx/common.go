@@ -10,7 +10,7 @@ import (
 )
 
 func ResourceToTags(logger common.Logger, resource pdata.Resource, tags map[string]string) (tagsAgain map[string]string) {
-	resource.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+	resource.Attributes().Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			logger.Debug("resource attribute key is empty")
 		} else if v, err := AttributeValueToInfluxTagValue(v); err != nil {
@@ -23,7 +23,7 @@ func ResourceToTags(logger common.Logger, resource pdata.Resource, tags map[stri
 	return tags
 }
 
-func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationLibrary, tags map[string]string) (tagsAgain map[string]string) {
+func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name() != "" {
 		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
 	}
@@ -33,81 +33,81 @@ func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationLi
 	return tags
 }
 
-func AttributeValueToInfluxTagValue(value pdata.AttributeValue) (string, error) {
+func AttributeValueToInfluxTagValue(value pdata.Value) (string, error) {
 	switch value.Type() {
-	case pdata.AttributeValueTypeString:
+	case pdata.ValueTypeString:
 		return value.StringVal(), nil
-	case pdata.AttributeValueTypeInt:
+	case pdata.ValueTypeInt:
 		return strconv.FormatInt(value.IntVal(), 10), nil
-	case pdata.AttributeValueTypeDouble:
+	case pdata.ValueTypeDouble:
 		return strconv.FormatFloat(value.DoubleVal(), 'f', -1, 64), nil
-	case pdata.AttributeValueTypeBool:
+	case pdata.ValueTypeBool:
 		return strconv.FormatBool(value.BoolVal()), nil
-	case pdata.AttributeValueTypeMap:
+	case pdata.ValueTypeMap:
 		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeArray:
+	case pdata.ValueTypeSlice:
 		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeEmpty:
+	case pdata.ValueTypeEmpty:
 		return "", nil
 	default:
 		return "", fmt.Errorf("unknown value type %d", value.Type())
 	}
 }
 
-func AttributeValueToInfluxFieldValue(value pdata.AttributeValue) (interface{}, error) {
+func AttributeValueToInfluxFieldValue(value pdata.Value) (interface{}, error) {
 	switch value.Type() {
-	case pdata.AttributeValueTypeString:
+	case pdata.ValueTypeString:
 		return value.StringVal(), nil
-	case pdata.AttributeValueTypeInt:
+	case pdata.ValueTypeInt:
 		return value.IntVal(), nil
-	case pdata.AttributeValueTypeDouble:
+	case pdata.ValueTypeDouble:
 		return value.DoubleVal(), nil
-	case pdata.AttributeValueTypeBool:
+	case pdata.ValueTypeBool:
 		return value.BoolVal(), nil
-	case pdata.AttributeValueTypeMap:
+	case pdata.ValueTypeMap:
 		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeArray:
+	case pdata.ValueTypeSlice:
 		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.AttributeValueTypeEmpty:
+	case pdata.ValueTypeEmpty:
 		return nil, nil
 	default:
 		return nil, fmt.Errorf("unknown value type %v", value)
 	}
 }
 
-func otlpKeyValueListToMap(kvList pdata.AttributeMap) map[string]interface{} {
+func otlpKeyValueListToMap(kvList pdata.Map) map[string]interface{} {
 	m := make(map[string]interface{}, kvList.Len())
-	kvList.Range(func(k string, v pdata.AttributeValue) bool {
+	kvList.Range(func(k string, v pdata.Value) bool {
 		switch v.Type() {
-		case pdata.AttributeValueTypeString:
+		case pdata.ValueTypeString:
 			m[k] = v.StringVal()
-		case pdata.AttributeValueTypeInt:
+		case pdata.ValueTypeInt:
 			m[k] = v.IntVal()
-		case pdata.AttributeValueTypeDouble:
+		case pdata.ValueTypeDouble:
 			m[k] = v.DoubleVal()
-		case pdata.AttributeValueTypeBool:
+		case pdata.ValueTypeBool:
 			m[k] = v.BoolVal()
-		case pdata.AttributeValueTypeMap:
+		case pdata.ValueTypeMap:
 			m[k] = otlpKeyValueListToMap(v.MapVal())
-		case pdata.AttributeValueTypeArray:
+		case pdata.ValueTypeSlice:
 			m[k] = otlpArrayToSlice(v.SliceVal())
-		case pdata.AttributeValueTypeEmpty:
+		case pdata.ValueTypeEmpty:
 			m[k] = nil
 		default:
 			m[k] = fmt.Sprintf("<invalid map value> %v", v)
@@ -117,20 +117,20 @@ func otlpKeyValueListToMap(kvList pdata.AttributeMap) map[string]interface{} {
 	return m
 }
 
-func otlpArrayToSlice(arr pdata.AttributeValueSlice) []interface{} {
+func otlpArrayToSlice(arr pdata.Slice) []interface{} {
 	s := make([]interface{}, 0, arr.Len())
 	for i := 0; i < arr.Len(); i++ {
 		v := arr.At(i)
 		switch v.Type() {
-		case pdata.AttributeValueTypeString:
+		case pdata.ValueTypeString:
 			s = append(s, v.StringVal())
-		case pdata.AttributeValueTypeInt:
+		case pdata.ValueTypeInt:
 			s = append(s, v.IntVal())
-		case pdata.AttributeValueTypeDouble:
+		case pdata.ValueTypeDouble:
 			s = append(s, v.DoubleVal())
-		case pdata.AttributeValueTypeBool:
+		case pdata.ValueTypeBool:
 			s = append(s, v.BoolVal())
-		case pdata.AttributeValueTypeEmpty:
+		case pdata.ValueTypeEmpty:
 			s = append(s, nil)
 		default:
 			s = append(s, fmt.Sprintf("<invalid array value> %v", v))

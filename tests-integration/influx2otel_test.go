@@ -52,7 +52,7 @@ cpu_temp,foo=bar gauge=87.332
 		require.NoError(t, err)
 		assert.Equal(t, 2, response.StatusCode/100)
 
-		gotTime := mockExporterFactory.consumedMetrics.ResourceMetrics().At(0).InstrumentationLibraryMetrics().At(0).Metrics().At(0).Gauge().DataPoints().At(0).Timestamp().AsTime()
+		gotTime := mockExporterFactory.consumedMetrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Gauge().DataPoints().At(0).Timestamp().AsTime()
 		assert.WithinDuration(t, time.Now(), gotTime, time.Second)
 	})
 }
@@ -64,7 +64,7 @@ cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.302
 `
 
 		expect := pdata.NewMetrics()
-		metrics := expect.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty().Metrics()
+		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("cpu_usage_iowait")
 		metric.SetDataType(pdata.MetricDataTypeGauge)
@@ -100,7 +100,7 @@ func TestInflux2Otel_gaugeNonPrometheus(t *testing.T) {
 swap,host=8eaaf6b73054 used_percent=1.5,total=1073737728i 1626302080000000000
 `
 		expect := pdata.NewMetrics()
-		metrics := expect.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty().Metrics()
+		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("swap_used_percent")
 		metric.SetDataType(pdata.MetricDataTypeGauge)
@@ -126,7 +126,7 @@ func TestInflux2Otel_counterNonPrometheus(t *testing.T) {
 swap,host=8eaaf6b73054 in=32768i,out=12021760i 1626302080000000000
 `
 		expect := pdata.NewMetrics()
-		metrics := expect.ResourceMetrics().AppendEmpty().InstrumentationLibraryMetrics().AppendEmpty().Metrics()
+		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("swap_in")
 		metric.SetDataType(pdata.MetricDataTypeSum)

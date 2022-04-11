@@ -9,7 +9,7 @@ import (
 )
 
 type metricWriter interface {
-	writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, metric pdata.Metric, w InfluxWriter) error
+	writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, metric pdata.Metric, w InfluxWriter) error
 }
 
 type OtelMetricsToLineProtocol struct {
@@ -38,11 +38,11 @@ func NewOtelMetricsToLineProtocol(logger common.Logger, schema common.MetricsSch
 func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pdata.Metrics, w InfluxWriter) error {
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
-		for j := 0; j < resourceMetrics.InstrumentationLibraryMetrics().Len(); j++ {
-			ilMetrics := resourceMetrics.InstrumentationLibraryMetrics().At(j)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			ilMetrics := resourceMetrics.ScopeMetrics().At(j)
 			for k := 0; k < ilMetrics.Metrics().Len(); k++ {
 				metric := ilMetrics.Metrics().At(k)
-				if err := c.writer.writeMetric(ctx, resourceMetrics.Resource(), ilMetrics.InstrumentationLibrary(), metric, w); err != nil {
+				if err := c.writer.writeMetric(ctx, resourceMetrics.Resource(), ilMetrics.Scope(), metric, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP metric to line protocol: %w", err)
 				}
 			}

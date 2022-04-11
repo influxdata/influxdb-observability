@@ -10,8 +10,8 @@ import (
 func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 	for i := 0; i < rm.Len(); i++ {
 		r := rm.At(i)
-		for j := 0; j < r.InstrumentationLibraryMetrics().Len(); j++ {
-			il := r.InstrumentationLibraryMetrics().At(j)
+		for j := 0; j < r.ScopeMetrics().Len(); j++ {
+			il := r.ScopeMetrics().At(j)
 			for k := 0; k < il.Metrics().Len(); k++ {
 				m := il.Metrics().At(k)
 				switch m.DataType() {
@@ -43,11 +43,11 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 				return a.Name() < b.Name()
 			})
 		}
-		r.InstrumentationLibraryMetrics().Sort(func(a, b pdata.InstrumentationLibraryMetrics) bool {
-			if a.InstrumentationLibrary().Name() == b.InstrumentationLibrary().Name() {
-				return a.InstrumentationLibrary().Version() < b.InstrumentationLibrary().Version()
+		r.ScopeMetrics().Sort(func(a, b pdata.ScopeMetrics) bool {
+			if a.Scope().Name() == b.Scope().Name() {
+				return a.Scope().Version() < b.Scope().Version()
 			}
-			return a.InstrumentationLibrary().Name() < b.InstrumentationLibrary().Name()
+			return a.Scope().Name() < b.Scope().Name()
 		})
 		r.Resource().Attributes().Sort()
 	}

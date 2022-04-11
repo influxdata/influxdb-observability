@@ -5,7 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/config/configmapprovider"
+	"go.opentelemetry.io/collector/config/mapprovider/envmapprovider"
+	"go.opentelemetry.io/collector/config/mapprovider/filemapprovider"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -94,8 +95,8 @@ service:
 		},
 		ConfigProvider: otelcolConfigProvider,
 	}
-	configmapprovider.NewEnv()
-	configmapprovider.NewFile()
+	envmapprovider.New()
+	filemapprovider.New()
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
 

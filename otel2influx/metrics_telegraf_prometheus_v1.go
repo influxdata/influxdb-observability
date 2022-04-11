@@ -15,7 +15,7 @@ type metricWriterTelegrafPrometheusV1 struct {
 	logger common.Logger
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, metric pdata.Metric, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, metric pdata.Metric, w InfluxWriter) error {
 	// Ignore metric.Description() and metric.Unit() .
 	switch metric.DataType() {
 	case pdata.MetricDataTypeGauge:
@@ -34,7 +34,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeMetric(ctx context.Context, reso
 	}
 }
 
-func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, timestamp pdata.Timestamp, labels pdata.AttributeMap) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, timestamp pdata.Timestamp, labels pdata.Map) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	ts = timestamp.AsTime()
 	ts.UTC()
 	if ts.IsZero() {
@@ -45,7 +45,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	labels.Range(func(k string, v pdata.AttributeValue) bool {
+	labels.Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			c.logger.Debug("metric label key is empty")
 		} else {
@@ -69,7 +69,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 	return
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, gauge pdata.Gauge, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, measurement string, gauge pdata.Gauge, w InfluxWriter) error {
 	for i := 0; i < gauge.DataPoints().Len(); i++ {
 		dataPoint := gauge.DataPoints().At(i)
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
@@ -96,7 +96,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, measurement string, sum pdata.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum (as gauge) aggregation temporality %q", sum.AggregationTemporality())
 	}
@@ -127,7 +127,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, sum pdata.Sum, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, measurement string, sum pdata.Sum, w InfluxWriter) error {
 	if sum.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
 	}
@@ -158,7 +158,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, histogram pdata.Histogram, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, measurement string, histogram pdata.Histogram, w InfluxWriter) error {
 	if histogram.AggregationTemporality() != pdata.MetricAggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
 	}
@@ -193,7 +193,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 	return nil
 }
 
-func (c *metricWriterTelegrafPrometheusV1) writeSummary(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, measurement string, summary pdata.Summary, w InfluxWriter) error {
+func (c *metricWriterTelegrafPrometheusV1) writeSummary(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, measurement string, summary pdata.Summary, w InfluxWriter) error {
 	for i := 0; i < summary.DataPoints().Len(); i++ {
 		dataPoint := summary.DataPoints().At(i)
 		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())

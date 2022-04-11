@@ -23,11 +23,11 @@ func NewOtelTracesToLineProtocol(logger common.Logger) *OtelTracesToLineProtocol
 func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td pdata.Traces, w InfluxWriter) error {
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
-		for j := 0; j < resourceSpans.InstrumentationLibrarySpans().Len(); j++ {
-			ilSpans := resourceSpans.InstrumentationLibrarySpans().At(j)
+		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+			ilSpans := resourceSpans.ScopeSpans().At(j)
 			for k := 0; k < ilSpans.Spans().Len(); k++ {
 				span := ilSpans.Spans().At(k)
-				if err := c.writeSpan(ctx, resourceSpans.Resource(), ilSpans.InstrumentationLibrary(), span, w); err != nil {
+				if err := c.writeSpan(ctx, resourceSpans.Resource(), ilSpans.Scope(), span, w); err != nil {
 					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
 				}
 			}
@@ -36,7 +36,7 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td pdata.Tra
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, span pdata.Span, w InfluxWriter) error {
+func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, span pdata.Span, w InfluxWriter) error {
 	measurement := common.MeasurementSpans
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
@@ -80,7 +80,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	}
 
 	droppedAttributesCount := uint64(span.DroppedAttributesCount())
-	span.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+	span.Attributes().Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span attribute key is empty")
@@ -145,7 +145,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID pdata.SpanID, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationLibrary, spanEvent pdata.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID pdata.SpanID, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, spanEvent pdata.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
@@ -160,7 +160,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID p
 	}
 
 	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
-	spanEvent.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+	spanEvent.Attributes().Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span event attribute key is empty")
@@ -217,7 +217,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pdata.TraceID, spanID pd
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
-	spanLink.Attributes().Range(func(k string, v pdata.AttributeValue) bool {
+	spanLink.Attributes().Range(func(k string, v pdata.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span link attribute key is empty")
