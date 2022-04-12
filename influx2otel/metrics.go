@@ -106,11 +106,8 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 	}
 
 	ilmKey := ilName + ":" + ilVersion
-	var ilMetrics pdata.ScopeMetrics
-	if ilm, found := b.ilmByRMAttributesAndIL[rKey][ilmKey]; found {
-		ilMetrics = ilm
-	} else {
-		ilMetrics = resourceMetrics.ScopeMetrics().AppendEmpty()
+	if _, found := b.ilmByRMAttributesAndIL[rKey][ilmKey]; !found {
+		ilMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
 		ilMetrics.Scope().SetName(ilName)
 		ilMetrics.Scope().SetVersion(ilVersion)
 		b.ilmByRMAttributesAndIL[rKey][ilmKey] = ilMetrics
