@@ -51,8 +51,8 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.2.16 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.2.16 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.2.17 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.2.17 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.32.0 // indirect
 	github.com/jhump/protoreflect v1.8.3-0.20210616212123-6cc1efa697ca // indirect
