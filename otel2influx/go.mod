@@ -5,7 +5,8 @@ go 1.17
 require (
 	github.com/influxdata/influxdb-observability/common v0.2.17
 	github.com/stretchr/testify v1.7.1
-	go.opentelemetry.io/collector/model v0.48.0
+	go.opentelemetry.io/collector/model v0.49.0
+	go.opentelemetry.io/collector/pdata v0.49.0
 )
 
 require (

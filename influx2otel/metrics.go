@@ -3,11 +3,12 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type LineProtocolToOtelMetrics struct {
@@ -22,22 +23,22 @@ func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetr
 
 func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 	return &MetricsBatch{
-		rmByAttributes:            make(map[string]pdata.ResourceMetrics),
-		ilmByRMAttributesAndIL:    make(map[string]map[string]pdata.ScopeMetrics),
-		metricByRMIL:              make(map[string]map[string]map[string]pdata.Metric),
-		histogramDataPointsByMDPK: make(map[pdata.Metric]map[dataPointKey]pdata.HistogramDataPoint),
-		summaryDataPointsByMDPK:   make(map[pdata.Metric]map[dataPointKey]pdata.SummaryDataPoint),
+		rmByAttributes:            make(map[string]pmetric.ResourceMetrics),
+		ilmByRMAttributesAndIL:    make(map[string]map[string]pmetric.ScopeMetrics),
+		metricByRMIL:              make(map[string]map[string]map[string]pmetric.Metric),
+		histogramDataPointsByMDPK: make(map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint),
+		summaryDataPointsByMDPK:   make(map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint),
 
 		logger: c.logger,
 	}
 }
 
 type MetricsBatch struct {
-	rmByAttributes            map[string]pdata.ResourceMetrics
-	ilmByRMAttributesAndIL    map[string]map[string]pdata.ScopeMetrics
-	metricByRMIL              map[string]map[string]map[string]pdata.Metric
-	histogramDataPointsByMDPK map[pdata.Metric]map[dataPointKey]pdata.HistogramDataPoint
-	summaryDataPointsByMDPK   map[pdata.Metric]map[dataPointKey]pdata.SummaryDataPoint
+	rmByAttributes            map[string]pmetric.ResourceMetrics
+	ilmByRMAttributesAndIL    map[string]map[string]pmetric.ScopeMetrics
+	metricByRMIL              map[string]map[string]map[string]pmetric.Metric
+	histogramDataPointsByMDPK map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint
+	summaryDataPointsByMDPK   map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint
 
 	logger common.Logger
 }
@@ -60,9 +61,9 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 	}
 }
 
-func resourceAttributesToKey(rAttributes pdata.Map) string {
+func resourceAttributesToKey(rAttributes pcommon.Map) string {
 	var key strings.Builder
-	rAttributes.Range(func(k string, v pdata.Value) bool {
+	rAttributes.Range(func(k string, v pcommon.Value) bool {
 		key.WriteString(k)
 		key.WriteByte(':')
 		return true
@@ -72,10 +73,10 @@ func resourceAttributesToKey(rAttributes pdata.Map) string {
 
 var errValueTypeUnknown = errors.New("value type unknown")
 
-func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (pdata.Metric, pdata.Map, error) {
+func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (pmetric.Metric, pcommon.Map, error) {
 	var ilName, ilVersion string
-	rAttributes := pdata.NewMap()
-	mAttributes := pdata.NewMap()
+	rAttributes := pcommon.NewMap()
+	mAttributes := pcommon.NewMap()
 	for k, v := range tags {
 		switch {
 		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
@@ -94,15 +95,15 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 	rAttributes.Sort()
 
 	rKey := resourceAttributesToKey(rAttributes)
-	var resourceMetrics pdata.ResourceMetrics
+	var resourceMetrics pmetric.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
 		resourceMetrics = rm
 	} else {
-		resourceMetrics = pdata.NewResourceMetrics()
+		resourceMetrics = pmetric.NewResourceMetrics()
 		rAttributes.CopyTo(resourceMetrics.Resource().Attributes())
 		b.rmByAttributes[rKey] = resourceMetrics
-		b.ilmByRMAttributesAndIL[rKey] = make(map[string]pdata.ScopeMetrics)
-		b.metricByRMIL[rKey] = make(map[string]map[string]pdata.Metric)
+		b.ilmByRMAttributesAndIL[rKey] = make(map[string]pmetric.ScopeMetrics)
+		b.metricByRMIL[rKey] = make(map[string]map[string]pmetric.Metric)
 	}
 
 	ilmKey := ilName + ":" + ilVersion
@@ -111,30 +112,30 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		ilMetrics.Scope().SetName(ilName)
 		ilMetrics.Scope().SetVersion(ilVersion)
 		b.ilmByRMAttributesAndIL[rKey][ilmKey] = ilMetrics
-		b.metricByRMIL[rKey][ilmKey] = make(map[string]pdata.Metric)
+		b.metricByRMIL[rKey][ilmKey] = make(map[string]pmetric.Metric)
 	}
 
-	var metric pdata.Metric
+	var metric pmetric.Metric
 	if m, found := b.metricByRMIL[rKey][ilmKey][metricName]; found {
 		switch m.DataType() {
-		case pdata.MetricDataTypeGauge:
+		case pmetric.MetricDataTypeGauge:
 			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
-				return pdata.Metric{}, pdata.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
+				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
 			}
-		case pdata.MetricDataTypeSum:
+		case pmetric.MetricDataTypeSum:
 			if vType != common.InfluxMetricValueTypeSum {
-				return pdata.Metric{}, pdata.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
+				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
 			}
-		case pdata.MetricDataTypeHistogram:
+		case pmetric.MetricDataTypeHistogram:
 			if vType != common.InfluxMetricValueTypeHistogram {
-				return pdata.Metric{}, pdata.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
+				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
 			}
-		case pdata.MetricDataTypeSummary:
+		case pmetric.MetricDataTypeSummary:
 			if vType != common.InfluxMetricValueTypeSummary {
-				return pdata.Metric{}, pdata.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
+				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
 		default:
-			return pdata.Metric{}, pdata.Map{}, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
+			return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("impossible InfluxMetricValueType %d", vType)
 		}
 		metric = m
 
@@ -143,36 +144,36 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		metric.SetName(metricName)
 		switch vType {
 		case common.InfluxMetricValueTypeGauge:
-			metric.SetDataType(pdata.MetricDataTypeGauge)
+			metric.SetDataType(pmetric.MetricDataTypeGauge)
 		case common.InfluxMetricValueTypeSum:
-			metric.SetDataType(pdata.MetricDataTypeSum)
+			metric.SetDataType(pmetric.MetricDataTypeSum)
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeHistogram:
-			metric.SetDataType(pdata.MetricDataTypeHistogram)
-			metric.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+			metric.SetDataType(pmetric.MetricDataTypeHistogram)
+			metric.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeSummary:
-			metric.SetDataType(pdata.MetricDataTypeSummary)
+			metric.SetDataType(pmetric.MetricDataTypeSummary)
 		default:
-			return pdata.Metric{}, pdata.Map{}, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
+			return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
 		}
 		b.metricByRMIL[rKey][ilmKey][metricName] = metric
-		b.histogramDataPointsByMDPK[metric] = make(map[dataPointKey]pdata.HistogramDataPoint)
-		b.summaryDataPointsByMDPK[metric] = make(map[dataPointKey]pdata.SummaryDataPoint)
+		b.histogramDataPointsByMDPK[metric] = make(map[dataPointKey]pmetric.HistogramDataPoint)
+		b.summaryDataPointsByMDPK[metric] = make(map[dataPointKey]pmetric.SummaryDataPoint)
 	}
 
 	return metric, mAttributes, nil
 }
 
-func (b *MetricsBatch) GetMetrics() pdata.Metrics {
-	metrics := pdata.NewMetrics()
+func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
+	metrics := pmetric.NewMetrics()
 	// Ensure that the extra bucket counts have been added.
 	for _, resourceMetrics := range b.rmByAttributes {
 		for i := 0; i < resourceMetrics.ScopeMetrics().Len(); i++ {
 			ilMetrics := resourceMetrics.ScopeMetrics().At(i)
 			for j := 0; j < ilMetrics.Metrics().Len(); j++ {
 				metric := ilMetrics.Metrics().At(j)
-				if metric.DataType() == pdata.MetricDataTypeHistogram {
+				if metric.DataType() == pmetric.MetricDataTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
 						if len(dataPoint.BucketCounts()) == len(dataPoint.ExplicitBounds()) {
@@ -215,7 +216,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
 		} else if intValue != nil {

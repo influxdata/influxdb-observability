@@ -1,67 +1,70 @@
 package tests
 
 import (
-	"go.opentelemetry.io/collector/model/pdata"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
 var (
 	metricTests []struct {
-		otel pdata.Metrics
+		otel pmetric.Metrics
 		lp   string
 	}
 
 	traceTests []struct {
-		otel pdata.Traces
+		otel ptrace.Traces
 		lp   string
 	}
 
 	logTests []struct {
-		otel pdata.Logs
+		otel plog.Logs
 		lp   string
 	}
 )
 
 func init() {
 	{
-		metrics := pdata.NewMetrics()
+		metrics := pmetric.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
 		ilMetrics := rm.ScopeMetrics().AppendEmpty()
 		m := ilMetrics.Metrics().AppendEmpty()
 		m.SetName("cpu_temp")
-		m.SetDataType(pdata.MetricDataTypeGauge)
+		m.SetDataType(pmetric.MetricDataTypeGauge)
 		dp := m.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("foo", "bar")
-		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleVal(87.332)
 		m = ilMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
-		m.SetDataType(pdata.MetricDataTypeHistogram)
-		m.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+		m.SetDataType(pmetric.MetricDataTypeHistogram)
+		m.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		dp2 := m.Histogram().DataPoints().AppendEmpty()
 		dp2.Attributes().InsertString("region", "eu")
-		dp2.SetTimestamp(pdata.Timestamp(1622848686000000000))
+		dp2.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp2.SetCount(144320)
 		dp2.SetSum(53423)
 		dp2.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 		dp2.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
 		m = ilMetrics.Metrics().AppendEmpty()
 		m.SetName("http_requests_total")
-		m.SetDataType(pdata.MetricDataTypeSum)
-		m.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+		m.SetDataType(pmetric.MetricDataTypeSum)
+		m.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		m.Sum().SetIsMonotonic(true)
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("method", "post")
 		dp.Attributes().InsertString("code", "200")
-		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleVal(1027)
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("method", "post")
 		dp.Attributes().InsertString("code", "400")
-		dp.SetTimestamp(pdata.Timestamp(1622848686000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleVal(3)
 
 		metricTests = append(metricTests, struct {
-			otel pdata.Metrics
+			otel pmetric.Metrics
 			lp   string
 		}{
 			otel: metrics,
@@ -75,48 +78,48 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 	}
 
 	{
-		traces := pdata.NewTraces()
+		traces := ptrace.NewTraces()
 		rs := traces.ResourceSpans().AppendEmpty()
 		ilSpan := rs.ScopeSpans().AppendEmpty()
 		span := ilSpan.Spans().AppendEmpty()
 		span.SetName("cpu_temp")
-		span.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
-		span.SetSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
-		span.SetKind(pdata.SpanKindInternal)
-		span.SetStartTimestamp(pdata.Timestamp(1622848000000000000))
-		span.SetEndTimestamp(pdata.Timestamp(1622848100000000000))
+		span.SetTraceID(pcommon.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
+		span.SetSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
+		span.SetKind(ptrace.SpanKindInternal)
+		span.SetStartTimestamp(pcommon.Timestamp(1622848000000000000))
+		span.SetEndTimestamp(pcommon.Timestamp(1622848100000000000))
 		span.Attributes().InsertBool("k", true)
 		span.SetDroppedAttributesCount(7)
 		event := span.Events().AppendEmpty()
 		event.SetName("yay-event")
-		event.SetTimestamp(pdata.Timestamp(1622848000000000001))
+		event.SetTimestamp(pcommon.Timestamp(1622848000000000001))
 		event.Attributes().InsertString("foo", "bar")
 		event.SetDroppedAttributesCount(5)
 		span.SetDroppedEventsCount(13)
 		link := span.Links().AppendEmpty()
-		link.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2}))
-		link.SetSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
+		link.SetTraceID(pcommon.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2}))
+		link.SetSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
 		link.Attributes().InsertInt("yay-link", 123)
 		link.SetDroppedAttributesCount(19)
 		span.SetDroppedLinksCount(17)
 		span = ilSpan.Spans().AppendEmpty()
 		span.SetName("http_request")
-		span.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
-		span.SetSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 4}))
-		span.SetParentSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
-		span.SetKind(pdata.SpanKindClient)
-		span.SetStartTimestamp(pdata.Timestamp(1622848000000000002))
-		span.SetEndTimestamp(pdata.Timestamp(1622848000000000005))
+		span.SetTraceID(pcommon.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
+		span.SetSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 4}))
+		span.SetParentSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
+		span.SetKind(ptrace.SpanKindClient)
+		span.SetStartTimestamp(pcommon.Timestamp(1622848000000000002))
+		span.SetEndTimestamp(pcommon.Timestamp(1622848000000000005))
 		span = ilSpan.Spans().AppendEmpty()
 		span.SetName("process_batch")
-		span.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2}))
-		span.SetSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 5}))
-		span.SetKind(pdata.SpanKindConsumer)
-		span.SetStartTimestamp(pdata.Timestamp(1622848000000000010))
-		span.SetEndTimestamp(pdata.Timestamp(1622848000000000012))
+		span.SetTraceID(pcommon.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2}))
+		span.SetSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 5}))
+		span.SetKind(ptrace.SpanKindConsumer)
+		span.SetStartTimestamp(pcommon.Timestamp(1622848000000000010))
+		span.SetEndTimestamp(pcommon.Timestamp(1622848000000000012))
 
 		traceTests = append(traceTests, struct {
-			otel pdata.Traces
+			otel ptrace.Traces
 			lp   string
 		}{
 			otel: traces,
@@ -131,21 +134,21 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 	}
 
 	{
-		logs := pdata.NewLogs()
+		logs := plog.NewLogs()
 		rl := logs.ResourceLogs().AppendEmpty()
 		ilLog := rl.ScopeLogs().AppendEmpty()
 		log := ilLog.LogRecords().AppendEmpty()
-		log.SetTimestamp(pdata.Timestamp(1622848686000000000))
-		log.SetSeverityNumber(pdata.SeverityNumberINFO)
+		log.SetTimestamp(pcommon.Timestamp(1622848686000000000))
+		log.SetSeverityNumber(plog.SeverityNumberINFO)
 		log.SetSeverityText("info")
 		log.Body().SetStringVal("something-happened")
 		log.Attributes().InsertBool("k", true)
 		log.SetDroppedAttributesCount(5)
-		log.SetTraceID(pdata.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
-		log.SetSpanID(pdata.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
+		log.SetTraceID(pcommon.NewTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1}))
+		log.SetSpanID(pcommon.NewSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3}))
 
 		logTests = append(logTests, struct {
-			otel pdata.Logs
+			otel plog.Logs
 			lp   string
 		}{
 			otel: logs,

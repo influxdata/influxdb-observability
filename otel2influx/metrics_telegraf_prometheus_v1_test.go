@@ -2,6 +2,8 @@ package otel2influx_test
 
 import (
 	"context"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"testing"
 	"time"
 
@@ -9,14 +11,13 @@ import (
 	"github.com/influxdata/influxdb-observability/otel2influx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func TestWriteMetric_v1_gauge(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -25,14 +26,14 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cache_age_seconds")
 	m.SetDescription("Age in seconds of the current cache")
-	m.SetDataType(pdata.MetricDataTypeGauge)
+	m.SetDataType(pmetric.MetricDataTypeGauge)
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("engine_id", 0)
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("engine_id", 1)
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(11.9)
 
 	w := new(MockInfluxWriter)
@@ -77,7 +78,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -86,16 +87,16 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cache_age_seconds")
 	m.SetDescription("Age in seconds of the current cache")
-	m.SetDataType(pdata.MetricDataTypeSum)
+	m.SetDataType(pmetric.MetricDataTypeSum)
 	m.Sum().SetIsMonotonic(false)
-	m.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	m.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("engine_id", 0)
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(23.9)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("engine_id", 1)
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(11.9)
 
 	w := new(MockInfluxWriter)
@@ -140,7 +141,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -149,18 +150,18 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("http_requests_total")
 	m.SetDescription("The total number of HTTP requests")
-	m.SetDataType(pdata.MetricDataTypeSum)
+	m.SetDataType(pmetric.MetricDataTypeSum)
 	m.Sum().SetIsMonotonic(true)
-	m.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	m.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("code", 200)
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("code", 400)
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleVal(3)
 
 	w := new(MockInfluxWriter)
@@ -208,7 +209,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -216,13 +217,13 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	ilMetrics.Scope().SetVersion("latest")
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("http_request_duration_seconds")
-	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.SetDataType(pmetric.MetricDataTypeHistogram)
 	m.SetDescription("A histogram of the request duration")
-	m.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	m.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("code", 200)
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
 	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
@@ -264,7 +265,7 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -272,13 +273,13 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 	ilMetrics.Scope().SetVersion("latest")
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("http_request_duration_seconds")
-	m.SetDataType(pdata.MetricDataTypeHistogram)
+	m.SetDataType(pmetric.MetricDataTypeHistogram)
 	m.SetDescription("A histogram of the request duration")
-	m.Histogram().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+	m.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("code", 200)
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
 	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988})
@@ -320,7 +321,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
-	metrics := pdata.NewMetrics()
+	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().InsertString("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
@@ -328,12 +329,12 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	ilMetrics.Scope().SetVersion("latest")
 	m := ilMetrics.Metrics().AppendEmpty()
 	m.SetName("rpc_duration_seconds")
-	m.SetDataType(pdata.MetricDataTypeSummary)
+	m.SetDataType(pmetric.MetricDataTypeSummary)
 	m.SetDescription("A summary of the RPC duration in seconds")
 	dp := m.Summary().DataPoints().AppendEmpty()
 	dp.Attributes().InsertInt("code", 200)
 	dp.Attributes().InsertString("method", "post")
-	dp.SetTimestamp(pdata.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
 	qv := dp.QuantileValues().AppendEmpty()

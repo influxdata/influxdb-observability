@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type OtelLogsToLineProtocol struct {
@@ -19,7 +20,7 @@ func NewOtelLogsToLineProtocol(logger common.Logger) *OtelLogsToLineProtocol {
 	}
 }
 
-func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld pdata.Logs, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld plog.Logs, w InfluxWriter) error {
 	for i := 0; i < ld.ResourceLogs().Len(); i++ {
 		resourceLogs := ld.ResourceLogs().At(i)
 		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
@@ -35,7 +36,7 @@ func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld pdata.Logs, w
 	return nil
 }
 
-func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, logRecord pdata.LogRecord, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, logRecord plog.LogRecord, w InfluxWriter) error {
 	ts := logRecord.Timestamp().AsTime()
 	if ts.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
@@ -59,7 +60,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 		}
 	}
 
-	if severityNumber := logRecord.SeverityNumber(); severityNumber != pdata.SeverityNumberUNDEFINED {
+	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUNDEFINED {
 		fields[common.AttributeSeverityNumber] = int64(severityNumber)
 	}
 	if severityText := logRecord.SeverityText(); severityText != "" {
@@ -73,7 +74,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pd
 	}
 
 	droppedAttributesCount := uint64(logRecord.DroppedAttributesCount())
-	logRecord.Attributes().Range(func(k string, v pdata.Value) bool {
+	logRecord.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("log record attribute key is empty")

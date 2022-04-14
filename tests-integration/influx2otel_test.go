@@ -2,6 +2,8 @@ package tests
 
 import (
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"net/http"
 	"strings"
 	"testing"
@@ -11,7 +13,6 @@ import (
 	"github.com/influxdata/telegraf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func TestInflux2Otel(t *testing.T) {
@@ -63,31 +64,31 @@ func TestInflux2Otel_unknownSchema(t *testing.T) {
 cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.3027245206862381,usage_iowait=0,invalid="ignored" 1395066363000000123
 `
 
-		expect := pdata.NewMetrics()
+		expect := pmetric.NewMetrics()
 		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("cpu_usage_iowait")
-		metric.SetDataType(pdata.MetricDataTypeGauge)
+		metric.SetDataType(pmetric.MetricDataTypeGauge)
 		dp := metric.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("cpu", "cpu4")
 		dp.Attributes().InsertString("host", "777348dc6343")
-		dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleVal(0.0)
 		metric = metrics.AppendEmpty()
 		metric.SetName("cpu_usage_system")
-		metric.SetDataType(pdata.MetricDataTypeGauge)
+		metric.SetDataType(pmetric.MetricDataTypeGauge)
 		dp = metric.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("cpu", "cpu4")
 		dp.Attributes().InsertString("host", "777348dc6343")
-		dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleVal(0.3027245206862381)
 		metric = metrics.AppendEmpty()
 		metric.SetName("cpu_usage_user")
-		metric.SetDataType(pdata.MetricDataTypeGauge)
+		metric.SetDataType(pmetric.MetricDataTypeGauge)
 		dp = metric.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("cpu", "cpu4")
 		dp.Attributes().InsertString("host", "777348dc6343")
-		dp.SetTimestamp(pdata.Timestamp(1395066363000000123))
+		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleVal(0.10090817356207936)
 
 		assertOtel2InfluxTelegraf(t, lp, telegraf.Untyped, expect)
@@ -99,21 +100,21 @@ func TestInflux2Otel_gaugeNonPrometheus(t *testing.T) {
 		lp := `
 swap,host=8eaaf6b73054 used_percent=1.5,total=1073737728i 1626302080000000000
 `
-		expect := pdata.NewMetrics()
+		expect := pmetric.NewMetrics()
 		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("swap_used_percent")
-		metric.SetDataType(pdata.MetricDataTypeGauge)
+		metric.SetDataType(pmetric.MetricDataTypeGauge)
 		dp := metric.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("host", "8eaaf6b73054")
-		dp.SetTimestamp(pdata.Timestamp(1626302080000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetDoubleVal(1.5)
 		metric = metrics.AppendEmpty()
 		metric.SetName("swap_total")
-		metric.SetDataType(pdata.MetricDataTypeGauge)
+		metric.SetDataType(pmetric.MetricDataTypeGauge)
 		dp = metric.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("host", "8eaaf6b73054")
-		dp.SetTimestamp(pdata.Timestamp(1626302080000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntVal(1073737728)
 
 		assertOtel2InfluxTelegraf(t, lp, telegraf.Gauge, expect)
@@ -125,25 +126,25 @@ func TestInflux2Otel_counterNonPrometheus(t *testing.T) {
 		lp := `
 swap,host=8eaaf6b73054 in=32768i,out=12021760i 1626302080000000000
 `
-		expect := pdata.NewMetrics()
+		expect := pmetric.NewMetrics()
 		metrics := expect.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
 		metric := metrics.AppendEmpty()
 		metric.SetName("swap_in")
-		metric.SetDataType(pdata.MetricDataTypeSum)
+		metric.SetDataType(pmetric.MetricDataTypeSum)
 		metric.Sum().SetIsMonotonic(true)
-		metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+		metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		dp := metric.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("host", "8eaaf6b73054")
-		dp.SetTimestamp(pdata.Timestamp(1626302080000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntVal(32768)
 		metric = metrics.AppendEmpty()
 		metric.SetName("swap_out")
-		metric.SetDataType(pdata.MetricDataTypeSum)
+		metric.SetDataType(pmetric.MetricDataTypeSum)
 		metric.Sum().SetIsMonotonic(true)
-		metric.Sum().SetAggregationTemporality(pdata.MetricAggregationTemporalityCumulative)
+		metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		dp = metric.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().InsertString("host", "8eaaf6b73054")
-		dp.SetTimestamp(pdata.Timestamp(1626302080000000000))
+		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntVal(12021760)
 
 		assertOtel2InfluxTelegraf(t, lp, telegraf.Counter, expect)
