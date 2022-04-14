@@ -3,14 +3,14 @@ package otel2influx
 import (
 	"encoding/json"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"strconv"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
-func ResourceToTags(logger common.Logger, resource pdata.Resource, tags map[string]string) (tagsAgain map[string]string) {
-	resource.Attributes().Range(func(k string, v pdata.Value) bool {
+func ResourceToTags(logger common.Logger, resource pcommon.Resource, tags map[string]string) (tagsAgain map[string]string) {
+	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			logger.Debug("resource attribute key is empty")
 		} else if v, err := AttributeValueToInfluxTagValue(v); err != nil {
@@ -23,7 +23,7 @@ func ResourceToTags(logger common.Logger, resource pdata.Resource, tags map[stri
 	return tags
 }
 
-func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
+func InstrumentationLibraryToTags(instrumentationLibrary pcommon.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name() != "" {
 		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
 	}
@@ -33,81 +33,81 @@ func InstrumentationLibraryToTags(instrumentationLibrary pdata.InstrumentationSc
 	return tags
 }
 
-func AttributeValueToInfluxTagValue(value pdata.Value) (string, error) {
+func AttributeValueToInfluxTagValue(value pcommon.Value) (string, error) {
 	switch value.Type() {
-	case pdata.ValueTypeString:
+	case pcommon.ValueTypeString:
 		return value.StringVal(), nil
-	case pdata.ValueTypeInt:
+	case pcommon.ValueTypeInt:
 		return strconv.FormatInt(value.IntVal(), 10), nil
-	case pdata.ValueTypeDouble:
+	case pcommon.ValueTypeDouble:
 		return strconv.FormatFloat(value.DoubleVal(), 'f', -1, 64), nil
-	case pdata.ValueTypeBool:
+	case pcommon.ValueTypeBool:
 		return strconv.FormatBool(value.BoolVal()), nil
-	case pdata.ValueTypeMap:
+	case pcommon.ValueTypeMap:
 		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.ValueTypeSlice:
+	case pcommon.ValueTypeSlice:
 		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.ValueTypeEmpty:
+	case pcommon.ValueTypeEmpty:
 		return "", nil
 	default:
 		return "", fmt.Errorf("unknown value type %d", value.Type())
 	}
 }
 
-func AttributeValueToInfluxFieldValue(value pdata.Value) (interface{}, error) {
+func AttributeValueToInfluxFieldValue(value pcommon.Value) (interface{}, error) {
 	switch value.Type() {
-	case pdata.ValueTypeString:
+	case pcommon.ValueTypeString:
 		return value.StringVal(), nil
-	case pdata.ValueTypeInt:
+	case pcommon.ValueTypeInt:
 		return value.IntVal(), nil
-	case pdata.ValueTypeDouble:
+	case pcommon.ValueTypeDouble:
 		return value.DoubleVal(), nil
-	case pdata.ValueTypeBool:
+	case pcommon.ValueTypeBool:
 		return value.BoolVal(), nil
-	case pdata.ValueTypeMap:
+	case pcommon.ValueTypeMap:
 		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.ValueTypeSlice:
+	case pcommon.ValueTypeSlice:
 		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
 		}
-	case pdata.ValueTypeEmpty:
+	case pcommon.ValueTypeEmpty:
 		return nil, nil
 	default:
 		return nil, fmt.Errorf("unknown value type %v", value)
 	}
 }
 
-func otlpKeyValueListToMap(kvList pdata.Map) map[string]interface{} {
+func otlpKeyValueListToMap(kvList pcommon.Map) map[string]interface{} {
 	m := make(map[string]interface{}, kvList.Len())
-	kvList.Range(func(k string, v pdata.Value) bool {
+	kvList.Range(func(k string, v pcommon.Value) bool {
 		switch v.Type() {
-		case pdata.ValueTypeString:
+		case pcommon.ValueTypeString:
 			m[k] = v.StringVal()
-		case pdata.ValueTypeInt:
+		case pcommon.ValueTypeInt:
 			m[k] = v.IntVal()
-		case pdata.ValueTypeDouble:
+		case pcommon.ValueTypeDouble:
 			m[k] = v.DoubleVal()
-		case pdata.ValueTypeBool:
+		case pcommon.ValueTypeBool:
 			m[k] = v.BoolVal()
-		case pdata.ValueTypeMap:
+		case pcommon.ValueTypeMap:
 			m[k] = otlpKeyValueListToMap(v.MapVal())
-		case pdata.ValueTypeSlice:
+		case pcommon.ValueTypeSlice:
 			m[k] = otlpArrayToSlice(v.SliceVal())
-		case pdata.ValueTypeEmpty:
+		case pcommon.ValueTypeEmpty:
 			m[k] = nil
 		default:
 			m[k] = fmt.Sprintf("<invalid map value> %v", v)
@@ -117,20 +117,20 @@ func otlpKeyValueListToMap(kvList pdata.Map) map[string]interface{} {
 	return m
 }
 
-func otlpArrayToSlice(arr pdata.Slice) []interface{} {
+func otlpArrayToSlice(arr pcommon.Slice) []interface{} {
 	s := make([]interface{}, 0, arr.Len())
 	for i := 0; i < arr.Len(); i++ {
 		v := arr.At(i)
 		switch v.Type() {
-		case pdata.ValueTypeString:
+		case pcommon.ValueTypeString:
 			s = append(s, v.StringVal())
-		case pdata.ValueTypeInt:
+		case pcommon.ValueTypeInt:
 			s = append(s, v.IntVal())
-		case pdata.ValueTypeDouble:
+		case pcommon.ValueTypeDouble:
 			s = append(s, v.DoubleVal())
-		case pdata.ValueTypeBool:
+		case pcommon.ValueTypeBool:
 			s = append(s, v.BoolVal())
-		case pdata.ValueTypeEmpty:
+		case pcommon.ValueTypeEmpty:
 			s = append(s, nil)
 		default:
 			s = append(s, fmt.Sprintf("<invalid array value> %v", v))

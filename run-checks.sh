@@ -8,6 +8,10 @@ BASEDIR=$(pwd)
 for package in common influx2otel otel2influx tests-integration; do
   echo checking ${package}
   cd ${BASEDIR}/${package}
+  go mod tidy
+  if ! git diff --exit-code -- go.mod go.sum; then
+    fail=1
+  fi
   if ! go build; then
     fail=1
   fi

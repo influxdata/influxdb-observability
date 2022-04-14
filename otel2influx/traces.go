@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -20,7 +22,7 @@ func NewOtelTracesToLineProtocol(logger common.Logger) *OtelTracesToLineProtocol
 	}
 }
 
-func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td pdata.Traces, w InfluxWriter) error {
+func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Traces, w InfluxWriter) error {
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
@@ -36,7 +38,7 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td pdata.Tra
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, span pdata.Span, w InfluxWriter) error {
+func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, span ptrace.Span, w InfluxWriter) error {
 	measurement := common.MeasurementSpans
 	tags := make(map[string]string)
 	fields := make(map[string]interface{})
@@ -65,7 +67,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	if name := span.Name(); name != "" {
 		tags[common.AttributeName] = name
 	}
-	if kind := span.Kind(); kind != pdata.SpanKindUnspecified {
+	if kind := span.Kind(); kind != ptrace.SpanKindUnspecified {
 		tags[common.AttributeSpanKind] = kind.String()
 	}
 
@@ -80,7 +82,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	}
 
 	droppedAttributesCount := uint64(span.DroppedAttributesCount())
-	span.Attributes().Range(func(k string, v pdata.Value) bool {
+	span.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span attribute key is empty")
@@ -126,10 +128,10 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 
 	status := span.Status()
 	switch status.Code() {
-	case pdata.StatusCodeUnset:
-	case pdata.StatusCodeOk:
+	case ptrace.StatusCodeUnset:
+	case ptrace.StatusCodeOk:
 		fields[common.AttributeStatusCode] = common.AttributeStatusCodeOK
-	case pdata.StatusCodeError:
+	case ptrace.StatusCodeError:
 		fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
 	default:
 		c.logger.Debug("status code not recognized", "code", status.Code())
@@ -145,7 +147,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pdata
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID pdata.SpanID, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, spanEvent pdata.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID pcommon.SpanID, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, spanEvent ptrace.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
@@ -160,7 +162,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID p
 	}
 
 	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
-	spanEvent.Attributes().Range(func(k string, v pdata.Value) bool {
+	spanEvent.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span event attribute key is empty")
@@ -190,7 +192,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pdata.TraceID, spanID p
 	return
 }
 
-func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pdata.TraceID, spanID pdata.SpanID, spanLink pdata.SpanLink) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
+func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID pcommon.SpanID, spanLink ptrace.SpanLink) (measurement string, tags map[string]string, fields map[string]interface{}, err error) {
 	measurement = common.MeasurementSpanLinks
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
@@ -217,7 +219,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pdata.TraceID, spanID pd
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
-	spanLink.Attributes().Range(func(k string, v pdata.Value) bool {
+	spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
 			c.logger.Debug("span link attribute key is empty")

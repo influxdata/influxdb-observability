@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/collector/config/configunmarshaler"
+	"go.opentelemetry.io/collector/config/mapconverter/expandmapconverter"
 	"go.opentelemetry.io/collector/config/mapprovider/envmapprovider"
 	"go.opentelemetry.io/collector/config/mapprovider/filemapprovider"
 	"io/ioutil"
@@ -69,7 +71,16 @@ service:
 		configString = strings.ReplaceAll(configString, "SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		return service.MustNewDefaultConfigProvider([]string{"env:test-env"}, nil)
+		configMapProvider := envmapprovider.New()
+		configProviderSettings := service.ConfigProviderSettings{
+			Locations:     []string{"env:test-env"},
+			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
+			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
+			Unmarshaler:   configunmarshaler.NewDefault(),
+		}
+		configProvider, err := service.NewConfigProvider(configProviderSettings)
+		require.NoError(t, err)
+		return configProvider
 	}()
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(mockReceiverFactory)
@@ -267,7 +278,16 @@ service:
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		return service.MustNewDefaultConfigProvider([]string{"env:test-env"}, nil)
+		configMapProvider := envmapprovider.New()
+		configProviderSettings := service.ConfigProviderSettings{
+			Locations:     []string{"env:test-env"},
+			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
+			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
+			Unmarshaler:   configunmarshaler.NewDefault(),
+		}
+		configProvider, err := service.NewConfigProvider(configProviderSettings)
+		require.NoError(t, err)
+		return configProvider
 	}()
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(influxdbreceiver.NewFactory())

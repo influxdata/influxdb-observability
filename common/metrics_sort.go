@@ -2,12 +2,11 @@ package common
 
 import (
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"sort"
-
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
-func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
+func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 	for i := 0; i < rm.Len(); i++ {
 		r := rm.At(i)
 		for j := 0; j < r.ScopeMetrics().Len(); j++ {
@@ -15,23 +14,23 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 			for k := 0; k < il.Metrics().Len(); k++ {
 				m := il.Metrics().At(k)
 				switch m.DataType() {
-				case pdata.MetricDataTypeGauge:
+				case pmetric.MetricDataTypeGauge:
 					for l := 0; l < m.Gauge().DataPoints().Len(); l++ {
 						m.Gauge().DataPoints().At(l).Attributes().Sort()
 					}
-				case pdata.MetricDataTypeSum:
+				case pmetric.MetricDataTypeSum:
 					for l := 0; l < m.Sum().DataPoints().Len(); l++ {
 						m.Sum().DataPoints().At(l).Attributes().Sort()
 					}
-				case pdata.MetricDataTypeHistogram:
+				case pmetric.MetricDataTypeHistogram:
 					for l := 0; l < m.Histogram().DataPoints().Len(); l++ {
 						sortBuckets(m.Histogram().DataPoints().At(l))
 						m.Histogram().DataPoints().At(l).Attributes().Sort()
 					}
-				case pdata.MetricDataTypeSummary:
+				case pmetric.MetricDataTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
 						m.Summary().DataPoints().At(l).Attributes().Sort()
-						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pdata.ValueAtQuantile) bool {
+						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pmetric.ValueAtQuantile) bool {
 							return a.Quantile() < b.Quantile()
 						})
 					}
@@ -39,11 +38,11 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 					panic(fmt.Sprintf("unsupported metric data type %d", m.DataType()))
 				}
 			}
-			il.Metrics().Sort(func(a, b pdata.Metric) bool {
+			il.Metrics().Sort(func(a, b pmetric.Metric) bool {
 				return a.Name() < b.Name()
 			})
 		}
-		r.ScopeMetrics().Sort(func(a, b pdata.ScopeMetrics) bool {
+		r.ScopeMetrics().Sort(func(a, b pmetric.ScopeMetrics) bool {
 			if a.Scope().Name() == b.Scope().Name() {
 				return a.Scope().Version() < b.Scope().Version()
 			}
@@ -53,7 +52,7 @@ func SortResourceMetrics(rm pdata.ResourceMetricsSlice) {
 	}
 }
 
-func sortBuckets(hdp pdata.HistogramDataPoint) {
+func sortBuckets(hdp pmetric.HistogramDataPoint) {
 	buckets := make(sortableBuckets, len(hdp.ExplicitBounds()))
 	for i := range hdp.ExplicitBounds() {
 		buckets[i] = sortableBucket{hdp.BucketCounts()[i], hdp.ExplicitBounds()[i]}
