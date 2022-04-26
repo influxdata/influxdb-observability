@@ -9,4 +9,4 @@ jobs:
   semantic:
     uses: influxdata/validate-semantic-github-messages/.github/workflows/semantic.yml@main
     with:
-      COMMITS_HISTORY: 100
+      COMMITS_HISTORY: 3
