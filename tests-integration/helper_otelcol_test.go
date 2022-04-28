@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/config/configunmarshaler"
 	"go.opentelemetry.io/collector/config/mapconverter/expandmapconverter"
 	"go.opentelemetry.io/collector/config/mapprovider/envmapprovider"
 	"go.opentelemetry.io/collector/config/mapprovider/filemapprovider"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +24,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/model/pdata"
 	"go.opentelemetry.io/collector/service"
 	"go.uber.org/zap"
 )
@@ -76,7 +75,7 @@ service:
 			Locations:     []string{"env:test-env"},
 			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
 			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
-			Unmarshaler:   configunmarshaler.NewDefault(),
+			//Unmarshaler:   configunmarshaler.NewDefault(),
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
@@ -283,7 +282,7 @@ service:
 			Locations:     []string{"env:test-env"},
 			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
 			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
-			Unmarshaler:   configunmarshaler.NewDefault(),
+			//Unmarshaler:   configunmarshaler.NewDefault(),
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
@@ -404,7 +403,7 @@ func (m mockExporterFactory) CreateTracesExporter(ctx context.Context, params co
 var _ component.MetricsExporter = (*mockMetricsExporter)(nil)
 
 type mockMetricsExporter struct {
-	consumedMetrics pdata.Metrics
+	consumedMetrics pmetric.Metrics
 }
 
 func (m mockMetricsExporter) Start(ctx context.Context, host component.Host) error {
@@ -421,7 +420,7 @@ func (m mockMetricsExporter) Capabilities() consumer.Capabilities {
 	}
 }
 
-func (m *mockMetricsExporter) ConsumeMetrics(ctx context.Context, md pdata.Metrics) error {
+func (m *mockMetricsExporter) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 	m.consumedMetrics = md.Clone()
 	return nil
 }

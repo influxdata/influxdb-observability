@@ -3,13 +3,15 @@ package otel2influx
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type metricWriter interface {
-	writeMetric(ctx context.Context, resource pdata.Resource, instrumentationLibrary pdata.InstrumentationScope, metric pdata.Metric, w InfluxWriter) error
+	writeMetric(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, metric pdata.Metric, w InfluxWriter) error
 }
 
 type OtelMetricsToLineProtocol struct {
@@ -35,7 +37,7 @@ func NewOtelMetricsToLineProtocol(logger common.Logger, schema common.MetricsSch
 	}, nil
 }
 
-func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pdata.Metrics, w InfluxWriter) error {
+func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pmetric.Metrics, w InfluxWriter) error {
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
 		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
