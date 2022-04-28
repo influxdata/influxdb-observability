@@ -2,11 +2,12 @@ package influx2otel
 
 import (
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strconv"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func (b *MetricsBatch) addPointTelegrafPrometheusV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
@@ -84,7 +85,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
 		} else if intValue != nil {
@@ -119,7 +120,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
 		} else if intValue != nil {
@@ -154,7 +155,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
 		} else if intValue != nil {
@@ -189,7 +190,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleVal(*floatValue)
 		} else if intValue != nil {
@@ -253,7 +254,7 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	}
 	dataPoint := metric.Histogram().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
 	dataPoint.SetBucketCounts(bucketCounts)
@@ -266,7 +267,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	foundCount := false
 	var sum float64
 	foundSum := false
-	quantileValues := pdata.NewValueAtQuantileSlice()
+	quantileValues := pmetric.NewValueAtQuantileSlice()
 
 	for k, vi := range fields {
 		if k == common.MetricSummaryCountFieldKey {
@@ -310,7 +311,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	}
 	dataPoint := metric.Summary().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
 	quantileValues.MoveAndAppendTo(dataPoint.QuantileValues())

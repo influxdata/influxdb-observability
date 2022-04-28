@@ -79,11 +79,11 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.MetricValueTypeNone:
+		case pmetric.NumberDataPointValueTypeNone:
 			continue
-		case pmetric.MetricValueTypeDouble:
+		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricGaugeFieldKey] = dataPoint.DoubleVal()
-		case pmetric.MetricValueTypeInt:
+		case pmetric.NumberDataPointValueTypeInt:
 			fields[common.MetricGaugeFieldKey] = dataPoint.IntVal()
 		default:
 			return fmt.Errorf("unsupported gauge data point type %d", dataPoint.ValueType())
@@ -110,11 +110,11 @@ func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.MetricValueTypeNone:
+		case pmetric.NumberDataPointValueTypeNone:
 			continue
-		case pmetric.MetricValueTypeDouble:
+		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricGaugeFieldKey] = dataPoint.DoubleVal()
-		case pmetric.MetricValueTypeInt:
+		case pmetric.NumberDataPointValueTypeInt:
 			fields[common.MetricGaugeFieldKey] = dataPoint.IntVal()
 		default:
 			return fmt.Errorf("unsupported sum (as gauge) data point type %d", dataPoint.ValueType())
@@ -141,11 +141,11 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.MetricValueTypeNone:
+		case pmetric.NumberDataPointValueTypeNone:
 			continue
-		case pmetric.MetricValueTypeDouble:
+		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricCounterFieldKey] = dataPoint.DoubleVal()
-		case pmetric.MetricValueTypeInt:
+		case pmetric.NumberDataPointValueTypeInt:
 			fields[common.MetricCounterFieldKey] = dataPoint.IntVal()
 		default:
 			return fmt.Errorf("unsupported sum data point type %d", dataPoint.ValueType())

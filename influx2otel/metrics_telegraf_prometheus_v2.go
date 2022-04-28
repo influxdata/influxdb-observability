@@ -2,12 +2,12 @@ package influx2otel
 
 import (
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 func (b *MetricsBatch) addPointTelegrafPrometheusV2(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
@@ -60,12 +60,12 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 
 type dataPointKey string
 
-func newDataPointKey(unixNanos uint64, attributes pdata.Map) dataPointKey {
+func newDataPointKey(unixNanos uint64, attributes pcommon.Map) dataPointKey {
 	attributes.Sort()
 	components := make([]string, 0, attributes.Len()*2+1)
 	components = append(components, strconv.FormatUint(unixNanos, 32))
 	var err error
-	attributes.Range(func(k string, v pdata.Value) bool {
+	attributes.Range(func(k string, v pcommon.Value) bool {
 		var vv string
 		vv, err = common.AttributeValueToInfluxTagValue(v)
 		if err != nil {
@@ -106,7 +106,7 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	}
 	dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
 	} else if intValue != nil {
@@ -146,7 +146,7 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	}
 	dataPoint := metric.Sum().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
-	dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	if floatValue != nil {
 		dataPoint.SetDoubleVal(*floatValue)
 	} else if intValue != nil {
@@ -198,7 +198,7 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 	if !found {
 		dataPoint = metric.Histogram().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		b.histogramDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 
@@ -297,7 +297,7 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 	if !found {
 		dataPoint = metric.Summary().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
-		dataPoint.SetTimestamp(pdata.NewTimestampFromTime(ts))
+		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		b.summaryDataPointsByMDPK[metric][dpk] = dataPoint
 	}
 

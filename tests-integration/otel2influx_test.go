@@ -3,12 +3,14 @@ package tests
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
+	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/model/otlpgrpc"
 )
 
 func TestOtel2Influx(t *testing.T) {
@@ -30,10 +32,9 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					metricsClient := otlpgrpc.NewMetricsClient(clientConn)
+					metricsClient := pmetricotlp.NewClient(clientConn)
 
-					request := otlpgrpc.NewMetricsRequest()
-					request.SetMetrics(mt.otel.Clone())
+					request := pmetricotlp.NewRequestFromMetrics(mt.otel.Clone())
 					_, err := metricsClient.Export(context.Background(), request)
 					if err != nil {
 						// TODO not sure why the service returns this error, but the data arrives as required by the test
@@ -70,10 +71,9 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					tracesClient := otlpgrpc.NewTracesClient(clientConn)
+					tracesClient := ptraceotlp.NewClient(clientConn)
 
-					request := otlpgrpc.NewTracesRequest()
-					request.SetTraces(tt.otel.Clone())
+					request := ptraceotlp.NewRequestFromTraces(tt.otel.Clone())
 					_, err := tracesClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
@@ -104,10 +104,9 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					logsClient := otlpgrpc.NewLogsClient(clientConn)
+					logsClient := plogotlp.NewClient(clientConn)
 
-					request := otlpgrpc.NewLogsRequest()
-					request.SetLogs(lt.otel.Clone())
+					request := plogotlp.NewRequestFromLogs(lt.otel.Clone())
 					_, err := logsClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
