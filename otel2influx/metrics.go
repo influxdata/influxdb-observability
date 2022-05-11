@@ -7,11 +7,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type metricWriter interface {
-	writeMetric(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, metric pdata.Metric, w InfluxWriter) error
+	writeMetric(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, metric pmetric.Metric, w InfluxWriter) error
 }
 
 type OtelMetricsToLineProtocol struct {
