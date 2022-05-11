@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
-	"go.opentelemetry.io/collector/model/pdata"
 )
 
 type OtelTracesToLineProtocol struct {
@@ -58,7 +57,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	}
 	tags[common.AttributeSpanID] = spanID.HexString()
 
-	if span.TraceState() != pdata.TraceStateEmpty {
+	if span.TraceState() != ptrace.TraceStateEmpty {
 		tags[common.AttributeTraceState] = string(span.TraceState())
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
@@ -214,7 +213,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
 	}
 
-	if traceState := spanLink.TraceState(); traceState != pdata.TraceStateEmpty {
+	if traceState := spanLink.TraceState(); traceState != ptrace.TraceStateEmpty {
 		tags[common.AttributeTraceState] = string(traceState)
 	}
 
