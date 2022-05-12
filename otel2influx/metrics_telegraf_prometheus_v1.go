@@ -173,7 +173,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 
 		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
 		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum()
-		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
+		bucketCounts, explicitBounds := dataPoint.MBucketCounts(), dataPoint.MExplicitBounds()
 		if len(bucketCounts) > 0 &&
 			len(bucketCounts) != len(explicitBounds) &&
 			len(bucketCounts) != len(explicitBounds)+1 {
