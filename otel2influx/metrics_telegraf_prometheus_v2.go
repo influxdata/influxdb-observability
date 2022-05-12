@@ -184,7 +184,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 			}
 		}
 
-		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
+		bucketCounts, explicitBounds := dataPoint.MBucketCounts(), dataPoint.MExplicitBounds()
 		if len(bucketCounts) > 0 &&
 			len(bucketCounts) != len(explicitBounds) &&
 			len(bucketCounts) != len(explicitBounds)+1 {

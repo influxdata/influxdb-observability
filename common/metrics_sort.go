@@ -53,13 +53,13 @@ func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 }
 
 func sortBuckets(hdp pmetric.HistogramDataPoint) {
-	buckets := make(sortableBuckets, len(hdp.ExplicitBounds()))
-	for i := range hdp.ExplicitBounds() {
-		buckets[i] = sortableBucket{hdp.BucketCounts()[i], hdp.ExplicitBounds()[i]}
+	buckets := make(sortableBuckets, len(hdp.MExplicitBounds()))
+	for i := range hdp.MExplicitBounds() {
+		buckets[i] = sortableBucket{hdp.MBucketCounts()[i], hdp.MExplicitBounds()[i]}
 	}
 	sort.Sort(buckets)
 	for i, bucket := range buckets {
-		hdp.BucketCounts()[i], hdp.ExplicitBounds()[i] = bucket.count, bucket.bound
+		hdp.MBucketCounts()[i], hdp.MExplicitBounds()[i] = bucket.count, bucket.bound
 	}
 }
 

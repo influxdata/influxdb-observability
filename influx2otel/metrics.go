@@ -176,8 +176,8 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 				if metric.DataType() == pmetric.MetricDataTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
-						if len(dataPoint.BucketCounts()) == len(dataPoint.ExplicitBounds()) {
-							dataPoint.SetBucketCounts(append(dataPoint.BucketCounts(), dataPoint.Count()))
+						if len(dataPoint.MBucketCounts()) == len(dataPoint.MExplicitBounds()) {
+							dataPoint.SetMBucketCounts(append(dataPoint.MBucketCounts(), dataPoint.Count()))
 						}
 					}
 				}

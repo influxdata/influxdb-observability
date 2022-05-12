@@ -226,8 +226,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
-	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetMBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.SetMExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 	w := new(MockInfluxWriter)
 
@@ -282,8 +282,8 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.SetBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988})
-	dp.SetExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetMBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988})
+	dp.SetMExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 	w := new(MockInfluxWriter)
 
