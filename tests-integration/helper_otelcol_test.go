@@ -74,8 +74,7 @@ service:
 		configProviderSettings := service.ConfigProviderSettings{
 			Locations:     []string{"env:test-env"},
 			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
-			//Unmarshaler:   configunmarshaler.NewDefault(),
+			MapConverters: []config.MapConverter{expandmapconverter.New()},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
@@ -281,8 +280,7 @@ service:
 		configProviderSettings := service.ConfigProviderSettings{
 			Locations:     []string{"env:test-env"},
 			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []config.MapConverterFunc{expandmapconverter.New()},
-			//Unmarshaler:   configunmarshaler.NewDefault(),
+			MapConverters: []config.MapConverter{expandmapconverter.New()},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
