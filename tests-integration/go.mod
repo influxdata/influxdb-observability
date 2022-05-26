@@ -1,11 +1,11 @@
 module tests
 
-go 1.17
+go 1.18
 
 require (
 	github.com/influxdata/influxdb-observability/common v0.2.21
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v0.0.0-20220413223915-351ab58ac873
+	github.com/influxdata/telegraf v0.0.0-20220526005922-cb126f106d88
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.52.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.52.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.52.0
@@ -53,8 +53,8 @@ require (
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/serf v0.9.7 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.2.21-0.20220517160208-05f925d616de // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.2.21-0.20220517160208-05f925d616de // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.2.21 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.2.21 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.34.1 // indirect
 	github.com/jhump/protoreflect v1.8.3-0.20210616212123-6cc1efa697ca // indirect
@@ -87,7 +87,6 @@ require (
 	github.com/sleepinggenius2/gosmi v0.4.4 // indirect
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/streadway/amqp v1.0.0 // indirect
 	github.com/tidwall/gjson v1.10.2 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -98,7 +97,6 @@ require (
 	github.com/wavefronthq/wavefront-sdk-go v0.9.11 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/collector/model v0.50.0 // indirect
 	go.opentelemetry.io/collector/semconv v0.52.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
@@ -125,6 +123,7 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
+	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20220526005922-cb126f106d88
 //github.com/influxdata/telegraf => ../../telegraf
 //github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../../opentelemetry-collector-contrib/exporter/influxdbexporter
 //github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver => ../../opentelemetry-collector-contrib/receiver/influxdbreceiver
