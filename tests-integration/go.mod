@@ -3,7 +3,7 @@ module tests
 go 1.17
 
 require (
-	github.com/influxdata/influxdb-observability/common v0.2.21-0.20220517160208-05f925d616de
+	github.com/influxdata/influxdb-observability/common v0.2.21
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/influxdata/telegraf v0.0.0-20220413223915-351ab58ac873
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.52.0
