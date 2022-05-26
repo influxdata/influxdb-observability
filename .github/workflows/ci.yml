@@ -15,7 +15,7 @@ jobs:
         go: [ "1.17", "1.18" ]
         package: [ "common", "influx2otel", "otel2influx", "tests-integration" ]
         exclude:
-        - go: 1.18
+        - go: 1.17
           package: tests-integration
     runs-on: ubuntu-latest
     steps:
