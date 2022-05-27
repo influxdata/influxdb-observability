@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/influxdata/influxdb-observability/common v0.2.21
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v0.0.0-20220526005922-cb126f106d88
+	github.com/influxdata/telegraf v0.0.0-20220527162431-1200f3c87e02
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.52.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.52.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.52.0
@@ -123,7 +123,6 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20220526005922-cb126f106d88
 //github.com/influxdata/telegraf => ../../telegraf
 //github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../../opentelemetry-collector-contrib/exporter/influxdbexporter
 //github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver => ../../opentelemetry-collector-contrib/receiver/influxdbreceiver
