@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/config/mapconverter/expandmapconverter"
-	"go.opentelemetry.io/collector/config/mapprovider/envmapprovider"
-	"go.opentelemetry.io/collector/config/mapprovider/filemapprovider"
+	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
+	"go.opentelemetry.io/collector/confmap/provider/envprovider"
+	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"io/ioutil"
 	"net/http"
@@ -70,11 +71,11 @@ service:
 		configString = strings.ReplaceAll(configString, "SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envmapprovider.New()
+		configMapProvider := envprovider.New()
 		configProviderSettings := service.ConfigProviderSettings{
 			Locations:     []string{"env:test-env"},
-			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []config.MapConverter{expandmapconverter.New()},
+			MapProviders:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
+			MapConverters: []confmap.Converter{expandconverter.New()},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
@@ -104,8 +105,8 @@ service:
 		},
 		ConfigProvider: otelcolConfigProvider,
 	}
-	envmapprovider.New()
-	filemapprovider.New()
+	envprovider.New()
+	fileprovider.New()
 	otelcol, err := service.New(appSettings)
 	require.NoError(t, err)
 
@@ -276,11 +277,11 @@ service:
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envmapprovider.New()
+		configMapProvider := envprovider.New()
 		configProviderSettings := service.ConfigProviderSettings{
 			Locations:     []string{"env:test-env"},
-			MapProviders:  map[string]config.MapProvider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []config.MapConverter{expandmapconverter.New()},
+			MapProviders:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
+			MapConverters: []confmap.Converter{expandconverter.New()},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
