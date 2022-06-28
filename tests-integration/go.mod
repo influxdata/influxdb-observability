@@ -6,12 +6,12 @@ require (
 	github.com/influxdata/influxdb-observability/common v0.2.22
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/influxdata/telegraf v0.0.0-20220527162431-1200f3c87e02
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.52.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.52.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.52.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.53.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.53.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.53.0
 	github.com/stretchr/testify v1.7.5
-	go.opentelemetry.io/collector v0.53.0
-	go.opentelemetry.io/collector/pdata v0.53.0
+	go.opentelemetry.io/collector v0.54.0
+	go.opentelemetry.io/collector/pdata v0.54.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.47.0
 )
@@ -56,11 +56,11 @@ require (
 	github.com/influxdata/influxdb-observability/influx2otel v0.2.21 // indirect
 	github.com/influxdata/influxdb-observability/otel2influx v0.2.21 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
-	github.com/jaegertracing/jaeger v1.34.1 // indirect
+	github.com/jaegertracing/jaeger v1.35.1 // indirect
 	github.com/jhump/protoreflect v1.8.3-0.20210616212123-6cc1efa697ca // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.6 // indirect
-	github.com/knadh/koanf v1.4.1 // indirect
+	github.com/knadh/koanf v1.4.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -72,11 +72,11 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.52.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.53.0 // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/prometheus/client_golang v1.12.1 // indirect
+	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.34.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -97,7 +97,7 @@ require (
 	github.com/wavefronthq/wavefront-sdk-go v0.9.11 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/collector/semconv v0.53.0 // indirect
+	go.opentelemetry.io/collector/semconv v0.54.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/prometheus v0.30.0 // indirect
