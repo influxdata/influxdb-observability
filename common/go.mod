@@ -3,7 +3,7 @@ module github.com/influxdata/influxdb-observability/common
 go 1.17
 
 require (
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	go.opentelemetry.io/collector/pdata v0.53.0
 )
 
