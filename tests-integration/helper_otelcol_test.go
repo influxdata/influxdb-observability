@@ -168,6 +168,10 @@ func (m mockReceiverFactory) Type() config.Type {
 	return "mock"
 }
 
+func (m mockReceiverFactory) StabilityLevel(config.DataType) component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
+}
+
 type mockReceiverConfig struct {
 	config.ReceiverSettings `mapstructure:",squash"`
 }
@@ -372,6 +376,10 @@ type mockExporterFactory struct {
 
 func (m mockExporterFactory) Type() config.Type {
 	return "mock"
+}
+
+func (m mockExporterFactory) StabilityLevel(config.DataType) component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
 }
 
 type mockExporterConfig struct {
