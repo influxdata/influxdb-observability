@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strconv"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -173,17 +174,17 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 
 		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
 		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum()
-		bucketCounts, explicitBounds := dataPoint.MBucketCounts(), dataPoint.MExplicitBounds()
-		if len(bucketCounts) > 0 &&
-			len(bucketCounts) != len(explicitBounds) &&
-			len(bucketCounts) != len(explicitBounds)+1 {
+		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
+		if bucketCounts.Len() > 0 &&
+			bucketCounts.Len() != explicitBounds.Len() &&
+			bucketCounts.Len() != explicitBounds.Len()+1 {
 			// The infinity bucket is not used in this schema,
 			// so accept input if that particular bucket is missing.
-			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
+			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len())
 		}
-		for i, explicitBound := range explicitBounds {
-			boundFieldKey := strconv.FormatFloat(explicitBound, 'f', -1, 64)
-			fields[boundFieldKey] = float64(bucketCounts[i])
+		for i := 0; i < explicitBounds.Len(); i++ {
+			boundFieldKey := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
+			fields[boundFieldKey] = float64(bucketCounts.At(i))
 		}
 
 		if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeHistogram); err != nil {

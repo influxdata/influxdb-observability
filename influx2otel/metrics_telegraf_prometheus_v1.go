@@ -2,10 +2,11 @@ package influx2otel
 
 import (
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strconv"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -257,8 +258,8 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
-	dataPoint.SetMBucketCounts(bucketCounts)
-	dataPoint.SetMExplicitBounds(explicitBounds)
+	dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(bucketCounts))
+	dataPoint.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(explicitBounds))
 	return nil
 }
 

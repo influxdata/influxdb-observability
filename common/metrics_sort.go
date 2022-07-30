@@ -2,8 +2,10 @@ package common
 
 import (
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"sort"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
@@ -53,14 +55,18 @@ func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 }
 
 func sortBuckets(hdp pmetric.HistogramDataPoint) {
-	buckets := make(sortableBuckets, len(hdp.MExplicitBounds()))
-	for i := range hdp.MExplicitBounds() {
-		buckets[i] = sortableBucket{hdp.MBucketCounts()[i], hdp.MExplicitBounds()[i]}
+	sBuckets := make(sortableBuckets, hdp.ExplicitBounds().Len())
+	for i := 0; i < hdp.ExplicitBounds().Len(); i++ {
+		sBuckets[i] = sortableBucket{hdp.BucketCounts().At(i), hdp.ExplicitBounds().At(i)}
 	}
-	sort.Sort(buckets)
-	for i, bucket := range buckets {
-		hdp.MBucketCounts()[i], hdp.MExplicitBounds()[i] = bucket.count, bucket.bound
+	sort.Sort(sBuckets)
+	counts := make([]uint64, hdp.ExplicitBounds().Len())
+	buckets := make([]float64, hdp.ExplicitBounds().Len())
+	for i, bucket := range sBuckets {
+		counts[i], buckets[i] = bucket.count, bucket.bound
 	}
+	hdp.SetBucketCounts(pcommon.NewImmutableUInt64Slice(counts))
+	hdp.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(buckets))
 }
 
 type sortableBucket struct {
