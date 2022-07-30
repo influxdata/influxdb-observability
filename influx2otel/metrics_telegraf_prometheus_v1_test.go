@@ -1,10 +1,11 @@
 package influx2otel_test
 
 import (
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"testing"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/influx2otel"
@@ -281,8 +282,8 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.SetMBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
-	dp.SetMExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetBucketCounts(pcommon.NewImmutableUInt64Slice([]uint64{24054, 33444, 100392, 129389, 133988, 144320}))
+	dp.SetExplicitBounds(pcommon.NewImmutableFloat64Slice([]float64{0.05, 0.1, 0.2, 0.5, 1}))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -329,8 +330,8 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.SetMBucketCounts([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
-	dp.SetMExplicitBounds([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetBucketCounts(pcommon.NewImmutableUInt64Slice([]uint64{24054, 33444, 100392, 129389, 133988, 144320}))
+	dp.SetExplicitBounds(pcommon.NewImmutableFloat64Slice([]float64{0.05, 0.1, 0.2, 0.5, 1}))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -437,8 +438,8 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
-	dp.SetMBucketCounts([]uint64{3102, 3272, 4773, 9001, 76656, 2693})
-	dp.SetMExplicitBounds([]float64{0.01, 0.05, 0.5, 0.9, 0.99})
+	dp.SetBucketCounts(pcommon.NewImmutableUInt64Slice([]uint64{3102, 3272, 4773, 9001, 76656, 2693}))
+	dp.SetExplicitBounds(pcommon.NewImmutableFloat64Slice([]float64{0.01, 0.05, 0.5, 0.9, 0.99}))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

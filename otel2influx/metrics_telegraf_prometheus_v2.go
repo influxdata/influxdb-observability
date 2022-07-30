@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strconv"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -184,16 +185,16 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 			}
 		}
 
-		bucketCounts, explicitBounds := dataPoint.MBucketCounts(), dataPoint.MExplicitBounds()
-		if len(bucketCounts) > 0 &&
-			len(bucketCounts) != len(explicitBounds) &&
-			len(bucketCounts) != len(explicitBounds)+1 {
+		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
+		if bucketCounts.Len() > 0 &&
+			bucketCounts.Len() != explicitBounds.Len() &&
+			bucketCounts.Len() != explicitBounds.Len()+1 {
 			// The infinity bucket is not used in this schema,
 			// so accept input if that particular bucket is missing.
-			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", len(bucketCounts), len(explicitBounds))
+			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len())
 		}
 
-		for i, explicitBound := range explicitBounds {
+		for i := 0; i < explicitBounds.Len(); i++ {
 			t := make(map[string]string, len(tags)+1)
 			for k, v := range tags {
 				t[k] = v
@@ -203,9 +204,9 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 				f[k] = v
 			}
 
-			boundTagValue := strconv.FormatFloat(explicitBound, 'f', -1, 64)
+			boundTagValue := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
 			t[common.MetricHistogramBoundKeyV2] = boundTagValue
-			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts[i])
+			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts.At(i))
 
 			if err = w.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, common.InfluxMetricValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)

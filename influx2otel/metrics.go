@@ -3,10 +3,11 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -176,8 +177,8 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 				if metric.DataType() == pmetric.MetricDataTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
-						if len(dataPoint.MBucketCounts()) == len(dataPoint.MExplicitBounds()) {
-							dataPoint.SetMBucketCounts(append(dataPoint.MBucketCounts(), dataPoint.Count()))
+						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
+							dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(append(dataPoint.BucketCounts().AsRaw(), dataPoint.Count())))
 						}
 					}
 				}
