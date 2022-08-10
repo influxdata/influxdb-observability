@@ -168,7 +168,15 @@ func (m mockReceiverFactory) Type() config.Type {
 	return "mock"
 }
 
-func (m mockReceiverFactory) StabilityLevel(config.DataType) component.StabilityLevel {
+func (m mockReceiverFactory) TracesReceiverStability() component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
+}
+
+func (m mockReceiverFactory) MetricsReceiverStability() component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
+}
+
+func (m mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
@@ -378,7 +386,15 @@ func (m mockExporterFactory) Type() config.Type {
 	return "mock"
 }
 
-func (m mockExporterFactory) StabilityLevel(config.DataType) component.StabilityLevel {
+func (m mockExporterFactory) TracesExporterStability() component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
+}
+
+func (m mockExporterFactory) MetricsExporterStability() component.StabilityLevel {
+	return component.StabilityLevelInDevelopment
+}
+
+func (m mockExporterFactory) LogsExporterStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
