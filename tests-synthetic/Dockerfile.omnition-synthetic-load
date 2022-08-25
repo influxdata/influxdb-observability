@@ -1,11 +1,12 @@
-FROM openjdk:8-jdk-alpine AS builder
+FROM eclipse-temurin:8-jdk AS builder
 
-RUN apk add git maven make
+RUN apt update
+RUN apt install -y git maven make
 RUN git clone https://github.com/Omnition/synthetic-load-generator
 WORKDIR /synthetic-load-generator
 RUN make java-jars
 
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:8-jre
 
 RUN mkdir -p /opt/omnition/topologies
 COPY --from=builder /synthetic-load-generator/target/SyntheticLoadGenerator-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/omnition/synthetic-load-generator.jar
