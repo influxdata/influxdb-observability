@@ -139,7 +139,7 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 		ilLog := rl.ScopeLogs().AppendEmpty()
 		log := ilLog.LogRecords().AppendEmpty()
 		log.SetTimestamp(pcommon.Timestamp(1622848686000000000))
-		log.SetSeverityNumber(plog.SeverityNumberINFO)
+		log.SetSeverityNumber(plog.SeverityNumberInfo)
 		log.SetSeverityText("info")
 		log.Body().SetStringVal("something-happened")
 		log.Attributes().InsertBool("k", true)
