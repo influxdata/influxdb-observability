@@ -73,9 +73,11 @@ service:
 		t.Setenv("test-env", configString)
 		configMapProvider := envprovider.New()
 		configProviderSettings := service.ConfigProviderSettings{
-			Locations:     []string{"env:test-env"},
-			MapProviders:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []confmap.Converter{expandconverter.New()},
+			ResolverSettings: confmap.ResolverSettings{
+				URIs:       []string{"env:test-env"},
+				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
+				Converters: []confmap.Converter{expandconverter.New()},
+			},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
@@ -291,9 +293,11 @@ service:
 		t.Setenv("test-env", configString)
 		configMapProvider := envprovider.New()
 		configProviderSettings := service.ConfigProviderSettings{
-			Locations:     []string{"env:test-env"},
-			MapProviders:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-			MapConverters: []confmap.Converter{expandconverter.New()},
+			ResolverSettings: confmap.ResolverSettings{
+				URIs:       []string{"env:test-env"},
+				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
+				Converters: []confmap.Converter{expandconverter.New()},
+			},
 		}
 		configProvider, err := service.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)

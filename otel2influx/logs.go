@@ -60,7 +60,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 		}
 	}
 
-	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUNDEFINED {
+	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUndefined {
 		fields[common.AttributeSeverityNumber] = int64(severityNumber)
 	}
 	if severityText := logRecord.SeverityText(); severityText != "" {
