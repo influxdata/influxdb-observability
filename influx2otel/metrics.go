@@ -228,7 +228,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 			continue
 		}
 
-		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metricName := fmt.Sprintf("%s%s%s", measurement, b.separator, k)
 		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
