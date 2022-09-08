@@ -13,13 +13,29 @@ import (
 )
 
 type LineProtocolToOtelMetrics struct {
-	logger common.Logger
+	logger    common.Logger
+	separator string
 }
 
 func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetrics, error) {
 	return &LineProtocolToOtelMetrics{
 		logger: logger,
+		// behavior of original API continues to use _ as separator
+		separator: "_",
 	}, nil
+}
+
+func NewLineProtocolToOtelMetricsOptions(opts ...Option) (*LineProtocolToOtelMetrics, error) {
+	lo := &LineProtocolToOtelMetrics{}
+	// apply options
+	for _, o := range opts {
+		o(lo)
+	}
+	// error to leave logger unset
+	if lo.logger == nil {
+		return nil, fmt.Errorf("logger must be set")
+	}
+	return lo, nil
 }
 
 func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
@@ -30,7 +46,8 @@ func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 		histogramDataPointsByMDPK: make(map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint),
 		summaryDataPointsByMDPK:   make(map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint),
 
-		logger: c.logger,
+		logger:    c.logger,
+		separator: c.separator,
 	}
 }
 
@@ -41,7 +58,8 @@ type MetricsBatch struct {
 	histogramDataPointsByMDPK map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint
 	summaryDataPointsByMDPK   map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint
 
-	logger common.Logger
+	logger    common.Logger
+	separator string
 }
 
 func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
