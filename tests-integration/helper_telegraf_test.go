@@ -164,19 +164,19 @@ func newMockOutputPlugin() *mockOutputPlugin {
 	}
 }
 
-func (m mockOutputPlugin) SampleConfig() string {
+func (m *mockOutputPlugin) SampleConfig() string {
 	return ""
 }
 
-func (m mockOutputPlugin) Description() string {
+func (m *mockOutputPlugin) Description() string {
 	return ""
 }
 
-func (m mockOutputPlugin) Connect() error {
+func (m *mockOutputPlugin) Connect() error {
 	return nil
 }
 
-func (m mockOutputPlugin) Close() error {
+func (m *mockOutputPlugin) Close() error {
 	return nil
 }
 
@@ -325,18 +325,18 @@ func (m *mockInputPlugin) Start(accumulator telegraf.Accumulator) error {
 	return nil
 }
 
-func (m mockInputPlugin) Stop() {
+func (m *mockInputPlugin) Stop() {
 }
 
-func (m mockInputPlugin) SampleConfig() string {
+func (m *mockInputPlugin) SampleConfig() string {
 	return ""
 }
 
-func (m mockInputPlugin) Description() string {
+func (m *mockInputPlugin) Description() string {
 	return ""
 }
 
-func (m mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
+func (m *mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
 	return nil
 }
 

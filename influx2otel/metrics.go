@@ -87,9 +87,9 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case k == common.AttributeInstrumentationLibraryVersion:
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
-			rAttributes.InsertString(k, v)
+			rAttributes.PutString(k, v)
 		default:
-			mAttributes.InsertString(k, v)
+			mAttributes.PutString(k, v)
 		}
 	}
 
@@ -145,16 +145,16 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		metric.SetName(metricName)
 		switch vType {
 		case common.InfluxMetricValueTypeGauge:
-			metric.SetDataType(pmetric.MetricDataTypeGauge)
+			metric.SetEmptyGauge()
 		case common.InfluxMetricValueTypeSum:
-			metric.SetDataType(pmetric.MetricDataTypeSum)
+			metric.SetEmptySum()
 			metric.Sum().SetIsMonotonic(true)
 			metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeHistogram:
-			metric.SetDataType(pmetric.MetricDataTypeHistogram)
+			metric.SetEmptyHistogram()
 			metric.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeSummary:
-			metric.SetDataType(pmetric.MetricDataTypeSummary)
+			metric.SetEmptySummary()
 		default:
 			return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("unrecognized InfluxMetricValueType %d", vType)
 		}
@@ -178,7 +178,7 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
 						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
-							dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(append(dataPoint.BucketCounts().AsRaw(), dataPoint.Count())))
+							dataPoint.BucketCounts().FromRaw(append(dataPoint.BucketCounts().AsRaw(), dataPoint.Count()))
 						}
 					}
 				}

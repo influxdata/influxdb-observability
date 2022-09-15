@@ -57,8 +57,8 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	}
 	tags[common.AttributeSpanID] = spanID.HexString()
 
-	if span.TraceState() != ptrace.TraceStateEmpty {
-		tags[common.AttributeTraceState] = string(span.TraceState())
+	if traceState := span.TraceStateStruct().AsRaw(); traceState != "" {
+		tags[common.AttributeTraceState] = traceState
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
 		tags[common.AttributeParentSpanID] = parentSpanID.HexString()
@@ -213,8 +213,8 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
 	}
 
-	if traceState := spanLink.TraceState(); traceState != ptrace.TraceStateEmpty {
-		tags[common.AttributeTraceState] = string(traceState)
+	if traceState := spanLink.TraceStateStruct().AsRaw(); traceState != "" {
+		tags[common.AttributeTraceState] = traceState
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())

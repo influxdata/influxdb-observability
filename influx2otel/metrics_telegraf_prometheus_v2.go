@@ -213,8 +213,8 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for histogram bucket count: %q", iBucketCount, iBucketCount)
 			}
-			dataPoint.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(append(dataPoint.ExplicitBounds().AsRaw(), explicitBound)))
-			dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(append(dataPoint.BucketCounts().AsRaw(), uint64(bucketCount))))
+			dataPoint.ExplicitBounds().FromRaw(append(dataPoint.ExplicitBounds().AsRaw(), explicitBound))
+			dataPoint.BucketCounts().FromRaw(append(dataPoint.BucketCounts().AsRaw(), uint64(bucketCount)))
 		} else {
 			return fmt.Errorf("histogram bucket bound has no matching count")
 		}
@@ -232,8 +232,8 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for summary (interpreted as histogram) quantile value: %q", iValue, iValue)
 			}
-			dataPoint.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(append(dataPoint.ExplicitBounds().AsRaw(), quantile)))
-			dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(append(dataPoint.BucketCounts().AsRaw(), uint64(value))))
+			dataPoint.ExplicitBounds().FromRaw(append(dataPoint.ExplicitBounds().AsRaw(), quantile))
+			dataPoint.BucketCounts().FromRaw(append(dataPoint.BucketCounts().AsRaw(), uint64(value)))
 		} else {
 			return fmt.Errorf("summary (interpreted as histogram) quantile has no matching value")
 		}
