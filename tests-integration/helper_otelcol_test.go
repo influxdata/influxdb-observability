@@ -166,19 +166,19 @@ func newMockReceiverFactory() *mockReceiverFactory {
 	}
 }
 
-func (m mockReceiverFactory) Type() config.Type {
+func (m *mockReceiverFactory) Type() config.Type {
 	return "mock"
 }
 
-func (m mockReceiverFactory) TracesReceiverStability() component.StabilityLevel {
+func (m *mockReceiverFactory) TracesReceiverStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
-func (m mockReceiverFactory) MetricsReceiverStability() component.StabilityLevel {
+func (m *mockReceiverFactory) MetricsReceiverStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
-func (m mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
+func (m *mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
@@ -186,7 +186,7 @@ type mockReceiverConfig struct {
 	config.ReceiverSettings `mapstructure:",squash"`
 }
 
-func (m mockReceiverFactory) CreateDefaultConfig() config.Receiver {
+func (m *mockReceiverFactory) CreateDefaultConfig() config.Receiver {
 	return &mockReceiverConfig{
 		ReceiverSettings: config.NewReceiverSettings(config.NewComponentID("mock")),
 	}
@@ -386,19 +386,19 @@ type mockExporterFactory struct {
 	*mockMetricsExporter
 }
 
-func (m mockExporterFactory) Type() config.Type {
+func (m *mockExporterFactory) Type() config.Type {
 	return "mock"
 }
 
-func (m mockExporterFactory) TracesExporterStability() component.StabilityLevel {
+func (m *mockExporterFactory) TracesExporterStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
-func (m mockExporterFactory) MetricsExporterStability() component.StabilityLevel {
+func (m *mockExporterFactory) MetricsExporterStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
-func (m mockExporterFactory) LogsExporterStability() component.StabilityLevel {
+func (m *mockExporterFactory) LogsExporterStability() component.StabilityLevel {
 	return component.StabilityLevelInDevelopment
 }
 
@@ -406,7 +406,7 @@ type mockExporterConfig struct {
 	config.ExporterSettings `mapstructure:",squash"`
 }
 
-func (m mockExporterFactory) CreateDefaultConfig() config.Exporter {
+func (m *mockExporterFactory) CreateDefaultConfig() config.Exporter {
 	return &mockExporterConfig{
 		ExporterSettings: config.NewExporterSettings(config.NewComponentID("mock")),
 	}
@@ -419,11 +419,11 @@ func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params 
 	return m.mockMetricsExporter, nil
 }
 
-func (m mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.LogsExporter, error) {
+func (m *mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.LogsExporter, error) {
 	panic("not implemented")
 }
 
-func (m mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.TracesExporter, error) {
+func (m *mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.TracesExporter, error) {
 	panic("not implemented")
 }
 
@@ -433,15 +433,15 @@ type mockMetricsExporter struct {
 	consumedMetrics pmetric.Metrics
 }
 
-func (m mockMetricsExporter) Start(ctx context.Context, host component.Host) error {
+func (m *mockMetricsExporter) Start(ctx context.Context, host component.Host) error {
 	return nil
 }
 
-func (m mockMetricsExporter) Shutdown(ctx context.Context) error {
+func (m *mockMetricsExporter) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (m mockMetricsExporter) Capabilities() consumer.Capabilities {
+func (m *mockMetricsExporter) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{
 		MutatesData: false,
 	}

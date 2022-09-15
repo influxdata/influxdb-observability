@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -65,8 +64,8 @@ func sortBuckets(hdp pmetric.HistogramDataPoint) {
 	for i, bucket := range sBuckets {
 		counts[i], buckets[i] = bucket.count, bucket.bound
 	}
-	hdp.SetBucketCounts(pcommon.NewImmutableUInt64Slice(counts))
-	hdp.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(buckets))
+	hdp.BucketCounts().FromRaw(counts)
+	hdp.ExplicitBounds().FromRaw(buckets)
 }
 
 type sortableBucket struct {

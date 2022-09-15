@@ -258,8 +258,8 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
-	dataPoint.SetBucketCounts(pcommon.NewImmutableUInt64Slice(bucketCounts))
-	dataPoint.SetExplicitBounds(pcommon.NewImmutableFloat64Slice(explicitBounds))
+	dataPoint.BucketCounts().FromRaw(bucketCounts)
+	dataPoint.ExplicitBounds().FromRaw(explicitBounds)
 	return nil
 }
 
