@@ -3,8 +3,9 @@ package otel2influx
 import (
 	"encoding/json"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"strconv"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -35,22 +36,22 @@ func InstrumentationLibraryToTags(instrumentationLibrary pcommon.Instrumentation
 
 func AttributeValueToInfluxTagValue(value pcommon.Value) (string, error) {
 	switch value.Type() {
-	case pcommon.ValueTypeString:
-		return value.StringVal(), nil
+	case pcommon.ValueTypeStr:
+		return value.Str(), nil
 	case pcommon.ValueTypeInt:
-		return strconv.FormatInt(value.IntVal(), 10), nil
+		return strconv.FormatInt(value.Int(), 10), nil
 	case pcommon.ValueTypeDouble:
-		return strconv.FormatFloat(value.DoubleVal(), 'f', -1, 64), nil
+		return strconv.FormatFloat(value.Double(), 'f', -1, 64), nil
 	case pcommon.ValueTypeBool:
-		return strconv.FormatBool(value.BoolVal()), nil
+		return strconv.FormatBool(value.Bool()), nil
 	case pcommon.ValueTypeMap:
-		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.Map())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
 		}
 	case pcommon.ValueTypeSlice:
-		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.Slice())); err != nil {
 			return "", err
 		} else {
 			return string(jsonBytes), nil
@@ -64,22 +65,22 @@ func AttributeValueToInfluxTagValue(value pcommon.Value) (string, error) {
 
 func AttributeValueToInfluxFieldValue(value pcommon.Value) (interface{}, error) {
 	switch value.Type() {
-	case pcommon.ValueTypeString:
-		return value.StringVal(), nil
+	case pcommon.ValueTypeStr:
+		return value.Str(), nil
 	case pcommon.ValueTypeInt:
-		return value.IntVal(), nil
+		return value.Int(), nil
 	case pcommon.ValueTypeDouble:
-		return value.DoubleVal(), nil
+		return value.Double(), nil
 	case pcommon.ValueTypeBool:
-		return value.BoolVal(), nil
+		return value.Bool(), nil
 	case pcommon.ValueTypeMap:
-		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.MapVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.Map())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
 		}
 	case pcommon.ValueTypeSlice:
-		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.SliceVal())); err != nil {
+		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.Slice())); err != nil {
 			return nil, err
 		} else {
 			return string(jsonBytes), nil
@@ -95,18 +96,18 @@ func otlpKeyValueListToMap(kvList pcommon.Map) map[string]interface{} {
 	m := make(map[string]interface{}, kvList.Len())
 	kvList.Range(func(k string, v pcommon.Value) bool {
 		switch v.Type() {
-		case pcommon.ValueTypeString:
-			m[k] = v.StringVal()
+		case pcommon.ValueTypeStr:
+			m[k] = v.Str()
 		case pcommon.ValueTypeInt:
-			m[k] = v.IntVal()
+			m[k] = v.Int()
 		case pcommon.ValueTypeDouble:
-			m[k] = v.DoubleVal()
+			m[k] = v.Double()
 		case pcommon.ValueTypeBool:
-			m[k] = v.BoolVal()
+			m[k] = v.Bool()
 		case pcommon.ValueTypeMap:
-			m[k] = otlpKeyValueListToMap(v.MapVal())
+			m[k] = otlpKeyValueListToMap(v.Map())
 		case pcommon.ValueTypeSlice:
-			m[k] = otlpArrayToSlice(v.SliceVal())
+			m[k] = otlpArrayToSlice(v.Slice())
 		case pcommon.ValueTypeEmpty:
 			m[k] = nil
 		default:
@@ -122,14 +123,14 @@ func otlpArrayToSlice(arr pcommon.Slice) []interface{} {
 	for i := 0; i < arr.Len(); i++ {
 		v := arr.At(i)
 		switch v.Type() {
-		case pcommon.ValueTypeString:
-			s = append(s, v.StringVal())
+		case pcommon.ValueTypeStr:
+			s = append(s, v.Str())
 		case pcommon.ValueTypeInt:
-			s = append(s, v.IntVal())
+			s = append(s, v.Int())
 		case pcommon.ValueTypeDouble:
-			s = append(s, v.DoubleVal())
+			s = append(s, v.Double())
 		case pcommon.ValueTypeBool:
-			s = append(s, v.BoolVal())
+			s = append(s, v.Bool())
 		case pcommon.ValueTypeEmpty:
 			s = append(s, nil)
 		default:

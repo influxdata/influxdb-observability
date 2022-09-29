@@ -35,7 +35,7 @@ func init() {
 		dp := m.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().PutString("foo", "bar")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
-		dp.SetDoubleVal(87.332)
+		dp.SetDoubleValue(87.332)
 		m = ilMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
 		m.SetEmptyHistogram()
@@ -56,12 +56,12 @@ func init() {
 		dp.Attributes().PutString("method", "post")
 		dp.Attributes().PutString("code", "200")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
-		dp.SetDoubleVal(1027)
+		dp.SetDoubleValue(1027)
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().PutString("method", "post")
 		dp.Attributes().PutString("code", "400")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
-		dp.SetDoubleVal(3)
+		dp.SetDoubleValue(3)
 
 		metricTests = append(metricTests, struct {
 			otel pmetric.Metrics
@@ -141,7 +141,7 @@ spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_
 		log.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		log.SetSeverityNumber(plog.SeverityNumberInfo)
 		log.SetSeverityText("info")
-		log.Body().SetStringVal("something-happened")
+		log.Body().SetStr("something-happened")
 		log.Attributes().PutBool("k", true)
 		log.SetDroppedAttributesCount(5)
 		log.SetTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1})

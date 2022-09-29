@@ -109,9 +109,9 @@ func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]
 	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	if floatValue != nil {
-		dataPoint.SetDoubleVal(*floatValue)
+		dataPoint.SetDoubleValue(*floatValue)
 	} else if intValue != nil {
-		dataPoint.SetIntVal(*intValue)
+		dataPoint.SetIntValue(*intValue)
 	} else {
 		panic("unreachable")
 	}
@@ -149,9 +149,9 @@ func (b *MetricsBatch) convertSumV2(tags map[string]string, fields map[string]in
 	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	if floatValue != nil {
-		dataPoint.SetDoubleVal(*floatValue)
+		dataPoint.SetDoubleValue(*floatValue)
 	} else if intValue != nil {
-		dataPoint.SetIntVal(*intValue)
+		dataPoint.SetIntValue(*intValue)
 	} else {
 		panic("unreachable")
 	}
