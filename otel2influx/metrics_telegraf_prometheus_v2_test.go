@@ -31,11 +31,11 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(23.9)
+	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(11.9)
+	dp.SetDoubleValue(11.9)
 
 	w := new(MockInfluxWriter)
 
@@ -95,11 +95,11 @@ func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(23.9)
+	dp.SetDoubleValue(23.9)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(11.9)
+	dp.SetDoubleValue(11.9)
 
 	w := new(MockInfluxWriter)
 
@@ -160,12 +160,12 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 	dp.Attributes().PutInt("code", 200)
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(1027)
+	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 400)
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(3)
+	dp.SetDoubleValue(3)
 
 	w := new(MockInfluxWriter)
 

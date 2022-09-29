@@ -46,7 +46,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp.Attributes().PutString("cpu", "cpu4")
 	dp.Attributes().PutString("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(0.10090817356207936)
+	dp.SetDoubleValue(0.10090817356207936)
 	m = ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cpu_usage_system")
 	m.SetEmptyGauge()
@@ -54,7 +54,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp.Attributes().PutString("cpu", "cpu4")
 	dp.Attributes().PutString("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetDoubleVal(0.3027245206862381)
+	dp.SetDoubleValue(0.3027245206862381)
 	m = ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cpu_some_int_key")
 	m.SetEmptyGauge()
@@ -62,7 +62,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp.Attributes().PutString("cpu", "cpu4")
 	dp.Attributes().PutString("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
-	dp.SetIntVal(7)
+	dp.SetIntValue(7)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

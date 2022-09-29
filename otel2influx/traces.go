@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -57,7 +58,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	}
 	tags[common.AttributeSpanID] = spanID.HexString()
 
-	if traceState := span.TraceStateStruct().AsRaw(); traceState != "" {
+	if traceState := span.TraceState().AsRaw(); traceState != "" {
 		tags[common.AttributeTraceState] = traceState
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
@@ -213,7 +214,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
 	}
 
-	if traceState := spanLink.TraceStateStruct().AsRaw(); traceState != "" {
+	if traceState := spanLink.TraceState().AsRaw(); traceState != "" {
 		tags[common.AttributeTraceState] = traceState
 	}
 

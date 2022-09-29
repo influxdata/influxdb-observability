@@ -14,21 +14,21 @@ func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 			il := r.ScopeMetrics().At(j)
 			for k := 0; k < il.Metrics().Len(); k++ {
 				m := il.Metrics().At(k)
-				switch m.DataType() {
-				case pmetric.MetricDataTypeGauge:
+				switch m.Type() {
+				case pmetric.MetricTypeGauge:
 					for l := 0; l < m.Gauge().DataPoints().Len(); l++ {
 						m.Gauge().DataPoints().At(l).Attributes().Sort()
 					}
-				case pmetric.MetricDataTypeSum:
+				case pmetric.MetricTypeSum:
 					for l := 0; l < m.Sum().DataPoints().Len(); l++ {
 						m.Sum().DataPoints().At(l).Attributes().Sort()
 					}
-				case pmetric.MetricDataTypeHistogram:
+				case pmetric.MetricTypeHistogram:
 					for l := 0; l < m.Histogram().DataPoints().Len(); l++ {
 						sortBuckets(m.Histogram().DataPoints().At(l))
 						m.Histogram().DataPoints().At(l).Attributes().Sort()
 					}
-				case pmetric.MetricDataTypeSummary:
+				case pmetric.MetricTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
 						m.Summary().DataPoints().At(l).Attributes().Sort()
 						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pmetric.ValueAtQuantile) bool {
@@ -36,7 +36,7 @@ func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 						})
 					}
 				default:
-					panic(fmt.Sprintf("unsupported metric data type %d", m.DataType()))
+					panic(fmt.Sprintf("unsupported metric data type %d", m.Type()))
 				}
 			}
 			il.Metrics().Sort(func(a, b pmetric.Metric) bool {

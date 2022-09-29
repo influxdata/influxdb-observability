@@ -57,11 +57,11 @@ func TestAddPoint_v1_gauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("engine_id", "0")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(23.9)
+	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("engine_id", "1")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(11.9)
+	dp.SetDoubleValue(11.9)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -111,11 +111,11 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("engine_id", "0")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(23.9)
+	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("engine_id", "1")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(11.9)
+	dp.SetDoubleValue(11.9)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -170,12 +170,12 @@ func TestAddPoint_v1_sum(t *testing.T) {
 	dp.Attributes().PutString("code", "200")
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(1027)
+	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("code", "400")
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(3)
+	dp.SetDoubleValue(3)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -230,12 +230,12 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 	dp.Attributes().PutString("code", "200")
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(1027)
+	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutString("code", "400")
 	dp.Attributes().PutString("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
-	dp.SetDoubleVal(3)
+	dp.SetDoubleValue(3)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

@@ -118,20 +118,20 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 
 	var metric pmetric.Metric
 	if m, found := b.metricByRMIL[rKey][ilmKey][metricName]; found {
-		switch m.DataType() {
-		case pmetric.MetricDataTypeGauge:
+		switch m.Type() {
+		case pmetric.MetricTypeGauge:
 			if vType != common.InfluxMetricValueTypeGauge && vType != common.InfluxMetricValueTypeUntyped {
 				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s' or '%s', got '%s'", metricName, common.InfluxMetricValueTypeGauge, common.InfluxMetricValueTypeUntyped, vType)
 			}
-		case pmetric.MetricDataTypeSum:
+		case pmetric.MetricTypeSum:
 			if vType != common.InfluxMetricValueTypeSum {
 				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSum, vType)
 			}
-		case pmetric.MetricDataTypeHistogram:
+		case pmetric.MetricTypeHistogram:
 			if vType != common.InfluxMetricValueTypeHistogram {
 				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeHistogram, vType)
 			}
-		case pmetric.MetricDataTypeSummary:
+		case pmetric.MetricTypeSummary:
 			if vType != common.InfluxMetricValueTypeSummary {
 				return pmetric.Metric{}, pcommon.Map{}, fmt.Errorf("value type conflict for metric '%s'; expected '%s', got '%s'", metricName, common.InfluxMetricValueTypeSummary, vType)
 			}
@@ -174,7 +174,7 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 			ilMetrics := resourceMetrics.ScopeMetrics().At(i)
 			for j := 0; j < ilMetrics.Metrics().Len(); j++ {
 				metric := ilMetrics.Metrics().At(j)
-				if metric.DataType() == pmetric.MetricDataTypeHistogram {
+				if metric.Type() == pmetric.MetricTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
 						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
@@ -219,9 +219,9 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
-			dataPoint.SetDoubleVal(*floatValue)
+			dataPoint.SetDoubleValue(*floatValue)
 		} else if intValue != nil {
-			dataPoint.SetIntVal(*intValue)
+			dataPoint.SetIntValue(*intValue)
 		} else {
 			panic("unreachable")
 		}
