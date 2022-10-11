@@ -2,6 +2,7 @@ package otel2influx
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -82,6 +83,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	}
 
 	droppedAttributesCount := uint64(span.DroppedAttributesCount())
+	attributes := make(map[string]interface{}, span.Attributes().Len())
 	span.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
@@ -90,10 +92,19 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 			droppedAttributesCount++
 			c.logger.Debug("invalid span attribute value", "key", k, err)
 		} else {
-			fields[k] = v
+			attributes[k] = v
 		}
 		return true
 	})
+	if len(attributes) > 0 {
+		marshalledAttributes, err := json.Marshal(attributes)
+		if err != nil {
+			c.logger.Debug("failed to marshal attributes to JSON", err)
+			droppedAttributesCount += uint64(len(attributes))
+		} else {
+			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+		}
+	}
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
 	}
@@ -162,6 +173,7 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID
 	}
 
 	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
+	attributes := make(map[string]interface{}, spanEvent.Attributes().Len())
 	spanEvent.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
@@ -170,10 +182,19 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID
 			droppedAttributesCount++
 			c.logger.Debug("invalid span event attribute value", err)
 		} else {
-			fields[k] = v
+			attributes[k] = v
 		}
 		return true
 	})
+	if len(attributes) > 0 {
+		marshalledAttributes, err := json.Marshal(attributes)
+		if err != nil {
+			c.logger.Debug("failed to marshal attributes to JSON", err)
+			droppedAttributesCount += uint64(len(attributes))
+		} else {
+			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+		}
+	}
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedEventAttributesCount] = droppedAttributesCount
 	}
@@ -219,6 +240,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
+	attributes := make(map[string]interface{}, spanLink.Attributes().Len())
 	spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			droppedAttributesCount++
@@ -227,10 +249,19 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 			droppedAttributesCount++
 			c.logger.Debug("invalid span link attribute value", err)
 		} else {
-			fields[k] = v
+			attributes[k] = v
 		}
 		return true
 	})
+	if len(attributes) > 0 {
+		marshalledAttributes, err := json.Marshal(attributes)
+		if err != nil {
+			c.logger.Debug("failed to marshal attributes to JSON", err)
+			droppedAttributesCount += uint64(len(attributes))
+		} else {
+			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+		}
+	}
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedLinkAttributesCount] = droppedAttributesCount
 	}
