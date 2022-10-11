@@ -48,6 +48,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/influxdata/influxdb-observability/influx2otel v0.2.28 // indirect
 	github.com/influxdata/influxdb-observability/otel2influx v0.2.28 // indirect
+	github.com/influxdata/influxdb/v2 v2.4.0
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.38.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
