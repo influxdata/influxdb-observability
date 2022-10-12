@@ -31,7 +31,7 @@ func SortResourceMetrics(rm pmetric.ResourceMetricsSlice) {
 				case pmetric.MetricTypeSummary:
 					for l := 0; l < m.Summary().DataPoints().Len(); l++ {
 						m.Summary().DataPoints().At(l).Attributes().Sort()
-						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pmetric.ValueAtQuantile) bool {
+						m.Summary().DataPoints().At(l).QuantileValues().Sort(func(a, b pmetric.SummaryDataPointValueAtQuantile) bool {
 							return a.Quantile() < b.Quantile()
 						})
 					}

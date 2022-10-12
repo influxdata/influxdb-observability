@@ -2,17 +2,19 @@ package tests
 
 import (
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/influxdata/influxdb-observability/common"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
 	"github.com/influxdata/telegraf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/influxdata/influxdb-observability/common"
 )
 
 func TestInflux2Otel(t *testing.T) {
@@ -70,24 +72,24 @@ cpu,cpu=cpu4,host=777348dc6343 usage_user=0.10090817356207936,usage_system=0.302
 		metric.SetName("cpu_usage_iowait")
 		metric.SetEmptyGauge()
 		dp := metric.Gauge().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("cpu", "cpu4")
-		dp.Attributes().PutString("host", "777348dc6343")
+		dp.Attributes().PutStr("cpu", "cpu4")
+		dp.Attributes().PutStr("host", "777348dc6343")
 		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleValue(0.0)
 		metric = metrics.AppendEmpty()
 		metric.SetName("cpu_usage_system")
 		metric.SetEmptyGauge()
 		dp = metric.Gauge().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("cpu", "cpu4")
-		dp.Attributes().PutString("host", "777348dc6343")
+		dp.Attributes().PutStr("cpu", "cpu4")
+		dp.Attributes().PutStr("host", "777348dc6343")
 		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleValue(0.3027245206862381)
 		metric = metrics.AppendEmpty()
 		metric.SetName("cpu_usage_user")
 		metric.SetEmptyGauge()
 		dp = metric.Gauge().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("cpu", "cpu4")
-		dp.Attributes().PutString("host", "777348dc6343")
+		dp.Attributes().PutStr("cpu", "cpu4")
+		dp.Attributes().PutStr("host", "777348dc6343")
 		dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 		dp.SetDoubleValue(0.10090817356207936)
 
@@ -106,14 +108,14 @@ swap,host=8eaaf6b73054 used_percent=1.5,total=1073737728i 1626302080000000000
 		metric.SetName("swap_used_percent")
 		metric.SetEmptyGauge()
 		dp := metric.Gauge().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("host", "8eaaf6b73054")
+		dp.Attributes().PutStr("host", "8eaaf6b73054")
 		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetDoubleValue(1.5)
 		metric = metrics.AppendEmpty()
 		metric.SetName("swap_total")
 		metric.SetEmptyGauge()
 		dp = metric.Gauge().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("host", "8eaaf6b73054")
+		dp.Attributes().PutStr("host", "8eaaf6b73054")
 		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntValue(1073737728)
 
@@ -132,18 +134,18 @@ swap,host=8eaaf6b73054 in=32768i,out=12021760i 1626302080000000000
 		metric.SetName("swap_in")
 		metric.SetEmptySum()
 		metric.Sum().SetIsMonotonic(true)
-		metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+		metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 		dp := metric.Sum().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("host", "8eaaf6b73054")
+		dp.Attributes().PutStr("host", "8eaaf6b73054")
 		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntValue(32768)
 		metric = metrics.AppendEmpty()
 		metric.SetName("swap_out")
 		metric.SetEmptySum()
 		metric.Sum().SetIsMonotonic(true)
-		metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+		metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 		dp = metric.Sum().DataPoints().AppendEmpty()
-		dp.Attributes().PutString("host", "8eaaf6b73054")
+		dp.Attributes().PutStr("host", "8eaaf6b73054")
 		dp.SetTimestamp(pcommon.Timestamp(1626302080000000000))
 		dp.SetIntValue(12021760)
 

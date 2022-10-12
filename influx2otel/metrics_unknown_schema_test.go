@@ -1,14 +1,16 @@
 package influx2otel_test
 
 import (
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/influx2otel"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUnknownSchema(t *testing.T) {
@@ -35,7 +37,7 @@ func TestUnknownSchema(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -43,24 +45,24 @@ func TestUnknownSchema(t *testing.T) {
 	m.SetName("cpu_usage_user")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
-	dp.Attributes().PutString("cpu", "cpu4")
-	dp.Attributes().PutString("host", "777348dc6343")
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(0.10090817356207936)
 	m = ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cpu_usage_system")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
-	dp.Attributes().PutString("cpu", "cpu4")
-	dp.Attributes().PutString("host", "777348dc6343")
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(0.3027245206862381)
 	m = ilMetrics.Metrics().AppendEmpty()
 	m.SetName("cpu_some_int_key")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
-	dp.Attributes().PutString("cpu", "cpu4")
-	dp.Attributes().PutString("host", "777348dc6343")
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(7)
 

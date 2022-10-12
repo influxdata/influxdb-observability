@@ -1,12 +1,13 @@
 package influx2otel_test
 
 import (
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"testing"
 
-	"github.com/influxdata/influxdb-observability/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/influxdata/influxdb-observability/common"
 )
 
 func assertMetricsEqual(t *testing.T, expect, got pmetric.Metrics) {

@@ -3,11 +3,15 @@ package tests
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
-	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
-	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
 	"strings"
 	"testing"
+
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,8 +25,9 @@ func TestOtel2Influx(t *testing.T) {
 					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
-					request := mt.otel.Clone()
-					err := mockReceiverFactory.nextMetricsConsumer.ConsumeMetrics(context.Background(), request)
+					clone := pmetric.NewMetrics()
+					mt.otel.CopyTo(clone)
+					err := mockReceiverFactory.nextMetricsConsumer.ConsumeMetrics(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
@@ -34,7 +39,9 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					metricsClient := pmetricotlp.NewClient(clientConn)
 
-					request := pmetricotlp.NewRequestFromMetrics(mt.otel.Clone())
+					clone := pmetric.NewMetrics()
+					mt.otel.CopyTo(clone)
+					request := pmetricotlp.NewRequestFromMetrics(clone)
 					_, err := metricsClient.Export(context.Background(), request)
 					if err != nil {
 						// TODO not sure why the service returns this error, but the data arrives as required by the test
@@ -60,8 +67,9 @@ func TestOtel2Influx(t *testing.T) {
 					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
-					request := tt.otel.Clone()
-					err := mockReceiverFactory.nextTracesConsumer.ConsumeTraces(context.Background(), request)
+					clone := ptrace.NewTraces()
+					tt.otel.CopyTo(clone)
+					err := mockReceiverFactory.nextTracesConsumer.ConsumeTraces(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
@@ -73,7 +81,9 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					tracesClient := ptraceotlp.NewClient(clientConn)
 
-					request := ptraceotlp.NewRequestFromTraces(tt.otel.Clone())
+					clone := ptrace.NewTraces()
+					tt.otel.CopyTo(clone)
+					request := ptraceotlp.NewRequestFromTraces(clone)
 					_, err := tracesClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
@@ -93,8 +103,9 @@ func TestOtel2Influx(t *testing.T) {
 					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
-					request := lt.otel.Clone()
-					err := mockReceiverFactory.nextLogsConsumer.ConsumeLogs(context.Background(), request)
+					clone := plog.NewLogs()
+					lt.otel.CopyTo(clone)
+					err := mockReceiverFactory.nextLogsConsumer.ConsumeLogs(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
@@ -106,7 +117,9 @@ func TestOtel2Influx(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
 					logsClient := plogotlp.NewClient(clientConn)
 
-					request := plogotlp.NewRequestFromLogs(lt.otel.Clone())
+					clone := plog.NewLogs()
+					lt.otel.CopyTo(clone)
+					request := plogotlp.NewRequestFromLogs(clone)
 					_, err := logsClient.Export(context.Background(), request)
 					require.NoError(t, err)
 

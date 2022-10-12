@@ -3,9 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
-	"google.golang.org/grpc/credentials/insecure"
 	"io/ioutil"
 	"log"
 	"net"
@@ -15,7 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/influxdata/influxdb-observability/common"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/agent"
@@ -30,6 +30,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
+
+	"github.com/influxdata/influxdb-observability/common"
 )
 
 func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect pmetric.Metrics) {
@@ -271,7 +273,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	require.NoError(t, err)
 	mockOtelService := newMockOtelService()
 	mockOtelServiceGrpcServer := grpc.NewServer()
-	pmetricotlp.RegisterServer(mockOtelServiceGrpcServer, mockOtelService)
+	pmetricotlp.RegisterGRPCServer(mockOtelServiceGrpcServer, mockOtelService)
 
 	go func() {
 		err := mockOtelServiceGrpcServer.Serve(mockOtelServiceListener)
@@ -340,7 +342,7 @@ func (m *mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
 	return nil
 }
 
-var _ pmetricotlp.Server = (*mockOtelService)(nil)
+var _ pmetricotlp.GRPCServer = (*mockOtelService)(nil)
 
 type mockOtelService struct {
 	metricss chan pmetric.Metrics
@@ -353,6 +355,8 @@ func newMockOtelService() *mockOtelService {
 }
 
 func (m *mockOtelService) Export(ctx context.Context, request pmetricotlp.Request) (pmetricotlp.Response, error) {
-	m.metricss <- request.Metrics().Clone()
+	clone := pmetric.NewMetrics()
+	request.Metrics().CopyTo(clone)
+	m.metricss <- clone
 	return pmetricotlp.NewResponse(), nil
 }

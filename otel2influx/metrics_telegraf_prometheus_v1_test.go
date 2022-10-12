@@ -8,10 +8,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/influxdata/influxdb-observability/common"
-	"github.com/influxdata/influxdb-observability/otel2influx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/influxdata/influxdb-observability/common"
+	"github.com/influxdata/influxdb-observability/otel2influx"
 )
 
 func TestWriteMetric_v1_gauge(t *testing.T) {
@@ -20,7 +21,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -81,7 +82,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -90,7 +91,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 	m.SetDescription("Age in seconds of the current cache")
 	m.SetEmptySum()
 	m.Sum().SetIsMonotonic(false)
-	m.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
@@ -144,7 +145,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -153,15 +154,15 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	m.SetDescription("The total number of HTTP requests")
 	m.SetEmptySum()
 	m.Sum().SetIsMonotonic(true)
-	m.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
-	dp.Attributes().PutString("method", "post")
+	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 400)
-	dp.Attributes().PutString("method", "post")
+	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(3)
 
@@ -212,7 +213,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -220,10 +221,10 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	m.SetName("http_request_duration_seconds")
 	m.SetEmptyHistogram()
 	m.SetDescription("A histogram of the request duration")
-	m.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
-	dp.Attributes().PutString("method", "post")
+	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
@@ -268,7 +269,7 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -276,10 +277,10 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 	m.SetName("http_request_duration_seconds")
 	m.SetEmptyHistogram()
 	m.SetDescription("A histogram of the request duration")
-	m.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
-	dp.Attributes().PutString("method", "post")
+	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
@@ -324,7 +325,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
-	rm.Resource().Attributes().PutString("container.name", "42")
+	rm.Resource().Attributes().PutStr("container.name", "42")
 	ilMetrics := rm.ScopeMetrics().AppendEmpty()
 	ilMetrics.Scope().SetName("My Library")
 	ilMetrics.Scope().SetVersion("latest")
@@ -334,7 +335,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	m.SetDescription("A summary of the RPC duration in seconds")
 	dp := m.Summary().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
-	dp.Attributes().PutString("method", "post")
+	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)

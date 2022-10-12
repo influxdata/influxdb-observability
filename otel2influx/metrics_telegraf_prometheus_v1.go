@@ -80,7 +80,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.NumberDataPointValueTypeNone:
+		case pmetric.NumberDataPointValueTypeEmpty:
 			continue
 		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricGaugeFieldKey] = dataPoint.DoubleValue()
@@ -99,7 +99,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, sum pmetric.Sum, w InfluxWriter) error {
-	if sum.AggregationTemporality() != pmetric.MetricAggregationTemporalityCumulative {
+	if sum.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum (as gauge) aggregation temporality %q", sum.AggregationTemporality())
 	}
 
@@ -111,7 +111,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.NumberDataPointValueTypeNone:
+		case pmetric.NumberDataPointValueTypeEmpty:
 			continue
 		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricGaugeFieldKey] = dataPoint.DoubleValue()
@@ -130,7 +130,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, sum pmetric.Sum, w InfluxWriter) error {
-	if sum.AggregationTemporality() != pmetric.MetricAggregationTemporalityCumulative {
+	if sum.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
 	}
 
@@ -142,7 +142,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 		}
 
 		switch dataPoint.ValueType() {
-		case pmetric.NumberDataPointValueTypeNone:
+		case pmetric.NumberDataPointValueTypeEmpty:
 			continue
 		case pmetric.NumberDataPointValueTypeDouble:
 			fields[common.MetricCounterFieldKey] = dataPoint.DoubleValue()
@@ -161,7 +161,7 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, histogram pmetric.Histogram, w InfluxWriter) error {
-	if histogram.AggregationTemporality() != pmetric.MetricAggregationTemporalityCumulative {
+	if histogram.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
 		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
 	}
 

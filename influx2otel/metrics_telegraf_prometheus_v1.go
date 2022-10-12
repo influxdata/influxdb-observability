@@ -268,7 +268,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	foundCount := false
 	var sum float64
 	foundSum := false
-	quantileValues := pmetric.NewValueAtQuantileSlice()
+	quantileValues := pmetric.NewSummaryDataPointValueAtQuantileSlice()
 
 	for k, vi := range fields {
 		if k == common.MetricSummaryCountFieldKey {

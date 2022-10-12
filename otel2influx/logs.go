@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 
@@ -60,7 +61,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 		}
 	}
 
-	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUndefined {
+	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUnspecified {
 		fields[common.AttributeSeverityNumber] = int64(severityNumber)
 	}
 	if severityText := logRecord.SeverityText(); severityText != "" {

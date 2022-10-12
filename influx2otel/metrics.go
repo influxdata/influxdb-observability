@@ -87,9 +87,9 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case k == common.AttributeInstrumentationLibraryVersion:
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
-			rAttributes.PutString(k, v)
+			rAttributes.PutStr(k, v)
 		default:
-			mAttributes.PutString(k, v)
+			mAttributes.PutStr(k, v)
 		}
 	}
 
@@ -149,10 +149,10 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case common.InfluxMetricValueTypeSum:
 			metric.SetEmptySum()
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+			metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeHistogram:
 			metric.SetEmptyHistogram()
-			metric.Histogram().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
+			metric.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 		case common.InfluxMetricValueTypeSummary:
 			metric.SetEmptySummary()
 		default:
