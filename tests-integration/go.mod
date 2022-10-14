@@ -10,8 +10,8 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.61.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.61.0
 	github.com/stretchr/testify v1.8.0
-	go.opentelemetry.io/collector v0.62.0
-	go.opentelemetry.io/collector/pdata v0.62.0
+	go.opentelemetry.io/collector v0.62.1
+	go.opentelemetry.io/collector/pdata v0.62.1
 	go.uber.org/zap v1.23.0
 	google.golang.org/grpc v1.50.0
 )
@@ -85,7 +85,7 @@ require (
 	github.com/wavefronthq/wavefront-sdk-go v0.10.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/collector/semconv v0.62.0 // indirect
+	go.opentelemetry.io/collector/semconv v0.62.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.1 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.10.0 // indirect
 	go.opentelemetry.io/otel v1.10.0 // indirect
