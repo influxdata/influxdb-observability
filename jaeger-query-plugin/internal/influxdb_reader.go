@@ -3,14 +3,14 @@ package internal
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
 	"go.uber.org/zap"
+
+	"github.com/influxdata/influxdb-observability/common"
 )
 
 var _ spanstore.Reader = (*influxdbReader)(nil)
@@ -24,14 +24,14 @@ type influxdbReader struct {
 
 func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Trace, error) {
 	// Get spans
-	spans := make(map[model.SpanID]*model.Span)
+	spansBySpanID := make(map[model.SpanID]*model.Span)
 
 	f := func(record map[string]interface{}) error {
 		span, err := recordToSpan(record)
 		if err != nil {
 			ir.logger.Warn("failed to convert span to Span", zap.Error(err))
 		} else {
-			spans[span.SpanID] = span
+			spansBySpanID[span.SpanID] = span
 		}
 		return nil
 	}
@@ -45,7 +45,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		_, spanID, log, err := recordToLog(record)
 		if err != nil {
 			ir.logger.Warn("failed to convert event to Log", zap.Error(err))
-		} else if span, ok := spans[spanID]; !ok {
+		} else if span, ok := spansBySpanID[spanID]; !ok {
 			ir.logger.Warn("span event contains unknown span ID")
 		} else {
 			// TODO filter span attributes duplicated in logs
@@ -55,7 +55,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 	}
 	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceID), f)
 	if err != nil {
-		return nil, err
+		ir.logger.Info("ignoring query error", zap.String("table", ir.tableLogs), zap.Error(err))
 	}
 
 	// Get links
@@ -63,7 +63,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		_, spanID, spanRef, err := recordToSpanRef(record)
 		if err != nil {
 			ir.logger.Warn("failed to convert link to SpanRef", zap.Error(err))
-		} else if span, found := spans[spanID]; !found {
+		} else if span, found := spansBySpanID[spanID]; !found {
 			ir.logger.Warn("link contains unknown span ID")
 		} else {
 			span.References = append(span.References, *spanRef)
@@ -73,25 +73,23 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 
 	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceID), f)
 	if err != nil {
-		return nil, err
+		ir.logger.Info("ignoring query error", zap.String("table", ir.tableSpanLinks), zap.Error(err))
 	}
 
 	// Assemble trace
 	trace := &model.Trace{
-		Spans: make([]*model.Span, len(spans)),
+		Spans: make([]*model.Span, 0, len(spansBySpanID)),
 	}
-	for i, span := range spans {
-		trace.Spans[i] = span
+	for _, span := range spansBySpanID {
+		trace.Spans = append(trace.Spans, span)
 	}
 	return trace, nil
 }
 
 func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
-	ir.logger.Info("GetServices")
 	var services []string
 	f := func(record map[string]interface{}) error {
-		fmt.Printf("%+v\n", record)
-		if serviceName, found := record[attributeServiceName]; found {
+		if serviceName, found := record[common.AttributeServiceName]; found {
 			services = append(services, serviceName.(string))
 		}
 		return nil
@@ -101,16 +99,15 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	println(strings.Join(services, "|"))
 	return services, nil
 }
 
 func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParameters spanstore.OperationQueryParameters) ([]spanstore.Operation, error) {
 	var operations []spanstore.Operation
 	f := func(record map[string]interface{}) error {
-		if operationName, found := record[attributeName]; found {
+		if operationName, found := record[common.AttributeName]; found {
 			operation := spanstore.Operation{Name: operationName.(string)}
-			if spanKind, found := record[attributeSpanKind]; found {
+			if spanKind, found := record[common.AttributeSpanKind]; found {
 				operation.SpanKind = spanKind.(string)
 			}
 			operations = append(operations, operation)
@@ -166,8 +163,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 
 	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceIDs...), f)
 	if err != nil {
-		ir.logger.Warn("while querying span events", zap.Error(err))
-		//return nil, err
+		ir.logger.Info("ignoring query error", zap.String("table", ir.tableLogs), zap.Error(err))
 	}
 
 	// Get links
@@ -186,8 +182,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 
 	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceIDs...), f)
 	if err != nil {
-		ir.logger.Warn("while querying span links", zap.Error(err))
-		//return nil, err
+		ir.logger.Info("ignoring query error", zap.String("table", ir.tableSpanLinks), zap.Error(err))
 	}
 
 	traces := make([]*model.Trace, 0, len(spansBySpanIDByTraceID))
@@ -199,13 +194,15 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 		traces = append(traces, trace)
 	}
 
+	ir.logger.Warn("FindTraces OK", zap.Int("count", len(traces)))
+
 	return traces, nil
 }
 
 func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
 	var traceIDs []model.TraceID
 	f := func(record map[string]interface{}) error {
-		if traceIDString, found := record[attributeTraceID].(string); found {
+		if traceIDString, found := record[common.AttributeTraceID].(string); found {
 			traceID, err := model.TraceIDFromString(traceIDString)
 			if err != nil {
 				return err

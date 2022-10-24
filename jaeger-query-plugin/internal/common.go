@@ -6,29 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/influxdata/influxdb-observability/common"
 	"github.com/jaegertracing/jaeger/model"
+
+	"github.com/influxdata/influxdb-observability/common"
 )
 
 const (
-	// These attribute key names are influenced by the proto message keys.
-	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/trace/v1/trace.proto
-	attributeTime             = "time"
-	attributeTraceID          = "trace_id"
-	attributeSpanID           = "span_id"
-	attributeParentSpanID     = "parent_span_id"
-	attributeName             = "name"
-	attributeBody             = "body"
-	attributeSpanKind         = "kind"
-	attributeEndTimeUnixNano  = "end_time_unix_nano"
-	attributeDurationNano     = "duration_nano"
-	attributeStatusCode       = "otel.status_code"
 	attributeStatusCodeError  = "ERROR"
-	attributeLinkedTraceID    = "linked_trace_id"
-	attributeLinkedSpanID     = "linked_span_id"
-	attributeServiceName      = "service.name"
 	attributeTelemetrySDKName = "telemetry.sdk.name"
-	attributeAttribute        = "attribute"
 )
 
 func recordToSpan(record map[string]interface{}) (*model.Span, error) {
@@ -47,38 +32,38 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			continue
 		}
 		switch k {
-		case attributeTime:
+		case common.AttributeTime:
 			if vv, ok := v.(time.Time); !ok {
 				return nil, fmt.Errorf("time is type %T", v)
 			} else {
 				span.StartTime = vv
 			}
-		case attributeTraceID:
+		case common.AttributeTraceID:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("trace ID is type %T", v)
 			} else if span.TraceID, err = model.TraceIDFromString(vv); err != nil {
 				return nil, err
 			}
 			parentSpanRef.TraceID = span.TraceID
-		case attributeSpanID:
+		case common.AttributeSpanID:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("span ID is type %T", v)
 			} else if span.SpanID, err = model.SpanIDFromString(vv); err != nil {
 				return nil, err
 			}
-		case attributeServiceName:
+		case common.AttributeServiceName:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("service name is type %T", v)
 			} else {
 				span.Process.ServiceName = vv
 			}
-		case attributeName:
+		case common.AttributeName:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("operation name is type %T", v)
 			} else {
 				span.OperationName = vv
 			}
-		case attributeSpanKind:
+		case common.AttributeSpanKind:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("span kind is type %T", v)
 			} else {
@@ -93,16 +78,16 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 					span.Tags = append(span.Tags, model.String("span.kind", "consumer"))
 				}
 			}
-		case attributeDurationNano:
+		case common.AttributeDurationNano:
 			if vv, ok := v.(int64); !ok {
 				return nil, fmt.Errorf("duration nanoseconds is type %T", v)
 			} else {
 				span.Duration = time.Duration(vv)
 			}
-		case attributeEndTimeUnixNano:
+		case common.AttributeEndTimeUnixNano:
 			// Jaeger likes duration ^^
 			continue
-		case attributeParentSpanID:
+		case common.AttributeParentSpanID:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("parent span ID is type %T", v)
 			} else {
@@ -111,7 +96,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			if err != nil {
 				return nil, err
 			}
-		case attributeStatusCode:
+		case common.AttributeStatusCode:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("status code is type %T", v)
 			} else {
@@ -120,7 +105,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 					span.Tags = append(span.Tags, model.Bool("error", true))
 				}
 			}
-		case attributeAttribute:
+		case common.AttributeSpanAttributes:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("attribute is type %T", v)
 			} else {
@@ -176,36 +161,39 @@ func recordToLog(record map[string]interface{}) (model.TraceID, model.SpanID, *m
 			continue
 		}
 		switch k {
-		case attributeTime:
+		case common.AttributeTime:
 			if vv, ok := v.(time.Time); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("time is type %T", v)
 			} else {
 				log.Timestamp = vv
 			}
-		case attributeTraceID:
+		case common.AttributeTraceID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("trace ID is type %T", v)
 			} else if traceID, err = model.TraceIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case attributeSpanID:
+		case common.AttributeSpanID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("span ID is type %T", v)
 			} else if spanID, err = model.SpanIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case attributeName:
+		case common.AttributeName:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("log name is type %T", v)
 			} else {
 				log.Fields = append(log.Fields, model.String("event", vv))
 			}
-		case attributeBody:
+		case common.AttributeBody:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("log body is type %T", v)
 			} else {
 				log.Fields = append(log.Fields, model.String("message", vv))
 			}
+		case common.AttributeEventAttributes:
+		case common.AttributeServiceName:
+			// The span has this information, no need to duplicate
 		default:
 			log.Fields = append(log.Fields, kvToKeyValue(k, v))
 		}
@@ -230,25 +218,25 @@ func recordToSpanRef(record map[string]interface{}) (model.TraceID, model.SpanID
 			continue
 		}
 		switch k {
-		case attributeTraceID:
+		case common.AttributeTraceID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("trace ID is type %T", v)
 			} else if traceID, err = model.TraceIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case attributeSpanID:
+		case common.AttributeSpanID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("span ID is type %T", v)
 			} else if spanID, err = model.SpanIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case attributeLinkedTraceID:
+		case common.AttributeLinkedTraceID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("linked trace ID is type %T", v)
 			} else if spanRef.TraceID, err = model.TraceIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case attributeLinkedSpanID:
+		case common.AttributeLinkedSpanID:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("linked span ID is type %T", v)
 			} else if spanRef.SpanID, err = model.SpanIDFromString(vv); err != nil {

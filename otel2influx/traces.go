@@ -57,19 +57,19 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	if spanID.IsEmpty() {
 		return errors.New("span has no span ID")
 	}
-	tags[common.AttributeSpanID] = spanID.HexString()
+	fields[common.AttributeSpanID] = spanID.HexString()
 
 	if traceState := span.TraceState().AsRaw(); traceState != "" {
-		tags[common.AttributeTraceState] = traceState
+		fields[common.AttributeTraceState] = traceState
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
-		tags[common.AttributeParentSpanID] = parentSpanID.HexString()
+		fields[common.AttributeParentSpanID] = parentSpanID.HexString()
 	}
 	if name := span.Name(); name != "" {
 		tags[common.AttributeName] = name
 	}
 	if kind := span.Kind(); kind != ptrace.SpanKindUnspecified {
-		tags[common.AttributeSpanKind] = kind.String()
+		fields[common.AttributeSpanKind] = kind.String()
 	}
 
 	ts := span.StartTimestamp().AsTime()
@@ -102,7 +102,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 			c.logger.Debug("failed to marshal attributes to JSON", err)
 			droppedAttributesCount += uint64(len(attributes))
 		} else {
-			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+			fields[common.AttributeSpanAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {
@@ -112,7 +112,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	droppedEventsCount := uint64(span.DroppedEventsCount())
 	for i := 0; i < span.Events().Len(); i++ {
 		event := span.Events().At(i)
-		if measurement, tags, fields, ts, err := c.spanEventToLP(traceID, spanID, resource, instrumentationLibrary, event); err != nil {
+		if measurement, tags, fields, ts, err := c.spanEventToLP(traceID, spanID, event); err != nil {
 			droppedEventsCount++
 			c.logger.Debug("invalid span event", err)
 		} else if err = w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
@@ -158,16 +158,13 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID pcommon.SpanID, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, spanEvent ptrace.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID pcommon.SpanID, spanEvent ptrace.SpanEvent) (measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
 	measurement = common.MeasurementLogs
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	tags = ResourceToTags(c.logger, resource, tags)
-	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
-
 	tags[common.AttributeTraceID] = traceID.HexString()
-	tags[common.AttributeSpanID] = spanID.HexString()
+	fields[common.AttributeSpanID] = spanID.HexString()
 	if name := spanEvent.Name(); name != "" {
 		tags[common.AttributeName] = name
 	}
@@ -192,16 +189,11 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID
 			c.logger.Debug("failed to marshal attributes to JSON", err)
 			droppedAttributesCount += uint64(len(attributes))
 		} else {
-			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+			fields[common.AttributeEventAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedEventAttributesCount] = droppedAttributesCount
-	}
-
-	if len(fields) == 0 {
-		// TODO remove when tags and fields are just columns
-		fields["count"] = uint64(1)
 	}
 
 	ts = spanEvent.Timestamp().AsTime()
@@ -219,7 +211,7 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 	fields = make(map[string]interface{})
 
 	tags[common.AttributeTraceID] = traceID.HexString()
-	tags[common.AttributeSpanID] = spanID.HexString()
+	fields[common.AttributeSpanID] = spanID.HexString()
 
 	if linkedTraceID := spanLink.TraceID(); linkedTraceID.IsEmpty() {
 		err = errors.New("span link has no trace ID")
@@ -232,11 +224,11 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 		err = errors.New("span link has no span ID")
 		return
 	} else {
-		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
+		fields[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
 	}
 
 	if traceState := spanLink.TraceState().AsRaw(); traceState != "" {
-		tags[common.AttributeTraceState] = traceState
+		fields[common.AttributeTraceState] = traceState
 	}
 
 	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
@@ -259,16 +251,11 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 			c.logger.Debug("failed to marshal attributes to JSON", err)
 			droppedAttributesCount += uint64(len(attributes))
 		} else {
-			fields[common.AttributeSpanAttribute] = string(marshalledAttributes)
+			fields[common.AttributeLinkAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {
 		fields[common.AttributeDroppedLinkAttributesCount] = droppedAttributesCount
-	}
-
-	if len(fields) == 0 {
-		// TODO remove when tags and fields are just columns
-		fields["count"] = uint64(1)
 	}
 
 	return

@@ -46,7 +46,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	go.opentelemetry.io/collector/pdata v0.62.0 // indirect
+	go.opentelemetry.io/collector/pdata v0.62.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20220926192436-02166a98028e // indirect
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
@@ -57,3 +57,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/influxdata/influxdb-observability/common => ../common
