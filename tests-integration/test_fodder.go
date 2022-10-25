@@ -124,11 +124,11 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 		}{
 			otel: traces,
 			lp: `
-spans,kind=SPAN_KIND_INTERNAL,name=cpu_temp,span_id=0000000000000003,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,otel.span.attributes="{\"k\":true}",otel.span.dropped_attributes_count=7u,otel.span.dropped_events_count=13u,otel.span.dropped_links_count=17u 1622848000000000000
-logs,name=yay-event,span_id=0000000000000003,trace_id=00000000000000020000000000000001 otel.event.attributes="{\"foo\":\"bar\"}",otel.event.dropped_attributes_count=5u 1622848000000000001
-span-links,linked_span_id=0000000000000003,linked_trace_id=00000000000000020000000000000002,span_id=0000000000000003,trace_id=00000000000000020000000000000001 otel.link.dropped_attributes_count=19u,otel.link.attributes="{\"yay-link\":123}" 1622848000000000000
-spans,kind=SPAN_KIND_CLIENT,name=http_request,parent_span_id=0000000000000003,span_id=0000000000000004,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i 1622848000000000002
-spans,kind=SPAN_KIND_CONSUMER,name=process_batch,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i 1622848000000000010
+spans,name=cpu_temp,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,kind="SPAN_KIND_INTERNAL",otel.span.attributes="{\"k\":true}",otel.span.dropped_attributes_count=7u,otel.span.dropped_events_count=13u,otel.span.dropped_links_count=17u,span_id="0000000000000003" 1622848000000000000
+logs,name=yay-event,trace_id=00000000000000020000000000000001 otel.event.attributes="{\"foo\":\"bar\"}",otel.event.dropped_attributes_count=5u,span_id="0000000000000003" 1622848000000000001
+span-links,linked_trace_id=00000000000000020000000000000002,trace_id=00000000000000020000000000000001 linked_span_id="0000000000000003",otel.link.dropped_attributes_count=19u,otel.link.attributes="{\"yay-link\":123}",span_id="0000000000000003" 1622848000000000000
+spans,name=http_request,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i,kind="SPAN_KIND_CLIENT",parent_span_id="0000000000000003",span_id="0000000000000004" 1622848000000000002
+spans,name=process_batch,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i,kind="SPAN_KIND_CONSUMER",span_id="0000000000000005" 1622848000000000010
 `,
 		})
 	}
