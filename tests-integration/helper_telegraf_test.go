@@ -3,7 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -231,7 +231,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	t.Helper()
 
 	logWriterToRestore := log.Writer()
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	t.Cleanup(func() {
 		log.SetOutput(logWriterToRestore)
 	})
