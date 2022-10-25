@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -221,7 +221,7 @@ func (m *mockReceiverFactory) CreateLogsReceiver(ctx context.Context, params com
 }
 
 func (m *mockReceiverFactory) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	payload, err := ioutil.ReadAll(request.Body)
+	payload, err := io.ReadAll(request.Body)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		_, err = writer.Write([]byte(err.Error()))
