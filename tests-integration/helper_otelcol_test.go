@@ -106,7 +106,8 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ConfigProvider: otelcolConfigProvider,
+		ConfigProvider:        otelcolConfigProvider,
+		SkipSettingGRPCLogger: true,
 	}
 	envprovider.New()
 	fileprovider.New()
