@@ -4,10 +4,9 @@ import (
 	"net"
 	"testing"
 
+	"github.com/influxdata/influxdb/v2/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/influxdata/influxdb/v2/models"
 )
 
 func findOpenTCPPort(t *testing.T) int {
@@ -22,61 +21,27 @@ func findOpenTCPPort(t *testing.T) int {
 func assertLineprotocolEqual(t *testing.T, expect, got string) bool {
 	t.Helper()
 
-	expectedPoints, err := parseLineProtocol(expect)
-	if err != nil {
-		t.Error(err)
-	}
-
-	actualPoints, err := parseLineProtocol(got)
-	if err != nil {
-		t.Error(err)
-	}
-
-	sameLength := assert.Len(t, actualPoints, len(expectedPoints))
-	if !sameLength {
-		return sameLength
-	}
-
-	// order of LP within the batch is not guaranteed, so we cannot do pairwise comparison
-	// instead, we create a map of Point::HashID() -> Point and compare the two maps
-
-	expectedMap := pointMap(expectedPoints)
-	actualMap := pointMap(actualPoints)
-
-	equality := make(map[uint64]bool, len(expectedMap))
-	for k, v := range expectedMap {
-		equality[k] = assertPointEqual(t, v, actualMap[k])
-	}
-
-	return assert.NotContains(t, equality, false)
+	expectPoints := parseLineProtocol(t, expect)
+	gotPoints := parseLineProtocol(t, got)
+	return assert.Equal(t, expectPoints, gotPoints)
 }
 
-func pointMap(points []models.Point) map[uint64]models.Point {
-	m := make(map[uint64]models.Point, len(points))
-
-	for _, p := range points {
-		m[p.HashID()] = p
-	}
-
-	return m
-}
-
-func assertPointEqual(t *testing.T, expected, actual models.Point) bool {
-	actualTs := actual.Time()
-	expectedTs := expected.Time()
-	actualTags := actual.Tags()
-	expectedTags := expected.Tags()
-	actualFields, _ := actual.Fields()
-	expectedFields, _ := expected.Fields()
-
-	timeMatch := assert.Equal(t, expectedTs, actualTs)
-	tagsMatch := assert.ElementsMatch(t, expectedTags, actualTags)
-	fieldsMatch := assert.Equal(t, expectedFields, actualFields)
-
-	return timeMatch && tagsMatch && fieldsMatch
-}
-
-func parseLineProtocol(line string) ([]models.Point, error) {
+func parseLineProtocol(t *testing.T, line string) map[string]map[string][]models.Fields {
 	points, err := models.ParsePointsString(line)
-	return points, err
+	require.NoError(t, err)
+	fieldsByTagsByMeasurement := make(map[string]map[string][]models.Fields)
+	for _, point := range points {
+		measurementName := string(point.Name())
+		fieldsByTags := fieldsByTagsByMeasurement[measurementName]
+		if fieldsByTags == nil {
+			fieldsByTagsByMeasurement[measurementName] = make(map[string][]models.Fields)
+			fieldsByTags = fieldsByTagsByMeasurement[measurementName]
+		}
+
+		tags := point.Tags().String()
+		fields, err := point.Fields()
+		require.NoError(t, err)
+		fieldsByTags[tags] = append(fieldsByTags[tags], fields)
+	}
+	return fieldsByTagsByMeasurement
 }

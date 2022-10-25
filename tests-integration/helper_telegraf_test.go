@@ -3,7 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -231,7 +231,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	t.Helper()
 
 	logWriterToRestore := log.Writer()
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	t.Cleanup(func() {
 		log.SetOutput(logWriterToRestore)
 	})
@@ -241,7 +241,9 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 	// telegrafConfig.Agent.LogTarget = "file"
 	// telegrafConfig.Agent.Logfile = "/dev/null"
 
-	mockInputPlugin := new(mockInputPlugin)
+	mockInputPlugin := &mockInputPlugin{
+		hasStarted: make(chan struct{}),
+	}
 	mockInputConfig := &models.InputConfig{
 		Name: "mock",
 	}
@@ -313,17 +315,26 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 		}
 	}
 
+	// Wait for input plugin to be started (to prevent race condition)
+	select {
+	case <-mockInputPlugin.hasStarted:
+	case <-time.After(time.Second):
+		t.Fatal("mock input plugin not started")
+	}
+
 	return mockInputPlugin, mockOtelService, stopAgent
 }
 
 var _ telegraf.ServiceInput = (*mockInputPlugin)(nil)
 
 type mockInputPlugin struct {
+	hasStarted  chan struct{}
 	accumulator telegraf.Accumulator
 }
 
 func (m *mockInputPlugin) Start(accumulator telegraf.Accumulator) error {
 	m.accumulator = accumulator
+	close(m.hasStarted)
 	return nil
 }
 
