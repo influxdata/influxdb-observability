@@ -88,7 +88,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 		return true
 	})
 	if droppedAttributesCount > 0 {
-		fields[common.AttributeDroppedSpanAttributesCount] = droppedAttributesCount
+		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
 	if err := w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
