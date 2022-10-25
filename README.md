@@ -2,6 +2,45 @@
 
 This repository is a reference for converting observability signals (traces, metrics, logs) to/from a common InfluxDB schema.
 
+## WIP
+
+This branch is a work-in-progress, with the goal to refine tracing.
+Steps to run the current demo follow.
+
+In an InfluxDB Cloud 2 org backed by IOx, create a bucket named `otel` and a token with permission to read and write to that bucket.
+
+In docker-compose.yml, set values for these keys:
+```yaml
+INFLUXDB_ADDR: <region specific hostname - no https prefix>
+INFLUXDB_BUCKETNAME: otel
+INFLUXDB_TOKEN: <the API token you just created>
+```
+
+In otelcol-influxdb/config.yml, set the similar values for these keys:
+```yaml
+endpoint: https://<region specific URL - https://hostname>
+bucket: otel
+token: <the API token you just created>
+```
+
+Build the needed docker images:
+```console
+$ docker compose build
+```
+
+Run the docker compose:
+```console
+$ docker compose up --abort-on-container-exit --remove-orphans
+```
+
+Create some traces.
+Browse to HotROD at http://localhost:8080 and click a few customer names.
+
+Query those traces.
+Browse to Jaeger at http://localhost:16686 and click "Find Traces" near the bottom left.
+
+Click any trace.
+
 ## Schema Reference
 
 [Schema reference with conversion tables](docs/index.md).

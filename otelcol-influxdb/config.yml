@@ -1,0 +1,19 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+  jaeger:
+    protocols:
+      thrift_compact:
+
+exporters:
+  influxdb:
+    endpoint:
+    bucket:
+    token:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger]
+      exporters: [influxdb]

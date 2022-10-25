@@ -1,2 +1,0 @@
-influxdb.host: http://localhost:8080
-influxdb.database: mydatabase
