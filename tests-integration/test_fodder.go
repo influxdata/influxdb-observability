@@ -124,11 +124,11 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 		}{
 			otel: traces,
 			lp: `
-spans,kind=Internal,name=cpu_temp,span_id=0000000000000003,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,attributes="{\"k\":true}",dropped_attributes_count=7u,dropped_events_count=13u,dropped_links_count=17u 1622848000000000000
-logs,name=yay-event,span_id=0000000000000003,trace_id=00000000000000020000000000000001 attributes="{\"foo\":\"bar\"}",dropped_attributes_count=5u 1622848000000000001
-span-links,linked_span_id=0000000000000003,linked_trace_id=00000000000000020000000000000002,span_id=0000000000000003,trace_id=00000000000000020000000000000001 dropped_attributes_count=19u,attributes="{\"yay-link\":123}" 1622848000000000000
-spans,kind=Client,name=http_request,parent_span_id=0000000000000003,span_id=0000000000000004,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i 1622848000000000002
-spans,kind=Consumer,name=process_batch,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i 1622848000000000010
+spans,name=cpu_temp,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,kind="Internal",attributes="{\"k\":true}",dropped_attributes_count=7u,dropped_events_count=13u,dropped_links_count=17u,span_id="0000000000000003" 1622848000000000000
+logs,name=yay-event,trace_id=00000000000000020000000000000001 attributes="{\"foo\":\"bar\"}",dropped_attributes_count=5u,span_id="0000000000000003" 1622848000000000001
+span-links,linked_trace_id=00000000000000020000000000000002,trace_id=00000000000000020000000000000001 linked_span_id="0000000000000003",dropped_attributes_count=19u,attributes="{\"yay-link\":123}",span_id="0000000000000003" 1622848000000000000
+spans,name=http_request,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i,kind="Client",parent_span_id="0000000000000003",span_id="0000000000000004" 1622848000000000002
+spans,name=process_batch,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i,kind="Consumer",span_id="0000000000000005" 1622848000000000010
 `,
 		})
 	}
