@@ -1,63 +1,160 @@
 package main
 
 import (
-	"flag"
+	"context"
+	"errors"
+	"fmt"
+	"net"
 	"os"
-	"sort"
-	"strings"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/hashicorp/go-hclog"
-	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/config"
-	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/store"
-	"github.com/jaegertracing/jaeger/plugin/storage/grpc"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
-	"github.com/spf13/viper"
+	"github.com/mattn/go-isatty"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
+	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/internal"
 )
 
-var configPath string
+const serviceName = "jaeger-influxdb"
 
 func main() {
-	logger := hclog.New(&hclog.LoggerOptions{
-		Name:       "jaeger-influxdb",
-		Level:      hclog.Warn, // Jaeger only captures >= Warn, so don't bother logging below Warn
-		JSONFormat: true,
-	})
-
-	flag.StringVar(&configPath, "config", "", "The absolute path to the InfluxDB plugin's configuration file")
-	flag.Parse()
-
-	v := viper.New()
-	v.AutomaticEnv()
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
-
-	if configPath != "" {
-		v.SetConfigFile(configPath)
-
-		err := v.ReadInConfig()
-		if err != nil {
-			logger.Error("failed to parse configuration file", "error", err)
-			os.Exit(1)
-		}
+	config := new(internal.Config)
+	command := &cobra.Command{
+		Use:   serviceName,
+		Args:  cobra.NoArgs,
+		Short: serviceName + " is the Jaeger-InfluxDB gRPC remote storage service",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return run(cmd.Context(), config)
+		},
 	}
 
-	conf := config.Configuration{}
-	conf.InitFromViper(v)
-
-	environ := os.Environ()
-	sort.Strings(environ)
-	for _, env := range environ {
-		logger.Warn(env)
-	}
-
-	logger.Warn("Started with InfluxDB")
-	plugin, err := store.NewStore(&conf, logger)
-
-	if err != nil {
-		logger.Error("failed to open plugin", "error", err)
+	if err := config.Init(command); err != nil {
+		fmt.Printf("failed to get config: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	grpc.Serve(&shared.PluginServices{
-		Store: plugin,
-	})
+	logger, err := initLogger(config)
+	if err != nil {
+		fmt.Printf("failed to start logger: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	ctx := contextWithStandardSignals(context.Background())
+	ctx = internal.LoggerWithContext(ctx, logger)
+	if err := command.ExecuteContext(ctx); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			fmt.Printf("%s\n", err.Error())
+			os.Exit(1)
+		}
+	}
+}
+
+func initLogger(config *internal.Config) (*zap.Logger, error) {
+	var loggerConfig zap.Config
+	if isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		loggerConfig = zap.NewDevelopmentConfig()
+	} else {
+		loggerConfig = zap.NewProductionConfig()
+	}
+	var err error
+	loggerConfig.Level, err = zap.ParseAtomicLevel(config.LogLevel)
+	if err != nil {
+		return nil, err
+	}
+	return loggerConfig.Build()
+}
+
+func contextWithStandardSignals(ctx context.Context) context.Context {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		defer cancel()
+		select {
+		case <-ctx.Done():
+			return
+		case <-sigCh:
+			return
+		}
+	}()
+	return ctx
+}
+
+type contextServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (ss *contextServerStream) Context() context.Context {
+	return ss.ctx
+}
+
+func run(ctx context.Context, config *internal.Config) error {
+	backend, err := internal.NewInfluxdbStorage(ctx, config)
+	if err != nil {
+		return err
+	}
+	logger := internal.LoggerFromContext(ctx)
+	grpcHandler := shared.NewGRPCHandlerWithPlugins(backend, backend, nil)
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			res, err := handler(internal.LoggerWithContext(ctx, logger), req)
+			if err != nil {
+				logger.Error("gRPC interceptor", zap.Error(err))
+			}
+			return res, err
+		}),
+		grpc.StreamInterceptor(func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			ctx := internal.LoggerWithContext(stream.Context(), logger)
+			stream = &contextServerStream{
+				ServerStream: stream,
+				ctx:          ctx,
+			}
+			err := handler(srv, stream)
+			if err != nil {
+				logger.Error("gRPC interceptor", zap.Error(err))
+			}
+			return err
+		}))
+	reflection.Register(grpcServer)
+	if err = grpcHandler.Register(grpcServer); err != nil {
+		return err
+	}
+
+	grpcListener, err := net.Listen("tcp", config.ListenAddr)
+	if err != nil {
+		return err
+	}
+	// grpcServer.Serve() closes this listener, so don't need to close it directly
+	defer func() { _ = grpcListener.Close() }()
+
+	errCh := make(chan error)
+	go func() {
+		defer close(errCh)
+		errCh <- grpcServer.Serve(grpcListener)
+	}()
+
+	internal.LoggerFromContext(ctx).Info("ready")
+	<-ctx.Done()
+	internal.LoggerFromContext(ctx).Info("exiting")
+
+	grpcServer.GracefulStop()
+	select {
+	case err = <-errCh:
+	case <-time.After(5 * time.Second):
+		internal.LoggerFromContext(ctx).Warn("the gRPC server is being stubborn, so forcing it to stop")
+		grpcServer.Stop()
+		select {
+		case err = <-errCh:
+		case <-time.After(3 * time.Second):
+			err = errors.New("the gRPC server never stopped")
+		}
+	}
+
+	return err
 }
