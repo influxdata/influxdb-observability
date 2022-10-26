@@ -1,4 +1,4 @@
-module github.com/influxdata/influxdb-observability/jaeger-query-plugin
+module github.com/influxdata/influxdb-observability/jaeger-influxdb
 
 go 1.18
 

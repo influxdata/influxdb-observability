@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/influxdata/influxdb-observability/jaeger-query-plugin/internal"
+	"github.com/influxdata/influxdb-observability/jaeger-influxdb/internal"
 )
 
 const serviceName = "jaeger-influxdb"
