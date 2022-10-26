@@ -1,0 +1,54 @@
+name: docker
+
+on:
+  push:
+    branches:
+    - iox-wip
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Docker meta, otelcol-influxdb
+      id: meta-otelcol-influxdb
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/otelcol-influxdb
+        tags: |
+          type=sha,prefix=iox-wip-,suffix=,format=short
+          type=raw,value=iox-wip-latest
+    - name: Docker meta, jaeger-influxdb
+      id: meta-jaeger-influxdb
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/jaeger-influxdb
+        tags: |
+          type=sha,prefix=iox-wip-,suffix=,format=short
+          type=raw,value=iox-wip-latest
+    - name: Build and push otelcol-influxdb
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        # this takes ~15m to build, vs ~2m without
+        # platforms: linux/amd64,linux/arm64
+        file: otelcol-influxdb/Dockerfile
+        tags: ${{ steps.meta-otelcol-influxdb.outputs.tags }}
+    - name: Build and push jaeger-influxdb
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        # this takes ~15m to build, vs ~2m without
+        # platforms: linux/amd64,linux/arm64
+        file: jaeger-influxdb/Dockerfile
+        tags: ${{ steps.meta-jaeger-influxdb.outputs.tags }}
