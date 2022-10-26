@@ -20,7 +20,7 @@ services:
   jaeger-influxdb:
     build:
       context: .
-      dockerfile: jaeger-query-plugin/Dockerfile
+      dockerfile: jaeger-influxdb/Dockerfile
     image: jaeger-influxdb:local
     stop_grace_period: 10s
     environment:

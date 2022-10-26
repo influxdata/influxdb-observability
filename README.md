@@ -55,9 +55,9 @@ The golang package [`influx2otel`](influx2otel/README.md) converts (measurement,
 It is imported by [the OpenTelemtry Collector InfluxDB receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.27.0/receiver/influxdbreceiver)
 and by [the (WIP) Telegraf OpenTelemetry output plugin](https://github.com/influxdata/telegraf/pull/9228).
 
-## `jaeger-query-plugin`
+## `jaeger-influxdb`
 
-The [Jaeger Query Plugin for InfluxDB](jaeger-query-plugin) enables querying traces stored in InfluxDB/IOx via the Jaeger UI.
+The [Jaeger Query Plugin for InfluxDB](jaeger-influxdb) enables querying traces stored in InfluxDB/IOx via the Jaeger UI.
 
 ## `common`
 
