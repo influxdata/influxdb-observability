@@ -2,6 +2,13 @@
 
 This repository is a reference for converting observability signals (traces, metrics, logs) to/from a common InfluxDB schema.
 
+## TODO
+Fork this demo:
+https://github.com/open-telemetry/opentelemetry-demo
+
+Double-check auth with this doc:
+https://opentelemetry.io/docs/collector/custom-auth/
+
 ## WIP
 
 This branch is a work-in-progress, with the goal to refine tracing.

@@ -40,7 +40,7 @@ func (c *Config) Init(command *cobra.Command) error {
 			pointer:      &c.ListenAddr,
 			name:         "listen-addr",
 			defaultValue: fmt.Sprintf(":%d", ports.RemoteStorageGRPC),
-			usage:        "Jaeger plugin service (this process) host:port address",
+			usage:        "Jaeger gRPC storage service (this process) host:port address",
 		},
 		{
 			pointer: &c.InfluxdbAddr,
