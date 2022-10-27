@@ -69,12 +69,13 @@ func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegr
 		return
 	}
 
+	marshaller := &pmetric.JSONMarshaler{}
 	common.SortResourceMetrics(expect.ResourceMetrics())
-	expectJSON, err := pmetric.NewJSONMarshaler().MarshalMetrics(expect)
+	expectJSON, err := marshaller.MarshalMetrics(expect)
 	require.NoError(t, err)
 
 	common.SortResourceMetrics(got.ResourceMetrics())
-	gotJSON, err := pmetric.NewJSONMarshaler().MarshalMetrics(got)
+	gotJSON, err := marshaller.MarshalMetrics(got)
 	require.NoError(t, err)
 
 	assert.JSONEq(t, string(expectJSON), string(gotJSON))
@@ -354,9 +355,9 @@ func newMockOtelService() *mockOtelService {
 	}
 }
 
-func (m *mockOtelService) Export(ctx context.Context, request pmetricotlp.Request) (pmetricotlp.Response, error) {
+func (m *mockOtelService) Export(ctx context.Context, request pmetricotlp.ExportRequest) (pmetricotlp.ExportResponse, error) {
 	clone := pmetric.NewMetrics()
 	request.Metrics().CopyTo(clone)
 	m.metricss <- clone
-	return pmetricotlp.NewResponse(), nil
+	return pmetricotlp.NewExportResponse(), nil
 }

@@ -37,11 +37,11 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					metricsClient := pmetricotlp.NewClient(clientConn)
+					metricsClient := pmetricotlp.NewGRPCClient(clientConn)
 
 					clone := pmetric.NewMetrics()
 					mt.otel.CopyTo(clone)
-					request := pmetricotlp.NewRequestFromMetrics(clone)
+					request := pmetricotlp.NewExportRequestFromMetrics(clone)
 					_, err := metricsClient.Export(context.Background(), request)
 					if err != nil {
 						// TODO not sure why the service returns this error, but the data arrives as required by the test
@@ -79,11 +79,11 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					tracesClient := ptraceotlp.NewClient(clientConn)
+					tracesClient := ptraceotlp.NewGRPCClient(clientConn)
 
 					clone := ptrace.NewTraces()
 					tt.otel.CopyTo(clone)
-					request := ptraceotlp.NewRequestFromTraces(clone)
+					request := ptraceotlp.NewExportRequestFromTraces(clone)
 					_, err := tracesClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
@@ -115,11 +115,11 @@ func TestOtel2Influx(t *testing.T) {
 
 				t.Run("telegraf", func(t *testing.T) {
 					clientConn, mockOutputPlugin, stopTelegraf := setupTelegrafOpenTelemetryInput(t)
-					logsClient := plogotlp.NewClient(clientConn)
+					logsClient := plogotlp.NewGRPCClient(clientConn)
 
 					clone := plog.NewLogs()
 					lt.otel.CopyTo(clone)
-					request := plogotlp.NewRequestFromLogs(clone)
+					request := plogotlp.NewExportRequestFromLogs(clone)
 					_, err := logsClient.Export(context.Background(), request)
 					require.NoError(t, err)
 
