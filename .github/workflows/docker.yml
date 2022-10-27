@@ -3,7 +3,7 @@ name: docker
 on:
   push:
     branches:
-    - iox-wip
+    - jgm-jaeger-aio-image
 
 jobs:
   docker:
@@ -18,21 +18,13 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
     - name: Docker meta, otelcol-influxdb
       id: meta-otelcol-influxdb
       uses: docker/metadata-action@v4
       with:
         images: |
           jacobmarble/otelcol-influxdb
-        tags: |
-          type=sha,prefix=iox-wip-,suffix=,format=short
-          type=raw,value=iox-wip-latest
-    - name: Docker meta, jaeger-influxdb
-      id: meta-jaeger-influxdb
-      uses: docker/metadata-action@v4
-      with:
-        images: |
-          jacobmarble/jaeger-influxdb
         tags: |
           type=sha,prefix=iox-wip-,suffix=,format=short
           type=raw,value=iox-wip-latest
@@ -44,6 +36,16 @@ jobs:
         # platforms: linux/amd64,linux/arm64
         file: otelcol-influxdb/Dockerfile
         tags: ${{ steps.meta-otelcol-influxdb.outputs.tags }}
+
+    - name: Docker meta, jaeger-influxdb
+      id: meta-jaeger-influxdb
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/jaeger-influxdb
+        tags: |
+          type=sha,prefix=iox-wip-,suffix=,format=short
+          type=raw,value=iox-wip-latest
     - name: Build and push jaeger-influxdb
       uses: docker/build-push-action@v3
       with:
@@ -52,3 +54,21 @@ jobs:
         # platforms: linux/amd64,linux/arm64
         file: jaeger-influxdb/Dockerfile
         tags: ${{ steps.meta-jaeger-influxdb.outputs.tags }}
+
+    - name: Docker meta, jaeger-influxdb-all-in-one
+      id: meta-jaeger-influxdb-all-in-one
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/jaeger-influxdb-all-in-one
+        tags: |
+          type=sha,prefix=iox-wip-,suffix=,format=short
+          type=raw,value=iox-wip-latest
+    - name: Build and push jaeger-influxdb-all-in-one
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        # this takes ~15m to build, vs ~2m without
+        # platforms: linux/amd64,linux/arm64
+        file: jaeger-influxdb/Dockerfile.all-in-one
+        tags: ${{ steps.meta-jaeger-influxdb-all-in-one.outputs.tags }}
