@@ -13,12 +13,14 @@ import (
 func assertMetricsEqual(t *testing.T, expect, got pmetric.Metrics) {
 	t.Helper()
 
+	marshaller := &pmetric.JSONMarshaler{}
+
 	common.SortResourceMetrics(expect.ResourceMetrics())
-	expectJSON, err := pmetric.NewJSONMarshaler().MarshalMetrics(expect)
+	expectJSON, err := marshaller.MarshalMetrics(expect)
 	require.NoError(t, err)
 
 	common.SortResourceMetrics(got.ResourceMetrics())
-	gotJSON, err := pmetric.NewJSONMarshaler().MarshalMetrics(got)
+	gotJSON, err := marshaller.MarshalMetrics(got)
 	require.NoError(t, err)
 
 	assert.JSONEq(t, string(expectJSON), string(gotJSON))
