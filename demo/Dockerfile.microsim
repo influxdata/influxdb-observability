@@ -4,7 +4,6 @@ FROM golang:1.19-alpine AS builder
 RUN apk add git
 RUN git clone --branch master --depth 1 https://github.com/yurishkuro/microsim
 WORKDIR /go/microsim
-COPY ./microsim.conf .
 ENV CGO_ENABLED 0
 RUN go install
 

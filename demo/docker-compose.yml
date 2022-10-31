@@ -5,7 +5,6 @@ services:
     stop_grace_period: 10s
     ports:
     - "16686:16686" # web UI
-    - "16687"
     depends_on:
     - jaeger-influxdb
     environment:
@@ -16,6 +15,17 @@ services:
       GRPC_STORAGE_CONNECTION_TIMEOUT: 30s
       QUERY_HTTP_SERVER_HOST_PORT: :16686
       ADMIN_HTTP_HOST_PORT: :16687
+      QUERY_UI_CONFIG: /jaeger-ui-config.json
+    volumes:
+    - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
+
+  #  grafana-jaeger-influxdb:
+  #    image: grafana/grafana-oss:9.2.2
+  #    stop_grace_period: 1s
+  #    ports:
+  #    - "3000:3000" # web UI
+  #    depends_on:
+  #    - jaeger-query
 
   jaeger-influxdb:
     build:
@@ -35,24 +45,24 @@ services:
       # required
       INFLUXDB_TOKEN:
 
-#  hotrod:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.hotrod
-#    image: hotrod:local
-#    stop_grace_period: 1s
-#    ports:
-#    - "8080:8080" # web UI
-#    depends_on:
-#    - otelcol-influxdb
-#    environment:
-#      JAEGER_AGENT_HOST: otelcol-influxdb
-#      JAEGER_AGENT_PORT: 6831
+  #  hotrod:
+  #    build:
+  #      context: .
+  #      dockerfile: demo/Dockerfile.hotrod
+  #    image: hotrod:local
+  #    stop_grace_period: 1s
+  #    ports:
+  #    - "8080:8080" # web UI
+  #    depends_on:
+  #    - otelcol-influxdb
+  #    environment:
+  #      JAEGER_AGENT_HOST: otelcol-influxdb
+  #      JAEGER_AGENT_PORT: 6831
 
   microsim:
     build:
       context: .
-      dockerfile: Dockerfile.microsim
+      dockerfile: demo/Dockerfile.microsim
     image: microsim:local
     stop_grace_period: 1s
     depends_on:
@@ -64,7 +74,7 @@ services:
       context: .
       dockerfile: otelcol-influxdb/Dockerfile
     image: otelcol-influxdb:local
-    command: ["--config", "/config.yml"]
+    command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
-    - ./otelcol-influxdb/config.yml:/config.yml:ro
+    - ./demo/otelcol-config.yml:/config.yml:ro
