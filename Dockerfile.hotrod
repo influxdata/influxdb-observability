@@ -1,0 +1,16 @@
+#syntax=docker/dockerfile:1.2
+FROM golang:1.19-alpine AS builder
+
+RUN apk add git
+RUN git clone --branch main --depth 1 https://github.com/jaegertracing/jaeger
+WORKDIR /go/jaeger
+COPY ./hotrod.patch .
+RUN git apply patch.hotrod
+ENV CGO_ENABLED 0
+RUN go install ./examples/hotrod
+
+FROM scratch
+USER 10001
+COPY --from=builder --chmod=0755 /go/bin/hotrod /
+ENTRYPOINT ["/hotrod"]
+CMD ["all"]

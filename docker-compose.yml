@@ -35,19 +35,31 @@ services:
       # required
       INFLUXDB_TOKEN:
 
-  hotrod:
-    image: jaegertracing/example-hotrod:1.38
-    command: ["all"]
-    stop_grace_period: 1s
-    ports:
-    - "8080:8080" # web UI
-    depends_on:
-    - otelcol
-    environment:
-      JAEGER_AGENT_HOST: otelcol
-      JAEGER_AGENT_PORT: 6831
+#  hotrod:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.hotrod
+#    image: hotrod:local
+#    stop_grace_period: 1s
+#    ports:
+#    - "8080:8080" # web UI
+#    depends_on:
+#    - otelcol-influxdb
+#    environment:
+#      JAEGER_AGENT_HOST: otelcol-influxdb
+#      JAEGER_AGENT_PORT: 6831
 
-  otelcol:
+  microsim:
+    build:
+      context: .
+      dockerfile: Dockerfile.microsim
+    image: microsim:local
+    stop_grace_period: 1s
+    depends_on:
+    - otelcol-influxdb
+    command: -d 24h -j http://otelcol-influxdb:14268/api/traces
+
+  otelcol-influxdb:
     build:
       context: .
       dockerfile: otelcol-influxdb/Dockerfile

@@ -139,3 +139,35 @@ func otlpArrayToSlice(arr pcommon.Slice) []interface{} {
 	}
 	return s
 }
+
+func attributesToInfluxTags(attributes pcommon.Map, tags map[string]string) {
+	attributes.Range(func(k string, v pcommon.Value) bool {
+		tagValue, err := AttributeValueToInfluxTagValue(v)
+		if err != nil {
+			panic(err)
+		}
+		tags[k] = tagValue
+		return true
+	})
+}
+
+func attributesToInfluxFields(attributes pcommon.Map, fields map[string]interface{}) {
+	attributes.Range(func(k string, v pcommon.Value) bool {
+		fieldValue, err := AttributeValueToInfluxFieldValue(v)
+		if err != nil {
+			panic(err)
+		}
+		fields[k] = fieldValue
+		return true
+	})
+}
+
+func instrumentationLibraryToFields(instrumentationLibrary pcommon.InstrumentationScope, fields map[string]interface{}) {
+	if instrumentationLibrary.Name() != "" {
+		fields[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
+	}
+	if instrumentationLibrary.Version() != "" {
+		fields[common.AttributeInstrumentationLibraryVersion] = instrumentationLibrary.Version()
+	}
+	attributesToInfluxFields(instrumentationLibrary.Attributes(), fields)
+}

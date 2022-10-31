@@ -17,9 +17,9 @@ var _ spanstore.Reader = (*influxdbReader)(nil)
 var _ dependencystore.Reader = (*influxdbReader)(nil)
 
 type influxdbReader struct {
-	logger                                *zap.Logger
-	db                                    *sql.DB
-	tableSpans, tableLogs, tableSpanLinks string
+	logger                                                      *zap.Logger
+	db                                                          *sql.DB
+	tableSpans, tableLogs, tableSpanLinks, tableDependencyLinks string
 }
 
 func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Trace, error) {
@@ -220,53 +220,43 @@ func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters
 }
 
 func (ir *influxdbReader) GetDependencies(ctx context.Context, endTs time.Time, lookback time.Duration) ([]model.DependencyLink, error) {
-	childServiceByParentService := make(map[string]map[string]uint64)
-	sourceByService := make(map[string]string)
+	var dependencyLinks []model.DependencyLink
 
 	f := func(record map[string]interface{}) error {
 		var parentService string
-		if v, found := record["parent_service"]; !found {
-			ir.logger.Warn("parent service not found in span dependency")
+		if v, found := record["parent"]; !found {
+			ir.logger.Warn("parent service not found in dependency link")
 			return nil
 		} else {
 			parentService = v.(string)
 		}
 		var childService string
-		if v, found := record["child_service"]; !found {
-			ir.logger.Warn("child service not found in span dependency")
+		if v, found := record["child"]; !found {
+			ir.logger.Warn("child service not found in dependency link")
 			return nil
 		} else {
 			childService = v.(string)
 		}
-		if parentSource, found := record["parent_source"]; found {
-			sourceByService[parentService] = parentSource.(string)
-		}
-		if childSource, found := record["child_source"]; found {
-			sourceByService[childService] = childSource.(string)
-		}
-		if parent, found := childServiceByParentService[parentService]; found {
-			parent[childService]++
+		var calls int64
+		if v, found := record["calls"]; !found {
+			ir.logger.Warn("calls not found in dependency link")
+			return nil
 		} else {
-			childServiceByParentService[parentService] = map[string]uint64{childService: 1}
+			calls = v.(int64)
 		}
+
+		dependencyLinks = append(dependencyLinks, model.DependencyLink{
+			Parent:    parentService,
+			Child:     childService,
+			CallCount: uint64(calls),
+		})
+
 		return nil
 	}
 
-	err := executeQuery(ctx, ir.db, queryGetDependencies(ir.tableSpans, endTs, lookback), f)
+	err := executeQuery(ctx, ir.db, queryGetDependencies(ir.tableDependencyLinks, endTs, lookback), f)
 	if err != nil {
 		return nil, err
-	}
-
-	var dependencyLinks []model.DependencyLink
-	for parentService, child := range childServiceByParentService {
-		for childService, callCount := range child {
-			dependencyLinks = append(dependencyLinks, model.DependencyLink{
-				Parent:    parentService,
-				Child:     childService,
-				CallCount: callCount,
-				Source:    sourceByService[parentService],
-			})
-		}
 	}
 
 	return dependencyLinks, nil

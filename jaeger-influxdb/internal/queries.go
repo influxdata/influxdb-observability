@@ -61,14 +61,20 @@ func queryGetOperations(tableSpans, serviceName string) string {
 		common.AttributeName, common.AttributeSpanKind, tableSpans, common.AttributeServiceName, serviceName, common.AttributeName, common.AttributeSpanKind)
 }
 
-func queryGetDependencies(tableSpans string, endTs time.Time, lookback time.Duration) string {
+func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
 	return fmt.Sprintf(`
-SELECT parent."%s" AS parent_service, parent."%s" AS parent_source, child."%s" AS child_service, child."%s" AS child_source
-FROM %s AS parent JOIN %s AS child ON (parent."%s" = child."%s")
-WHERE %s >= %d AND %s <= %d AND %s <= %d`,
-		common.AttributeServiceName, common.AttributeServiceName, attributeTelemetrySDKName, attributeTelemetrySDKName,
-		tableSpans, tableSpans, common.AttributeSpanID, common.AttributeParentSpanID,
-		common.AttributeTime, endTs.Add(-lookback).UnixNano(), common.AttributeTime, endTs.UnixNano(), common.AttributeEndTimeUnixNano, endTs.UnixNano())
+select parent, child, sum(calls) as calls
+from '%s'
+group by parent, child
+`,
+		tableDependencyLinks)
+
+	//SELECT parent."%s" AS parent_service, parent."%s" AS parent_source, child."%s" AS child_service, child."%s" AS child_source
+	//FROM %s AS parent JOIN %s AS child ON (parent."%s" = child."%s")
+	//WHERE %s >= %d AND %s <= %d AND %s <= %d`,
+	//		common.AttributeServiceName, common.AttributeServiceName, attributeTelemetrySDKName, attributeTelemetrySDKName,
+	//		tableSpans, tableSpans, common.AttributeSpanID, common.AttributeParentSpanID,
+	//		common.AttributeTime, endTs.Add(-lookback).UnixNano(), common.AttributeTime, endTs.UnixNano(), common.AttributeEndTimeUnixNano, endTs.UnixNano())
 }
 
 func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) string {

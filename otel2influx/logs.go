@@ -13,31 +13,34 @@ import (
 
 type OtelLogsToLineProtocol struct {
 	logger common.Logger
+	writer InfluxWriter
 }
 
-func NewOtelLogsToLineProtocol(logger common.Logger) *OtelLogsToLineProtocol {
+func NewOtelLogsToLineProtocol(logger common.Logger, writer InfluxWriter) *OtelLogsToLineProtocol {
 	return &OtelLogsToLineProtocol{
 		logger: logger,
+		writer: writer,
 	}
 }
 
-func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld plog.Logs, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld plog.Logs) error {
+	batch := c.writer.NewBatch()
 	for i := 0; i < ld.ResourceLogs().Len(); i++ {
 		resourceLogs := ld.ResourceLogs().At(i)
 		for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
 			ilLogs := resourceLogs.ScopeLogs().At(j)
 			for k := 0; k < ilLogs.LogRecords().Len(); k++ {
 				logRecord := ilLogs.LogRecords().At(k)
-				if err := c.writeLogRecord(ctx, resourceLogs.Resource(), ilLogs.Scope(), logRecord, w); err != nil {
+				if err := c.writeLogRecord(ctx, resourceLogs.Resource(), ilLogs.Scope(), logRecord, batch); err != nil {
 					return fmt.Errorf("failed to convert OTLP log record to line protocol: %w", err)
 				}
 			}
 		}
 	}
-	return nil
+	return batch.FlushBatch(ctx)
 }
 
-func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, logRecord plog.LogRecord, w InfluxWriter) error {
+func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, logRecord plog.LogRecord, batch InfluxWriterBatch) error {
 	ts := logRecord.Timestamp().AsTime()
 	if ts.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
@@ -91,7 +94,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err := w.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err := batch.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for int gauge: %w", err)
 	}
 

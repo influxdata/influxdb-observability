@@ -80,11 +80,12 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		logger:    logger,
 		closeFunc: db.Close,
 		reader: &influxdbReader{
-			logger:         logger.With(zap.String("influxdb", "reader")),
-			db:             db,
-			tableSpans:     "spans",
-			tableLogs:      "logs",
-			tableSpanLinks: "span-links",
+			logger:               logger.With(zap.String("influxdb", "reader")),
+			db:                   db,
+			tableSpans:           "spans",
+			tableLogs:            "logs",
+			tableSpanLinks:       "span-links",
+			tableDependencyLinks: "jaeger-dependencylinks",
 		},
 		archiveReader: &influxdbReader{
 			logger:         logger.With(zap.String("influxdb", "archive-reader")),
@@ -159,11 +160,9 @@ func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record m
 	if err != nil {
 		return err
 	}
-	logger.Info("columns", zap.Strings("column-names", columns))
 	m := make(map[string]interface{}, len(columns))
 
 	for rows.Next() {
-		logger.Warn("row")
 		dest := make([]interface{}, len(columns))
 		destP := make([]interface{}, len(columns))
 		for i := range dest {
@@ -176,12 +175,10 @@ func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record m
 			v := destP[i].(*interface{})
 			m[columnName] = *v
 		}
-		logger.Warn("calling f")
 		if err = f(m); err != nil {
 			return err
 		}
 	}
-	logger.Info("done with rows")
 
 	return multierr.Combine(rows.Err(), rows.Close())
 }
