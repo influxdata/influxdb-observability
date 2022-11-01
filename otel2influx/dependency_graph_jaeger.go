@@ -192,7 +192,6 @@ func (g *JaegerDependencyGraph) export(ctx context.Context, resourceMetrics metr
 			}
 			for _, dp := range dataPoints {
 				for _, kv := range dp.Attributes.ToSlice() {
-					g.logger.Debug("dp kv", string(kv.Key), kv.Value.Emit())
 					tags[string(kv.Key)] = kv.Value.Emit()
 				}
 				fields := map[string]interface{}{

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/golang/groupcache/lru"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
@@ -22,13 +23,27 @@ import (
 var _ shared.StoragePlugin = (*InfluxdbStorage)(nil)
 var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
 
-type InfluxdbStorage struct {
-	logger    *zap.Logger
-	closeFunc func() error
+const (
+	tableSpans                 = "spans"
+	tableSpansArchive          = "archive-spans"
+	tableLogs                  = "logs"
+	tableLogsArchive           = "archive-logs"
+	tableSpanLinks             = "span-links"
+	tableSpanLinksArchive      = "archive-span-links"
+	tableJaegerDependencyLinks = "jaeger-dependencylinks"
+)
 
-	reader        *influxdbReader
-	archiveReader *influxdbReader
-	archiveWriter *influxdbWriter
+type InfluxdbStorage struct {
+	logger *zap.Logger
+
+	client influxdb2.Client
+	db     *sql.DB
+
+	reader           spanstore.Reader
+	readerDependency dependencystore.Reader
+	writer           spanstore.Writer
+	readerArchive    spanstore.Reader
+	writerArchive    spanstore.Writer
 }
 
 func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, error) {
@@ -52,7 +67,6 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	options := influxdb2.DefaultOptions()
 	options.HTTPOptions().SetHTTPRequestTimeout(uint(config.InfluxdbTimeout.Seconds()))
 	client := influxdb2.NewClientWithOptions(clientURL, config.InfluxdbToken, options)
-	defer client.Close()
 
 	var bucket *domain.Bucket
 	var err error
@@ -76,75 +90,76 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	}
 
 	logger := LoggerFromContext(ctx)
+	reader := &influxdbReader{
+		logger:         logger.With(zap.String("influxdb", "reader")),
+		db:             db,
+		tableSpans:     tableSpans,
+		tableLogs:      tableLogs,
+		tableSpanLinks: tableSpanLinks,
+	}
+	readerDependency := &influxdbDependencyReader{
+		logger:               logger.With(zap.String("influxdb", "reader-dependency")),
+		ir:                   reader,
+		tableDependencyLinks: tableJaegerDependencyLinks,
+	}
+	writer := &influxdbWriterNoop{
+		logger: logger.With(zap.String("influxdb", "reader-dependency")),
+	}
+	readerArchive := &influxdbReader{
+		logger:         logger.With(zap.String("influxdb", "reader-archive")),
+		db:             db,
+		tableSpans:     tableSpansArchive,
+		tableLogs:      tableLogsArchive,
+		tableSpanLinks: tableSpanLinksArchive,
+	}
+	writerArchive := &influxdbWriterArchive{
+		logger:                logger.With(zap.String("influxdb", "writer-archive")),
+		queryAPI:              client.QueryAPI(*bucket.OrgID),
+		recentTraces:          lru.New(100),
+		bucketName:            bucket.Name,
+		tableSpans:            tableSpans,
+		tableLogs:             tableLogs,
+		tableSpanLinks:        tableSpanLinks,
+		tableSpansArchive:     tableSpansArchive,
+		tableLogsArchive:      tableLogsArchive,
+		tableSpanLinksArchive: tableSpanLinksArchive,
+	}
+
 	return &InfluxdbStorage{
-		logger:    logger,
-		closeFunc: db.Close,
-		reader: &influxdbReader{
-			logger:               logger.With(zap.String("influxdb", "reader")),
-			db:                   db,
-			tableSpans:           "spans",
-			tableLogs:            "logs",
-			tableSpanLinks:       "span-links",
-			tableDependencyLinks: "jaeger-dependencylinks",
-		},
-		archiveReader: &influxdbReader{
-			logger:         logger.With(zap.String("influxdb", "archive-reader")),
-			db:             db,
-			tableSpans:     "archive-spans",
-			tableLogs:      "archive-logs",
-			tableSpanLinks: "archive-span-links",
-		},
-		archiveWriter: nil,
+		logger:           logger,
+		client:           client,
+		db:               db,
+		reader:           reader,
+		readerDependency: readerDependency,
+		writer:           writer,
+		readerArchive:    readerArchive,
+		writerArchive:    writerArchive,
 	}, nil
 }
 
-/*
-func newFlightsqlClient(addr, token, bucketid string) (*flightsql.Client, error) {
-	middlewares := []flight.ClientMiddleware{tokenMiddleware(token, bucketid)}
-	flightsqlClient, err := flightsql.NewClient(addr, nil, middlewares)
-	if err != nil {
-		return nil, err
-	}
-	return flightsqlClient, nil
+func (i *InfluxdbStorage) Close() error {
+	i.client.Close()
+	return i.db.Close()
 }
-
-func tokenMiddleware(token, bucketID string) flight.ClientMiddleware {
-	contextWithTokenAndBucketid := func(ctx context.Context) context.Context {
-		return grpcMetadata.AppendToOutgoingContext(ctx,
-			"authorization", fmt.Sprintf("Token %s", token),
-			"bucket-id", bucketID)
-	}
-	return flight.ClientMiddleware{
-		Stream: func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-			ctx = contextWithTokenAndBucketid(ctx)
-			return streamer(ctx, desc, cc, method, opts...)
-		},
-		Unary: func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-			ctx = contextWithTokenAndBucketid(ctx)
-			return invoker(ctx, method, req, reply, cc, opts...)
-		},
-	}
-}
-*/
 
 func (i *InfluxdbStorage) SpanReader() spanstore.Reader {
 	return i.reader
 }
 
-func (i *InfluxdbStorage) SpanWriter() spanstore.Writer {
-	panic("not implemented")
+func (i *InfluxdbStorage) DependencyReader() dependencystore.Reader {
+	return i.readerDependency
 }
 
-func (i *InfluxdbStorage) DependencyReader() dependencystore.Reader {
-	return i.reader
+func (i *InfluxdbStorage) SpanWriter() spanstore.Writer {
+	return i.writer
 }
 
 func (i *InfluxdbStorage) ArchiveSpanReader() spanstore.Reader {
-	return i.archiveReader
+	return i.readerArchive
 }
 
 func (i *InfluxdbStorage) ArchiveSpanWriter() spanstore.Writer {
-	return i.archiveWriter
+	return i.writerArchive
 }
 
 func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error {

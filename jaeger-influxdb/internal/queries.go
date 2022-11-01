@@ -62,19 +62,13 @@ func queryGetOperations(tableSpans, serviceName string) string {
 }
 
 func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
+	// TODO limit time range
 	return fmt.Sprintf(`
 select parent, child, sum(calls) as calls
 from '%s'
 group by parent, child
 `,
 		tableDependencyLinks)
-
-	//SELECT parent."%s" AS parent_service, parent."%s" AS parent_source, child."%s" AS child_service, child."%s" AS child_source
-	//FROM %s AS parent JOIN %s AS child ON (parent."%s" = child."%s")
-	//WHERE %s >= %d AND %s <= %d AND %s <= %d`,
-	//		common.AttributeServiceName, common.AttributeServiceName, attributeTelemetrySDKName, attributeTelemetrySDKName,
-	//		tableSpans, tableSpans, common.AttributeSpanID, common.AttributeParentSpanID,
-	//		common.AttributeTime, endTs.Add(-lookback).UnixNano(), common.AttributeTime, endTs.UnixNano(), common.AttributeEndTimeUnixNano, endTs.UnixNano())
 }
 
 func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) string {
@@ -115,4 +109,18 @@ func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) s
 	query += fmt.Sprintf(` GROUP BY "%s" ORDER BY t DESC LIMIT %d`, common.AttributeTraceID, tqp.NumTraces)
 
 	return query
+}
+
+func archiveTraceDetails(bucketName, tableSource, tableDestination string, traceID model.TraceID) string {
+	return fmt.Sprintf(`
+from(bucket: "%s")
+  |> range(start: -8760h)
+  |> filter(fn: (r) => r._measurement == "%s" and r.trace_id == "%s")
+  |> map(fn: (r) => ({ r with _measurement: "%s" }))
+  |> to(bucket: "%s")
+`,
+		bucketName,
+		tableSource, traceIDToString(traceID),
+		tableDestination,
+		bucketName)
 }

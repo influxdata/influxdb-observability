@@ -14,12 +14,12 @@ import (
 )
 
 var _ spanstore.Reader = (*influxdbReader)(nil)
-var _ dependencystore.Reader = (*influxdbReader)(nil)
+var _ dependencystore.Reader = (*influxdbDependencyReader)(nil)
 
 type influxdbReader struct {
-	logger                                                      *zap.Logger
-	db                                                          *sql.DB
-	tableSpans, tableLogs, tableSpanLinks, tableDependencyLinks string
+	logger                                *zap.Logger
+	db                                    *sql.DB
+	tableSpans, tableLogs, tableSpanLinks string
 }
 
 func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Trace, error) {
@@ -219,27 +219,33 @@ func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters
 	return traceIDs, nil
 }
 
-func (ir *influxdbReader) GetDependencies(ctx context.Context, endTs time.Time, lookback time.Duration) ([]model.DependencyLink, error) {
+type influxdbDependencyReader struct {
+	logger               *zap.Logger
+	ir                   *influxdbReader
+	tableDependencyLinks string
+}
+
+func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs time.Time, lookback time.Duration) ([]model.DependencyLink, error) {
 	var dependencyLinks []model.DependencyLink
 
 	f := func(record map[string]interface{}) error {
 		var parentService string
 		if v, found := record["parent"]; !found {
-			ir.logger.Warn("parent service not found in dependency link")
+			idr.logger.Warn("parent service not found in dependency link")
 			return nil
 		} else {
 			parentService = v.(string)
 		}
 		var childService string
 		if v, found := record["child"]; !found {
-			ir.logger.Warn("child service not found in dependency link")
+			idr.logger.Warn("child service not found in dependency link")
 			return nil
 		} else {
 			childService = v.(string)
 		}
 		var calls int64
 		if v, found := record["calls"]; !found {
-			ir.logger.Warn("calls not found in dependency link")
+			idr.logger.Warn("calls not found in dependency link")
 			return nil
 		} else {
 			calls = v.(int64)
@@ -254,7 +260,7 @@ func (ir *influxdbReader) GetDependencies(ctx context.Context, endTs time.Time, 
 		return nil
 	}
 
-	err := executeQuery(ctx, ir.db, queryGetDependencies(ir.tableDependencyLinks, endTs, lookback), f)
+	err := executeQuery(ctx, idr.ir.db, queryGetDependencies(idr.tableDependencyLinks, endTs, lookback), f)
 	if err != nil {
 		return nil, err
 	}

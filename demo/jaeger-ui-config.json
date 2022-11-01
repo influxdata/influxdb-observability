@@ -6,7 +6,7 @@
   "monitor": {
     "menuEnabled": false
   },
-  "archiveEnabled": false,
+  "archiveEnabled": true,
   "menu": [
     {
       "label": "About InfluxDB",

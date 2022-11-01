@@ -13,6 +13,7 @@ import (
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -99,6 +100,7 @@ func run(ctx context.Context, config *internal.Config) error {
 	if err != nil {
 		return err
 	}
+	defer backend.Close()
 	logger := internal.LoggerFromContext(ctx)
 	grpcHandler := shared.NewGRPCHandlerWithPlugins(backend, backend, nil)
 	grpcServer := grpc.NewServer(
@@ -156,5 +158,6 @@ func run(ctx context.Context, config *internal.Config) error {
 		}
 	}
 
+	err = multierr.Combine(err, backend.Close())
 	return err
 }
