@@ -60,7 +60,6 @@ func newInfluxHTTPWriter(logger common.Logger, config *Config, telemetrySettings
 		}
 	}
 	queryValues := writeURL.Query()
-	queryValues.Set("org", config.Org)
 	queryValues.Set("bucket", config.Bucket)
 	queryValues.Set("precision", "ns")
 	writeURL.RawQuery = queryValues.Encode()

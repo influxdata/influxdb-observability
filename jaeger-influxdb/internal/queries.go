@@ -7,6 +7,7 @@ import (
 
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -53,12 +54,12 @@ func queryGetTraceLinks(tableSpanLinks string, traceIDs ...model.TraceID) string
 
 func queryGetServices(tableSpans string) string {
 	return fmt.Sprintf(`SELECT "%s" FROM %s GROUP BY "%s"`,
-		common.AttributeServiceName, tableSpans, common.AttributeServiceName)
+		semconv.AttributeServiceName, tableSpans, semconv.AttributeServiceName)
 }
 
 func queryGetOperations(tableSpans, serviceName string) string {
 	return fmt.Sprintf(`SELECT "%s", "%s" FROM %s WHERE "%s" = '%s' GROUP BY "%s", "%s"`,
-		common.AttributeName, common.AttributeSpanKind, tableSpans, common.AttributeServiceName, serviceName, common.AttributeName, common.AttributeSpanKind)
+		common.AttributeName, common.AttributeSpanKind, tableSpans, semconv.AttributeServiceName, serviceName, common.AttributeName, common.AttributeSpanKind)
 }
 
 func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
@@ -77,7 +78,7 @@ func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) s
 		tags[k] = v
 	}
 	if tqp.ServiceName != "" {
-		tags[common.AttributeServiceName] = tqp.ServiceName
+		tags[semconv.AttributeServiceName] = tqp.ServiceName
 	}
 	if tqp.OperationName != "" {
 		tags[common.AttributeName] = tqp.OperationName

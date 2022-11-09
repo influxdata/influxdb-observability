@@ -15,6 +15,7 @@ type Config struct {
 	LogLevel           string
 	ListenAddr         string
 	InfluxdbAddr       string
+	InfluxdbTLSDisable bool
 	InfluxdbTimeout    time.Duration
 	InfluxdbBucketid   string
 	InfluxdbBucketname string
@@ -46,6 +47,11 @@ func (c *Config) Init(command *cobra.Command) error {
 			pointer: &c.InfluxdbAddr,
 			name:    "influxdb-addr",
 			usage:   "InfluxDB service host:port",
+		},
+		{
+			pointer: &c.InfluxdbTLSDisable,
+			name:    "influxdb-tls-disable",
+			usage:   "Do not use TLS to connect to InfluxDB (mostly for development)",
 		},
 		{
 			pointer:      &c.InfluxdbTimeout,
@@ -90,6 +96,16 @@ func (c *Config) Init(command *cobra.Command) error {
 				return err
 			}
 			*v = viper.GetDuration(f.name)
+		case *bool:
+			var defaultValue bool
+			if f.defaultValue != nil {
+				defaultValue = f.defaultValue.(bool)
+			}
+			command.Flags().BoolVar(v, f.name, defaultValue, f.usage)
+			if err := viper.BindPFlag(f.name, command.Flags().Lookup(f.name)); err != nil {
+				return err
+			}
+			*v = viper.GetBool(f.name)
 		default:
 			return fmt.Errorf("flag type %T not implemented", f.pointer)
 		}

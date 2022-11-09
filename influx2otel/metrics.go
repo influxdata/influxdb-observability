@@ -8,6 +8,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -82,9 +83,9 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		switch {
 		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
 			continue
-		case k == common.AttributeInstrumentationLibraryName:
+		case k == semconv.OtelLibraryName:
 			ilName = v
-		case k == common.AttributeInstrumentationLibraryVersion:
+		case k == semconv.OtelStatusDescription:
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
 			rAttributes.PutStr(k, v)

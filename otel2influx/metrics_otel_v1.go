@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.opentelemetry.io/collector/consumer/consumererror"
@@ -20,7 +21,7 @@ type metricWriterOtelV1 struct {
 	logger common.Logger
 }
 
-func (m *metricWriterOtelV1) writeMetric(ctx context.Context, res pcommon.Resource, il pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
+func (m *metricWriterOtelV1) writeMetric(ctx context.Context, resource pcommon.Resource, is pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var rerr error
@@ -41,35 +42,26 @@ func (m *metricWriterOtelV1) writeMetric(ctx context.Context, res pcommon.Resour
 		}
 	}()
 
+	// TODO metric description
+	measurementName := fmt.Sprintf("%s_%s_%s", pm.Name(), pm.Unit(), strings.ToLower(pm.Type().String()))
+	resourceTags := convertResourceTags(resource)
+	scopeFields := convertScopeFields(is)
+
 	switch pm.Type() {
 	//case pmetric.MetricTypeGauge:
-	//	return m.writeGauge(ctx, res, il, pm.Name(), pm.Gauge(), batch)
+	//	return m.writeGauge(ctx, resource, is, pm.Name(), pm.Gauge(), batch)
 	case pmetric.MetricTypeSum:
-		m.writeSum(ctx, res, il, pm, batch)
-	//case pmetric.MetricTypeHistogram:
-	//	return m.writeHistogram(ctx, res, il, pm.Name(), pm.Histogram(), batch)
+		m.writeSum(ctx, measurementName, resourceTags, scopeFields, pm, batch)
+	case pmetric.MetricTypeHistogram:
+		m.writeHistogram(ctx, measurementName, resourceTags, scopeFields, pm, batch)
 	default:
 		err = fmt.Errorf("unrecognized metric type %q", pm.Type())
 	}
 	return
 }
 
-// formatMeasurementNameMetricOtelV1 composes a measurement name from metric (name, unit, type)
-func formatMeasurementNameMetricOtelV1(metricName, metricUnit, metricType string) string {
-	mt := strings.ToLower(metricType)
-	if mt != "sum" {
-		panic(fmt.Sprintf("unsupported metric type '%s'", metricType))
-	}
-	return fmt.Sprintf("%s_%s_%s", metricName, metricUnit, mt)
-}
-
-// formatFieldKeyMetricOtelV1 composes a value field key from (sum temporality, sum monotonicity, and datapoint value type)
-func formatFieldKeyMetricOtelV1(temporality string, monotonic bool, dataPointValueType string) string {
-	at := strings.ToLower(temporality)
-	if at != "delta" && at != "cumulative" {
-		panic(fmt.Sprintf("unsupported aggregation temporality '%s'", temporality))
-	}
-
+// formatFieldKeyMetricSumOtelV1 composes a value field key from (sum temporality, sum monotonicity, and datapoint value type)
+func formatFieldKeyMetricSumOtelV1(temporality string, monotonic bool, dataPointValueType string) string {
 	var monotonicity string
 	if monotonic {
 		monotonicity = "monotonic"
@@ -77,21 +69,15 @@ func formatFieldKeyMetricOtelV1(temporality string, monotonic bool, dataPointVal
 		monotonicity = "nonmonotonic"
 	}
 
-	vt := strings.ToLower(dataPointValueType)
-	if vt != "int" && vt != "double" {
-		panic(fmt.Sprintf("unsupported data point value type '%s'", dataPointValueType))
-	}
-	return fmt.Sprintf("value_%s_%s_%s", temporality, monotonicity, vt)
+	return fmt.Sprintf("value_%s_%s_%s", strings.ToLower(temporality), monotonicity, strings.ToLower(dataPointValueType))
 }
 
-func (m *metricWriterOtelV1) writeSum(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) {
-	// TODO metric description
-	measurementName := formatMeasurementNameMetricOtelV1(pm.Name(), pm.Unit(), pm.Type().String())
-	temporality := pm.Sum().AggregationTemporality()
+func (m *metricWriterOtelV1) writeSum(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+	temporality := pm.Sum().AggregationTemporality().String()
 	monotonic := pm.Sum().IsMonotonic()
 
 	buildValue := func(dataPoint pmetric.NumberDataPoint) (string, interface{}) {
-		fieldKey := formatFieldKeyMetricOtelV1(temporality.String(), monotonic, dataPoint.ValueType().String())
+		fieldKey := formatFieldKeyMetricSumOtelV1(temporality, monotonic, dataPoint.ValueType().String())
 		switch dataPoint.ValueType() {
 		case pmetric.NumberDataPointValueTypeInt:
 			return fieldKey, dataPoint.IntValue()
@@ -101,28 +87,83 @@ func (m *metricWriterOtelV1) writeSum(ctx context.Context, resource pcommon.Reso
 			panic(fmt.Sprintf("unsupported data point value type '%s'", dataPoint.ValueType().String()))
 		}
 	}
-	resourceTags := make(map[string]string)
-	attributesToInfluxTags(resource.Attributes(), resourceTags)
-	InstrumentationLibraryToTags(instrumentationLibrary, resourceTags)
 
 	for i := 0; i < pm.Sum().DataPoints().Len(); i++ {
 		// TODO datapoint exemplars
 		// TODO datapoint flags
 		dataPoint := pm.Sum().DataPoints().At(i)
 
+		fields := make(map[string]interface{}, len(scopeFields)+2)
+		for k, v := range scopeFields {
+			fields[k] = v
+		}
+		fields["start_time_unix_nano"] = dataPoint.StartTimestamp().AsTime().UnixNano()
 		valueFieldKey, value := buildValue(dataPoint)
-		fields := map[string]interface{}{
-			// TODO move constant string to common.go
-			"start_time_unix_nano": dataPoint.StartTimestamp().AsTime().UnixNano(),
-			valueFieldKey:          value,
-		}
-		attributeTags := make(map[string]string, dataPoint.Attributes().Len()+len(resourceTags))
-		for k, v := range resourceTags {
-			attributeTags[k] = v
-		}
-		attributesToInfluxTags(dataPoint.Attributes(), attributeTags)
+		fields[valueFieldKey] = value
 
-		err := batch.WritePoint(ctx, measurementName, resourceTags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		tags := make(map[string]string, dataPoint.Attributes().Len()+len(resourceTags))
+		for k, v := range resourceTags {
+			tags[k] = v
+		}
+		dataPoint.Attributes().Range(func(k string, v pcommon.Value) bool {
+			tags[k] = v.AsString()
+			return true
+		})
+
+		err := batch.WritePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (m *metricWriterOtelV1) writeHistogram(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+	temporality := strings.ToLower(pm.Histogram().AggregationTemporality().String())
+
+	for i := 0; i < pm.Histogram().DataPoints().Len(); i++ {
+		// TODO datapoint exemplars
+		// TODO datapoint flags
+		dataPoint := pm.Histogram().DataPoints().At(i)
+
+		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
+		if bucketCounts.Len() > 0 &&
+			bucketCounts.Len() != explicitBounds.Len() &&
+			bucketCounts.Len() != explicitBounds.Len()+1 {
+			// The infinity bucket is not used in this schema,
+			// so accept input if that particular bucket is missing.
+			panic(fmt.Sprintf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len()))
+		}
+
+		fields := make(map[string]interface{}, len(scopeFields)+explicitBounds.Len()+5)
+		for k, v := range scopeFields {
+			fields[k] = v
+		}
+		for i := 0; i < explicitBounds.Len(); i++ {
+			boundStr := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
+			k := fmt.Sprintf("%s_%s", temporality, boundStr)
+			fields[k] = bucketCounts.At(i)
+		}
+
+		fields["count"] = dataPoint.Count()
+		if dataPoint.HasSum() {
+			fields["sum"] = dataPoint.Sum()
+		}
+		if dataPoint.HasMin() && dataPoint.HasMax() {
+			fields["min"] = dataPoint.Min()
+			fields["max"] = dataPoint.Max()
+		}
+		fields["start_time_unix_nano"] = dataPoint.StartTimestamp().AsTime().UnixNano()
+
+		tags := make(map[string]string, dataPoint.Attributes().Len()+len(resourceTags))
+		for k, v := range resourceTags {
+			tags[k] = v
+		}
+		dataPoint.Attributes().Range(func(k string, v pcommon.Value) bool {
+			tags[k] = v.AsString()
+			return true
+		})
+
+		err := batch.WritePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 		if err != nil {
 			panic(err)
 		}

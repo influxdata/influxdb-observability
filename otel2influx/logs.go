@@ -55,7 +55,7 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 
 	// TODO handle logRecord.Flags()
 	tags = ResourceToTags(c.logger, resource, tags)
-	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = InstrumentationScopeToTags(instrumentationLibrary, tags)
 
 	if traceID := logRecord.TraceID(); !traceID.IsEmpty() {
 		tags[common.AttributeTraceID] = traceID.HexString()

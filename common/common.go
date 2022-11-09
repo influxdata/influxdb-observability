@@ -37,54 +37,25 @@ const (
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/trace/v1/trace.proto
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/metrics/v1/metrics.proto
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/logs/v1/logs.proto
-	AttributeTraceID                       = "trace_id"
-	AttributeSpanID                        = "span_id"
-	AttributeTraceState                    = "trace_state"
-	AttributeParentSpanID                  = "parent_span_id"
-	AttributeName                          = "name"
-	AttributeSpanKind                      = "kind"
-	AttributeEndTimeUnixNano               = "end_time_unix_nano"
-	AttributeDurationNano                  = "duration_nano"
-	AttributeDroppedAttributesCount        = "dropped_attributes_count"
-	AttributeDroppedEventsCount            = "dropped_events_count"
-	AttributeDroppedLinksCount             = "dropped_links_count"
-	AttributeAttribute                     = "attributes"
-	AttributeLinkedTraceID                 = "linked_trace_id"
-	AttributeLinkedSpanID                  = "linked_span_id"
-	AttributeStatusCode                    = "otel.status_code"
-	AttributeStatusCodeOK                  = "OK"
-	AttributeStatusCodeError               = "ERROR"
-	AttributeStatusMessage                 = "otel.status_description"
-	AttributeInstrumentationLibraryName    = "otel.library.name"
-	AttributeInstrumentationLibraryVersion = "otel.library.version"
-	AttributeSeverityNumber                = "severity_number"
-	AttributeSeverityText                  = "severity_text"
-	AttributeBody                          = "body"
+	AttributeTime                   = "time"
+	AttributeTraceID                = "trace_id"
+	AttributeSpanID                 = "span_id"
+	AttributeTraceState             = "trace_state"
+	AttributeParentSpanID           = "parent_span_id"
+	AttributeName                   = "name"
+	AttributeSpanKind               = "kind"
+	AttributeEndTimeUnixNano        = "end_time_unix_nano"
+	AttributeDurationNano           = "duration_nano"
+	AttributeDroppedAttributesCount = "dropped_attributes_count"
+	AttributeDroppedEventsCount     = "dropped_events_count"
+	AttributeDroppedLinksCount      = "dropped_links_count"
+	AttributeAttributes             = "attributes"
+	AttributeLinkedTraceID          = "linked_trace_id"
+	AttributeLinkedSpanID           = "linked_span_id"
+	AttributeSeverityNumber         = "severity_number"
+	AttributeSeverityText           = "severity_text"
+	AttributeBody                   = "body"
 )
-
-func ResourceToTags(logger Logger, resource pcommon.Resource, tags map[string]string) (tagsAgain map[string]string) {
-	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
-		if k == "" {
-			logger.Debug("resource attribute key is empty")
-		} else if v, err := AttributeValueToInfluxTagValue(v); err != nil {
-			logger.Debug("invalid resource attribute value", "key", k, err)
-		} else {
-			tags[k] = v
-		}
-		return true
-	})
-	return tags
-}
-
-func InstrumentationLibraryToTags(instrumentationLibrary pcommon.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
-	if instrumentationLibrary.Name() != "" {
-		tags[AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
-	}
-	if instrumentationLibrary.Version() != "" {
-		tags[AttributeInstrumentationLibraryVersion] = instrumentationLibrary.Version()
-	}
-	return tags
-}
 
 func AttributeValueToInfluxTagValue(value pcommon.Value) (string, error) {
 	switch value.Type() {
@@ -112,35 +83,6 @@ func AttributeValueToInfluxTagValue(value pcommon.Value) (string, error) {
 		return "", nil
 	default:
 		return "", fmt.Errorf("unknown value type %d", value.Type())
-	}
-}
-
-func AttributeValueToInfluxFieldValue(value pcommon.Value) (interface{}, error) {
-	switch value.Type() {
-	case pcommon.ValueTypeStr:
-		return value.Str(), nil
-	case pcommon.ValueTypeInt:
-		return value.Int(), nil
-	case pcommon.ValueTypeDouble:
-		return value.Double(), nil
-	case pcommon.ValueTypeBool:
-		return value.Bool(), nil
-	case pcommon.ValueTypeMap:
-		if jsonBytes, err := json.Marshal(otlpKeyValueListToMap(value.Map())); err != nil {
-			return nil, err
-		} else {
-			return string(jsonBytes), nil
-		}
-	case pcommon.ValueTypeSlice:
-		if jsonBytes, err := json.Marshal(otlpArrayToSlice(value.Slice())); err != nil {
-			return nil, err
-		} else {
-			return string(jsonBytes), nil
-		}
-	case pcommon.ValueTypeEmpty:
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("unknown value type %v", value)
 	}
 }
 

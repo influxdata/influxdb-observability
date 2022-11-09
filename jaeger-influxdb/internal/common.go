@@ -7,13 +7,11 @@ import (
 	"time"
 
 	"github.com/jaegertracing/jaeger/model"
+	"github.com/opentracing/opentracing-go/ext"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 
 	"github.com/influxdata/influxdb-observability/common"
-)
-
-const (
-	attributeStatusCodeError  = "ERROR"
-	attributeTelemetrySDKName = "telemetry.sdk.name"
 )
 
 func recordToSpan(record map[string]interface{}) (*model.Span, error) {
@@ -51,7 +49,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			} else if span.SpanID, err = model.SpanIDFromString(vv); err != nil {
 				return nil, err
 			}
-		case common.AttributeServiceName:
+		case semconv.AttributeServiceName:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("service name is type %T", v)
 			} else {
@@ -68,14 +66,16 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 				return nil, fmt.Errorf("span kind is type %T", v)
 			} else {
 				switch vv {
-				case "SPAN_KIND_SERVER":
-					span.Tags = append(span.Tags, model.String("span.kind", "server"))
-				case "SPAN_KIND_CLIENT":
-					span.Tags = append(span.Tags, model.String("span.kind", "client"))
-				case "SPAN_KIND_PRODUCER":
-					span.Tags = append(span.Tags, model.String("span.kind", "producer"))
-				case "SPAN_KIND_CONSUMER":
-					span.Tags = append(span.Tags, model.String("span.kind", "consumer"))
+				case ptrace.SpanKindServer.String():
+					span.Tags = append(span.Tags, model.String(string(ext.SpanKind), string(ext.SpanKindRPCServerEnum)))
+				case ptrace.SpanKindClient.String():
+					span.Tags = append(span.Tags, model.String(string(ext.SpanKind), string(ext.SpanKindRPCClientEnum)))
+				case ptrace.SpanKindProducer.String():
+					span.Tags = append(span.Tags, model.String(string(ext.SpanKind), string(ext.SpanKindProducerEnum)))
+				case ptrace.SpanKindConsumer.String():
+					span.Tags = append(span.Tags, model.String(string(ext.SpanKind), string(ext.SpanKindConsumerEnum)))
+				case ptrace.SpanKindInternal.String():
+					span.Tags = append(span.Tags, model.String(string(ext.SpanKind), "internal"))
 				}
 			}
 		case common.AttributeDurationNano:
@@ -96,16 +96,16 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			if err != nil {
 				return nil, err
 			}
-		case common.AttributeStatusCode:
+		case semconv.OtelStatusCode:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("status code is type %T", v)
 			} else {
 				span.Tags = append(span.Tags, model.String(k, vv))
-				if v == attributeStatusCodeError {
+				if v == ptrace.StatusCodeError {
 					span.Tags = append(span.Tags, model.Bool("error", true))
 				}
 			}
-		case common.AttributeSpanAttributes:
+		case common.AttributeAttributes:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("attribute is type %T", v)
 			} else {
@@ -191,8 +191,7 @@ func recordToLog(record map[string]interface{}) (model.TraceID, model.SpanID, *m
 			} else {
 				log.Fields = append(log.Fields, model.String("message", vv))
 			}
-		case common.AttributeEventAttributes:
-		case common.AttributeServiceName:
+		case common.AttributeAttributes, semconv.AttributeServiceName:
 			// The span has this information, no need to duplicate
 		default:
 			log.Fields = append(log.Fields, kvToKeyValue(k, v))

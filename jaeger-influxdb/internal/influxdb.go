@@ -67,6 +67,9 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	options := influxdb2.DefaultOptions()
 	options.HTTPOptions().SetHTTPRequestTimeout(uint(config.InfluxdbTimeout.Seconds()))
 	client := influxdb2.NewClientWithOptions(clientURL, config.InfluxdbToken, options)
+	if ok, err := client.Ping(ctx); err != nil || !ok {
+		return nil, fmt.Errorf("failed to ping InfluxDB: %w", err)
+	}
 
 	var bucket *domain.Bucket
 	var err error
@@ -81,9 +84,14 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		return nil, err
 	}
 
+	sslmode := "verify-full"
+	if config.InfluxdbTLSDisable {
+		sslmode = "disable"
+	}
+
 	dsn := fmt.Sprintf(
-		"host='%s' port=%d user='' password='%s' database='%s' passfile='' servicefile='' sslmode=verify-full",
-		influxdbClientHost, 5432, config.InfluxdbToken, *bucket.Id)
+		"host='%s' port=%d user='' password='%s' database='%s' passfile='' servicefile='' sslmode=%s",
+		influxdbClientHost, 5432, config.InfluxdbToken, *bucket.Id, sslmode)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
@@ -163,8 +171,6 @@ func (i *InfluxdbStorage) ArchiveSpanWriter() spanstore.Writer {
 }
 
 func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error {
-	logger := LoggerFromContext(ctx)
-	logger.Info(query)
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return err

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -24,12 +25,12 @@ func ResourceToTags(logger common.Logger, resource pcommon.Resource, tags map[st
 	return tags
 }
 
-func InstrumentationLibraryToTags(instrumentationLibrary pcommon.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
+func InstrumentationScopeToTags(instrumentationLibrary pcommon.InstrumentationScope, tags map[string]string) (tagsAgain map[string]string) {
 	if instrumentationLibrary.Name() != "" {
-		tags[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
+		tags[semconv.OtelLibraryName] = instrumentationLibrary.Name()
 	}
 	if instrumentationLibrary.Version() != "" {
-		tags[common.AttributeInstrumentationLibraryVersion] = instrumentationLibrary.Version()
+		tags[semconv.OtelLibraryVersion] = instrumentationLibrary.Version()
 	}
 	return tags
 }
@@ -140,34 +141,47 @@ func otlpArrayToSlice(arr pcommon.Slice) []interface{} {
 	return s
 }
 
-func attributesToInfluxTags(attributes pcommon.Map, tags map[string]string) {
-	attributes.Range(func(k string, v pcommon.Value) bool {
-		tagValue, err := AttributeValueToInfluxTagValue(v)
-		if err != nil {
-			panic(err)
-		}
-		tags[k] = tagValue
+func convertResourceTags(resource pcommon.Resource) map[string]string {
+	tags := make(map[string]string, resource.Attributes().Len())
+	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
+		tags[k] = v.AsString()
 		return true
 	})
+	// TODO dropped attributes counts
+	return tags
 }
 
-func attributesToInfluxFields(attributes pcommon.Map, fields map[string]interface{}) {
-	attributes.Range(func(k string, v pcommon.Value) bool {
-		fieldValue, err := AttributeValueToInfluxFieldValue(v)
-		if err != nil {
-			panic(err)
-		}
-		fields[k] = fieldValue
+func convertResourceFields(resource pcommon.Resource) map[string]interface{} {
+	fields := make(map[string]interface{}, resource.Attributes().Len())
+	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
+		fields[k] = v.AsRaw()
 		return true
 	})
+	// TODO dropped attributes counts
+	return fields
 }
 
-func instrumentationLibraryToFields(instrumentationLibrary pcommon.InstrumentationScope, fields map[string]interface{}) {
-	if instrumentationLibrary.Name() != "" {
-		fields[common.AttributeInstrumentationLibraryName] = instrumentationLibrary.Name()
+func convertScopeFields(is pcommon.InstrumentationScope) map[string]interface{} {
+	fields := make(map[string]interface{}, is.Attributes().Len()+2)
+	is.Attributes().Range(func(k string, v pcommon.Value) bool {
+		fields[k] = v.AsRaw()
+		return true
+	})
+	if name := is.Name(); name != "" {
+		fields[semconv.AttributeTelemetrySDKName] = name
 	}
-	if instrumentationLibrary.Version() != "" {
-		fields[common.AttributeInstrumentationLibraryVersion] = instrumentationLibrary.Version()
+	if version := is.Version(); version != "" {
+		fields[semconv.AttributeTelemetrySDKVersion] = version
 	}
-	attributesToInfluxFields(instrumentationLibrary.Attributes(), fields)
+	// TODO dropped attributes counts
+	return fields
+}
+
+func attributesToInfluxTags(attributes pcommon.Map) map[string]string {
+	tags := make(map[string]string, attributes.Len())
+	attributes.Range(func(k string, v pcommon.Value) bool {
+		tags[k] = v.AsString()
+		return true
+	})
+	return tags
 }

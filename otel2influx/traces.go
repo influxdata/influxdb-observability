@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 	"go.uber.org/multierr"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -50,19 +51,17 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Tr
 	batch := c.w.NewBatch()
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
-		resourceFields := make(map[string]interface{}, resourceSpans.Resource().Attributes().Len())
-		attributesToInfluxFields(resourceSpans.Resource().Attributes(), resourceFields)
+		resourceFields := convertResourceFields(resourceSpans.Resource())
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
-			ilSpans := resourceSpans.ScopeSpans().At(j)
-			ilFields := make(map[string]interface{}, len(resourceFields)+ilSpans.Scope().Attributes().Len()+2)
+			scopeSpans := resourceSpans.ScopeSpans().At(j)
+			scopeFields := convertScopeFields(scopeSpans.Scope())
 			for k, v := range resourceFields {
-				ilFields[k] = v
+				scopeFields[k] = v
 			}
-			instrumentationLibraryToFields(ilSpans.Scope(), ilFields)
-			for k := 0; k < ilSpans.Spans().Len(); k++ {
-				span := ilSpans.Spans().At(k)
+			for k := 0; k < scopeSpans.Spans().Len(); k++ {
+				span := scopeSpans.Spans().At(k)
 				c.dependencyGraph.ReportSpan(ctx, span, resourceSpans.Resource())
-				if err := c.writeSpan(ctx, span, ilFields, batch); err != nil {
+				if err := c.writeSpan(ctx, span, scopeFields, batch); err != nil {
 					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
 				}
 			}
@@ -71,7 +70,7 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Tr
 	return batch.FlushBatch(ctx)
 }
 
-func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Span, ilFields map[string]interface{}, batch InfluxWriterBatch) (err error) {
+func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Span, scopeFields map[string]interface{}, batch InfluxWriterBatch) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var rerr error
@@ -94,8 +93,8 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 
 	measurement := common.MeasurementSpans
 	tags := make(map[string]string, 2)
-	fields := make(map[string]interface{}, len(ilFields)+span.Attributes().Len()+9)
-	for k, v := range ilFields {
+	fields := make(map[string]interface{}, len(scopeFields)+span.Attributes().Len()+9)
+	for k, v := range scopeFields {
 		fields[k] = v
 	}
 
@@ -135,26 +134,13 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 	}
 
 	droppedAttributesCount := uint64(span.DroppedAttributesCount())
-	attributes := make(map[string]interface{}, span.Attributes().Len())
-	span.Attributes().Range(func(k string, v pcommon.Value) bool {
-		if k == "" {
-			droppedAttributesCount++
-			c.logger.Debug("span attribute key is empty")
-		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
-			droppedAttributesCount++
-			c.logger.Debug("invalid span attribute value", "key", k, err)
-		} else {
-			attributes[k] = v
-		}
-		return true
-	})
-	if len(attributes) > 0 {
-		marshalledAttributes, err := json.Marshal(attributes)
+	if span.Attributes().Len() > 0 {
+		marshalledAttributes, err := json.Marshal(span.Attributes().AsRaw())
 		if err != nil {
 			c.logger.Debug("failed to marshal attributes to JSON", err)
-			droppedAttributesCount += uint64(len(attributes))
+			droppedAttributesCount += uint64(span.Attributes().Len())
 		} else {
-			fields[common.AttributeAttribute] = string(marshalledAttributes)
+			fields[common.AttributeAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {
@@ -186,15 +172,13 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 	status := span.Status()
 	switch status.Code() {
 	case ptrace.StatusCodeUnset:
-	case ptrace.StatusCodeOk:
-		fields[common.AttributeStatusCode] = common.AttributeStatusCodeOK
-	case ptrace.StatusCodeError:
-		fields[common.AttributeStatusCode] = common.AttributeStatusCodeError
+	case ptrace.StatusCodeOk, ptrace.StatusCodeError:
+		fields[semconv.OtelStatusCode] = status.Code().String()
 	default:
 		c.logger.Debug("status code not recognized", "code", status.Code())
 	}
 	if message := status.Message(); message != "" {
-		fields[common.AttributeStatusMessage] = message
+		fields[semconv.OtelStatusDescription] = message
 	}
 
 	if err := batch.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
@@ -230,7 +214,7 @@ func (c *OtelTracesToLineProtocol) writeSpanEvent(ctx context.Context, traceID p
 			c.logger.Debug("failed to marshal attributes to JSON", err)
 			droppedAttributesCount += uint64(len(attributes))
 		} else {
-			fields[common.AttributeAttribute] = string(marshalledAttributes)
+			fields[common.AttributeAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {
@@ -292,7 +276,7 @@ func (c *OtelTracesToLineProtocol) writeSpanLink(ctx context.Context, traceID pc
 			c.logger.Debug("failed to marshal attributes to JSON", err)
 			droppedAttributesCount += uint64(len(attributes))
 		} else {
-			fields[common.AttributeAttribute] = string(marshalledAttributes)
+			fields[common.AttributeAttributes] = string(marshalledAttributes)
 		}
 	}
 	if droppedAttributesCount > 0 {

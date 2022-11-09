@@ -8,6 +8,7 @@ import (
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
+	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
 	"go.uber.org/zap"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -89,8 +90,8 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 	var services []string
 	f := func(record map[string]interface{}) error {
-		if serviceName, found := record[common.AttributeServiceName]; found {
-			services = append(services, serviceName.(string))
+		if v, found := record[semconv.AttributeServiceName]; found {
+			services = append(services, v.(string))
 		}
 		return nil
 	}
@@ -105,8 +106,8 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParameters spanstore.OperationQueryParameters) ([]spanstore.Operation, error) {
 	var operations []spanstore.Operation
 	f := func(record map[string]interface{}) error {
-		if operationName, found := record[common.AttributeName]; found {
-			operation := spanstore.Operation{Name: operationName.(string)}
+		if v, found := record[common.AttributeName]; found {
+			operation := spanstore.Operation{Name: v.(string)}
 			if spanKind, found := record[common.AttributeSpanKind]; found {
 				operation.SpanKind = spanKind.(string)
 			}
@@ -194,16 +195,14 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 		traces = append(traces, trace)
 	}
 
-	ir.logger.Warn("FindTraces OK", zap.Int("count", len(traces)))
-
 	return traces, nil
 }
 
 func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
 	var traceIDs []model.TraceID
 	f := func(record map[string]interface{}) error {
-		if traceIDString, found := record[common.AttributeTraceID].(string); found {
-			traceID, err := model.TraceIDFromString(traceIDString)
+		if v, found := record[common.AttributeTraceID]; found {
+			traceID, err := model.TraceIDFromString(v.(string))
 			if err != nil {
 				return err
 			}

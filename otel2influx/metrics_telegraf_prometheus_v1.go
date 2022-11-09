@@ -66,7 +66,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 	}
 
 	tags = ResourceToTags(c.logger, resource, tags)
-	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
+	tags = InstrumentationScopeToTags(instrumentationLibrary, tags)
 
 	return
 }

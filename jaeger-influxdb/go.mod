@@ -11,6 +11,7 @@ require (
 	github.com/mattn/go-isatty v0.0.16
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
+	go.opentelemetry.io/collector/semconv v0.64.1
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.23.0
 	google.golang.org/grpc v1.50.1
@@ -47,7 +48,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	go.opentelemetry.io/collector/pdata v0.63.0 // indirect
+	go.opentelemetry.io/collector/pdata v0.64.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20220926192436-02166a98028e // indirect
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect

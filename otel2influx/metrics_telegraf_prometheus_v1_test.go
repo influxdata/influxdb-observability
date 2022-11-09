@@ -16,7 +16,8 @@ import (
 )
 
 func TestWriteMetric_v1_gauge(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -38,8 +39,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(11.9)
 
-	w := new(MockInfluxWriter)
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -77,7 +77,8 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 }
 
 func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -101,8 +102,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(11.9)
 
-	w := new(MockInfluxWriter)
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -140,7 +140,8 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 }
 
 func TestWriteMetric_v1_sum(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -166,9 +167,7 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(3)
 
-	w := new(MockInfluxWriter)
-
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -208,7 +207,8 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 }
 
 func TestWriteMetric_v1_histogram(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -231,9 +231,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	w := new(MockInfluxWriter)
-
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -264,7 +262,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 }
 
 func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -287,9 +286,7 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
-	w := new(MockInfluxWriter)
-
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{
@@ -320,7 +317,8 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 }
 
 func TestWriteMetric_v1_summary(t *testing.T) {
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), common.MetricsSchemaTelegrafPrometheusV1)
+	w := new(MockInfluxWriter)
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV1)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -355,9 +353,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	qv.SetQuantile(0.99)
 	qv.SetValue(76656)
 
-	w := new(MockInfluxWriter)
-
-	err = c.WriteMetrics(context.Background(), metrics, w)
+	err = c.WriteMetrics(context.Background(), metrics)
 	require.NoError(t, err)
 
 	expected := []mockPoint{

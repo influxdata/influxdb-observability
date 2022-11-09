@@ -16,7 +16,7 @@ receivers:
 processors:
   spanmetrics:
     metrics_exporter: influxdb
-    latency_histogram_buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2500ms, 5s, 10s]
+    latency_histogram_buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 2500ms, 5000s, 10000s]
     dimensions:
     - name: http.method
       default: GET
