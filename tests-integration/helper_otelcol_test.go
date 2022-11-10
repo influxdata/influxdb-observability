@@ -167,7 +167,7 @@ func newMockReceiverFactory() *mockReceiverFactory {
 	}
 }
 
-func (m *mockReceiverFactory) Type() config.Type {
+func (m *mockReceiverFactory) Type() component.Type {
 	return "mock"
 }
 
@@ -187,13 +187,13 @@ type mockReceiverConfig struct {
 	config.ReceiverSettings `mapstructure:",squash"`
 }
 
-func (m *mockReceiverFactory) CreateDefaultConfig() config.Receiver {
+func (m *mockReceiverFactory) CreateDefaultConfig() component.ReceiverConfig {
 	return &mockReceiverConfig{
-		ReceiverSettings: config.NewReceiverSettings(config.NewComponentID("mock")),
+		ReceiverSettings: config.NewReceiverSettings(component.NewID("mock")),
 	}
 }
 
-func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg config.Receiver, nextConsumer consumer.Metrics) (component.MetricsReceiver, error) {
+func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Metrics) (component.MetricsReceiver, error) {
 	if m.nextMetricsConsumer == nil {
 		m.nextMetricsConsumer = nextConsumer
 	} else if m.nextMetricsConsumer != nextConsumer {
@@ -202,7 +202,7 @@ func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params 
 	return new(mockReceiver), nil
 }
 
-func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg config.Receiver, nextConsumer consumer.Traces) (component.TracesReceiver, error) {
+func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Traces) (component.TracesReceiver, error) {
 	if m.nextTracesConsumer == nil {
 		m.nextTracesConsumer = nextConsumer
 	} else if m.nextTracesConsumer != nextConsumer {
@@ -211,7 +211,7 @@ func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params c
 	return new(mockReceiver), nil
 }
 
-func (m *mockReceiverFactory) CreateLogsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg config.Receiver, nextConsumer consumer.Logs) (component.LogsReceiver, error) {
+func (m *mockReceiverFactory) CreateLogsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Logs) (component.LogsReceiver, error) {
 	if m.nextLogsConsumer == nil {
 		m.nextLogsConsumer = nextConsumer
 	} else if m.nextLogsConsumer != nextConsumer {
@@ -387,7 +387,7 @@ type mockExporterFactory struct {
 	*mockMetricsExporter
 }
 
-func (m *mockExporterFactory) Type() config.Type {
+func (m *mockExporterFactory) Type() component.Type {
 	return "mock"
 }
 
@@ -407,24 +407,24 @@ type mockExporterConfig struct {
 	config.ExporterSettings `mapstructure:",squash"`
 }
 
-func (m *mockExporterFactory) CreateDefaultConfig() config.Exporter {
+func (m *mockExporterFactory) CreateDefaultConfig() component.ExporterConfig {
 	return &mockExporterConfig{
-		ExporterSettings: config.NewExporterSettings(config.NewComponentID("mock")),
+		ExporterSettings: config.NewExporterSettings(component.NewID("mock")),
 	}
 }
 
-func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.MetricsExporter, error) {
+func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.MetricsExporter, error) {
 	if m.mockMetricsExporter == nil {
 		m.mockMetricsExporter = &mockMetricsExporter{}
 	}
 	return m.mockMetricsExporter, nil
 }
 
-func (m *mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.LogsExporter, error) {
+func (m *mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.LogsExporter, error) {
 	panic("not implemented")
 }
 
-func (m *mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg config.Exporter) (component.TracesExporter, error) {
+func (m *mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.TracesExporter, error) {
 	panic("not implemented")
 }
 
