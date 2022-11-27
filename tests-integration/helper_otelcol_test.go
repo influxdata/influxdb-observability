@@ -173,15 +173,15 @@ func (m *mockReceiverFactory) Type() component.Type {
 }
 
 func (m *mockReceiverFactory) TracesReceiverStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 func (m *mockReceiverFactory) MetricsReceiverStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 func (m *mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 type mockReceiverConfig struct {
@@ -393,15 +393,15 @@ func (m *mockExporterFactory) Type() component.Type {
 }
 
 func (m *mockExporterFactory) TracesExporterStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 func (m *mockExporterFactory) MetricsExporterStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 func (m *mockExporterFactory) LogsExporterStability() component.StabilityLevel {
-	return component.StabilityLevelInDevelopment
+	return component.StabilityLevelDevelopment
 }
 
 type mockExporterConfig struct {

@@ -2,6 +2,7 @@ package otel2influx
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -58,9 +59,9 @@ func (c *OtelLogsToLineProtocol) writeLogRecord(ctx context.Context, resource pc
 	tags = InstrumentationScopeToTags(instrumentationLibrary, tags)
 
 	if traceID := logRecord.TraceID(); !traceID.IsEmpty() {
-		tags[common.AttributeTraceID] = traceID.HexString()
+		tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
 		if spanID := logRecord.SpanID(); !spanID.IsEmpty() {
-			tags[common.AttributeSpanID] = spanID.HexString()
+			tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
 		}
 	}
 
