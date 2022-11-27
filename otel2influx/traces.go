@@ -2,6 +2,7 @@ package otel2influx
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -50,19 +51,19 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, resource pcomm
 	if traceID.IsEmpty() {
 		return errors.New("span has no trace ID")
 	}
-	tags[common.AttributeTraceID] = traceID.HexString()
+	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
 
 	spanID := span.SpanID()
 	if spanID.IsEmpty() {
 		return errors.New("span has no span ID")
 	}
-	tags[common.AttributeSpanID] = spanID.HexString()
+	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
 
 	if traceState := span.TraceState().AsRaw(); traceState != "" {
 		tags[common.AttributeTraceState] = traceState
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
-		tags[common.AttributeParentSpanID] = parentSpanID.HexString()
+		tags[common.AttributeParentSpanID] = hex.EncodeToString(parentSpanID[:])
 	}
 	if name := span.Name(); name != "" {
 		tags[common.AttributeName] = name
@@ -155,8 +156,8 @@ func (c *OtelTracesToLineProtocol) spanEventToLP(traceID pcommon.TraceID, spanID
 	tags = ResourceToTags(c.logger, resource, tags)
 	tags = InstrumentationLibraryToTags(instrumentationLibrary, tags)
 
-	tags[common.AttributeTraceID] = traceID.HexString()
-	tags[common.AttributeSpanID] = spanID.HexString()
+	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
+	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
 	if name := spanEvent.Name(); name != "" {
 		tags[common.AttributeName] = name
 	}
@@ -197,21 +198,21 @@ func (c *OtelTracesToLineProtocol) spanLinkToLP(traceID pcommon.TraceID, spanID 
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
 
-	tags[common.AttributeTraceID] = traceID.HexString()
-	tags[common.AttributeSpanID] = spanID.HexString()
+	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
+	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
 
 	if linkedTraceID := spanLink.TraceID(); linkedTraceID.IsEmpty() {
 		err = errors.New("span link has no trace ID")
 		return
 	} else {
-		tags[common.AttributeLinkedTraceID] = linkedTraceID.HexString()
+		tags[common.AttributeLinkedTraceID] = hex.EncodeToString(linkedTraceID[:])
 	}
 
 	if linkedSpanID := spanLink.SpanID(); linkedSpanID.IsEmpty() {
 		err = errors.New("span link has no span ID")
 		return
 	} else {
-		tags[common.AttributeLinkedSpanID] = linkedSpanID.HexString()
+		tags[common.AttributeLinkedSpanID] = hex.EncodeToString(linkedSpanID[:])
 	}
 
 	if traceState := spanLink.TraceState().AsRaw(); traceState != "" {
