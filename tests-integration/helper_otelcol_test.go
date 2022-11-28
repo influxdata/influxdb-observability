@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
 	"github.com/stretchr/testify/assert"
@@ -28,9 +27,11 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/service"
 	"go.uber.org/zap"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 )
 
-func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory) {
+func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory, func()) {
 	t.Helper()
 
 	const otelcolConfigTemplate = `
@@ -87,6 +88,8 @@ service:
 
 	receiverFactories, err := component.MakeReceiverFactoryMap(mockReceiverFactory)
 	require.NoError(t, err)
+	processorFactories, err := component.MakeProcessorFactoryMap()
+	require.NoError(t, err)
 	exporterFactories, err := component.MakeExporterFactoryMap(influxdbexporter.NewFactory())
 	require.NoError(t, err)
 	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
@@ -94,6 +97,7 @@ service:
 	appSettings := service.CollectorSettings{
 		Factories: component.Factories{
 			Receivers:  receiverFactories,
+			Processors: processorFactories,
 			Exporters:  exporterFactories,
 			Extensions: extensionFactories,
 		},
@@ -116,8 +120,7 @@ service:
 
 	done := make(chan struct{})
 	go func() {
-		err := otelcol.Run(context.Background())
-		assert.NoError(t, err)
+		_ = otelcol.Run(context.Background())
 		close(done)
 	}()
 	t.Cleanup(otelcol.Shutdown)
@@ -141,12 +144,12 @@ service:
 		time.Sleep(10 * time.Millisecond)
 		select {
 		case <-done:
-			return nil, nil
+			return nil, nil, nil
 		default:
 		}
 	}
 
-	return mockDestination, mockReceiverFactory
+	return mockDestination, mockReceiverFactory, func() { otelcol.Shutdown(); <-done }
 }
 
 var (

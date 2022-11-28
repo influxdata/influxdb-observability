@@ -137,6 +137,7 @@ func newLogsExporter(config *Config, params component.ExporterCreateSettings) (*
 
 	return &logsExporter{
 		logger:    logger,
+		writer:    writer,
 		converter: converter,
 	}, nil
 }

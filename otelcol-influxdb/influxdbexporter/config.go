@@ -30,6 +30,8 @@ const (
 	stability = component.StabilityLevelBeta
 )
 
+var _ component.ExporterConfig = (*Config)(nil)
+
 // Config defines configuration for the InfluxDB exporter.
 type Config struct {
 	config.ExporterSettings       `mapstructure:",squash"`

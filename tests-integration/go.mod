@@ -84,8 +84,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/featuregate v0.66.0 // indirect
-	go.opentelemetry.io/collector/processor/batchprocessor v0.65.0 // indirect
-	go.opentelemetry.io/collector/semconv v0.65.0 // indirect
+	go.opentelemetry.io/collector/processor/batchprocessor v0.66.0 // indirect
+	go.opentelemetry.io/collector/semconv v0.66.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.11.1 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
@@ -109,7 +109,7 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-//github.com/influxdata/telegraf => ../../telegraf
-//github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../../opentelemetry-collector-contrib/exporter/influxdbexporter
+	github.com/influxdata/telegraf => ../../telegraf
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../otelcol-influxdb/influxdbexporter
 //github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver => ../../opentelemetry-collector-contrib/receiver/influxdbreceiver
 )

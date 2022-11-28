@@ -176,12 +176,3 @@ func convertScopeFields(is pcommon.InstrumentationScope) map[string]interface{} 
 	// TODO dropped attributes counts
 	return fields
 }
-
-func attributesToInfluxTags(attributes pcommon.Map) map[string]string {
-	tags := make(map[string]string, attributes.Len())
-	attributes.Range(func(k string, v pcommon.Value) bool {
-		tags[k] = v.AsString()
-		return true
-	})
-	return tags
-}

@@ -85,7 +85,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 			continue
 		case k == semconv.OtelLibraryName:
 			ilName = v
-		case k == semconv.OtelStatusDescription:
+		case k == semconv.OtelLibraryVersion:
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
 			rAttributes.PutStr(k, v)

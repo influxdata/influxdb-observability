@@ -22,7 +22,7 @@ func TestOtel2Influx(t *testing.T) {
 		for i, mt := range metricTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
 					clone := pmetric.NewMetrics()
@@ -33,6 +33,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, mt.lp, got)
+					closeOtelcol()
 				})
 
 				t.Run("telegraf", func(t *testing.T) {
@@ -64,7 +65,7 @@ func TestOtel2Influx(t *testing.T) {
 		for i, tt := range traceTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
 					clone := ptrace.NewTraces()
@@ -75,6 +76,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, tt.lp, got)
+					closeOtelcol()
 				})
 
 				t.Run("telegraf", func(t *testing.T) {
@@ -100,7 +102,7 @@ func TestOtel2Influx(t *testing.T) {
 		for i, lt := range logTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
 					t.Cleanup(mockDestination.Close)
 
 					clone := plog.NewLogs()
@@ -111,6 +113,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, lt.lp, got)
+					closeOtelcol()
 				})
 
 				t.Run("telegraf", func(t *testing.T) {

@@ -17,14 +17,6 @@ func traceIDToString(traceID model.TraceID) string {
 	return fmt.Sprintf("%016x%016x", traceID.High, traceID.Low)
 }
 
-func traceIDsToStrings(traceIDs []model.TraceID) []string {
-	traceIDStrings := make([]string, len(traceIDs))
-	for i, traceID := range traceIDs {
-		traceIDStrings[i] = traceIDToString(traceID)
-	}
-	return traceIDStrings
-}
-
 func queryGetTraceSpans(tableSpans string, traceIDs ...model.TraceID) string {
 	predicates := make([]string, len(traceIDs))
 	for i, traceID := range traceIDs {

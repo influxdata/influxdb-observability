@@ -35,7 +35,7 @@ func NewFactory() component.ExporterFactory {
 	)
 }
 
-func createTraceExporter(ctx context.Context, set component.ExporterCreateSettings, config config.Exporter) (component.TracesExporter, error) {
+func createTraceExporter(ctx context.Context, set component.ExporterCreateSettings, config component.ExporterConfig) (component.TracesExporter, error) {
 	cfg := config.(*Config)
 
 	exporter, err := newTracesExporter(cfg, set)
@@ -55,7 +55,7 @@ func createTraceExporter(ctx context.Context, set component.ExporterCreateSettin
 	)
 }
 
-func createMetricsExporter(ctx context.Context, set component.ExporterCreateSettings, config config.Exporter) (component.MetricsExporter, error) {
+func createMetricsExporter(ctx context.Context, set component.ExporterCreateSettings, config component.ExporterConfig) (component.MetricsExporter, error) {
 	cfg := config.(*Config)
 
 	exporter, err := newMetricsExporter(cfg, set)
@@ -75,7 +75,7 @@ func createMetricsExporter(ctx context.Context, set component.ExporterCreateSett
 	)
 }
 
-func createLogsExporter(ctx context.Context, set component.ExporterCreateSettings, config config.Exporter) (component.LogsExporter, error) {
+func createLogsExporter(ctx context.Context, set component.ExporterCreateSettings, config component.ExporterConfig) (component.LogsExporter, error) {
 	cfg := config.(*Config)
 
 	exporter, err := newLogsExporter(cfg, set)
@@ -95,9 +95,9 @@ func createLogsExporter(ctx context.Context, set component.ExporterCreateSetting
 	)
 }
 
-func createDefaultConfig() config.Exporter {
+func createDefaultConfig() component.ExporterConfig {
 	return &Config{
-		ExporterSettings: config.NewExporterSettings(config.NewComponentID(typeStr)),
+		ExporterSettings: config.NewExporterSettings(component.NewID(typeStr)),
 		HTTPClientSettings: confighttp.HTTPClientSettings{
 			Timeout: 5 * time.Second,
 			Headers: map[string]string{

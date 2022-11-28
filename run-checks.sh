@@ -17,27 +17,27 @@ if ! hash staticcheck; then
   fi
 fi
 
-for package in common influx2otel otel2influx tests-integration; do
+for package in common influx2otel jaeger-influxdb otel2influx tests-integration; do
   echo checking ${package}
-  cd ${BASEDIR}/${package}
+  cd "${BASEDIR}/${package}"
   go mod tidy
   if ! git diff --exit-code -- go.mod go.sum; then
     fail=1
   fi
-  if ! go build; then
+  if ! go build ./...; then
     fail=1
   fi
-  if ! go test; then
+  if ! go test ./...; then
     fail=1
   fi
   if [[ -n $(gofmt -s -l . | head -n 1) ]]; then
     fail=1
     gofmt -s -d .
   fi
-  if ! go vet; then
+  if ! go vet ./...; then
     fail=1
   fi
-  if ! staticcheck -f stylish; then
+  if ! staticcheck -f stylish ./...; then
     fail=1
   fi
 done

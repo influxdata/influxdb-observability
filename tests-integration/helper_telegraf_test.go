@@ -112,8 +112,7 @@ func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutpu
 		models.NewRunningOutput(mockOutputPlugin, mockOutputConfig, 0, 0),
 		models.NewRunningOutput(healthOutputPlugin, healthOutputConfig, 0, 0))
 
-	ag, err := agent.NewAgent(telegrafConfig)
-	require.NoError(t, err)
+	ag := agent.NewAgent(telegrafConfig)
 	ctx, stopAgent := context.WithCancel(context.Background())
 
 	agentDone := make(chan struct{})
@@ -267,8 +266,7 @@ func setupTelegrafOpenTelemetryOutput(t *testing.T) (*mockInputPlugin, *mockOtel
 		models.NewRunningOutput(otelOutputPlugin, otelOutputConfig, 0, 0),
 		models.NewRunningOutput(healthOutputPlugin, healthOutputConfig, 0, 0))
 
-	ag, err := agent.NewAgent(telegrafConfig)
-	require.NoError(t, err)
+	ag := agent.NewAgent(telegrafConfig)
 	ctx, stopAgent := context.WithCancel(context.Background())
 	t.Cleanup(stopAgent)
 
