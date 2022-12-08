@@ -54,6 +54,12 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 		}
 	}
 
+	if mt, ok := tags["metric_type"]; ok {
+		if mt == "timing" {
+			return b.addPointWithUnknownSchema(measurement, tags, fields, ts)
+		}
+	}
+
 	err := b.addPointTelegrafPrometheusV1(measurement, tags, fields, ts, vType)
 	if err == errValueTypeUnknown {
 		return b.addPointWithUnknownSchema(measurement, tags, fields, ts)
