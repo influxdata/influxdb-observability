@@ -3,7 +3,7 @@ module github.com/influxdata/influxdb-observability/otel2influx
 go 1.18
 
 require (
-	github.com/influxdata/influxdb-observability/common v0.2.31
+	github.com/influxdata/influxdb-observability/common v0.2.33
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/collector/pdata v1.0.0-rc1
 )
