@@ -11,6 +11,8 @@ receivers:
   gomod: go.opentelemetry.io/collector v0.66.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.66.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.66.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.66.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.66.0
 
 exporters:
 - import: go.opentelemetry.io/collector/exporter/otlpexporter
