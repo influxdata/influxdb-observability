@@ -16,7 +16,11 @@ import (
 	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
+	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/extension"
+	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/receiver"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
@@ -25,7 +29,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/service"
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
@@ -67,34 +70,34 @@ service:
 	mockDestination := httptest.NewServer(mockReceiverFactory)
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 
-	otelcolConfigProvider := func() service.ConfigProvider {
+	otelcolConfigProvider := func() otelcol.ConfigProvider {
 		mockDestinationEndpoint := mockDestination.URL
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
 		configString = strings.ReplaceAll(configString, "SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
 		configMapProvider := envprovider.New()
-		configProviderSettings := service.ConfigProviderSettings{
+		configProviderSettings := otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
 				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
 				Converters: []confmap.Converter{expandconverter.New()},
 			},
 		}
-		configProvider, err := service.NewConfigProvider(configProviderSettings)
+		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
 		return configProvider
 	}()
 
-	receiverFactories, err := component.MakeReceiverFactoryMap(mockReceiverFactory)
+	receiverFactories, err := receiver.MakeFactoryMap(mockReceiverFactory)
 	require.NoError(t, err)
 	processorFactories, err := component.MakeProcessorFactoryMap()
 	require.NoError(t, err)
-	exporterFactories, err := component.MakeExporterFactoryMap(influxdbexporter.NewFactory())
+	exporterFactories, err := exporter.MakeFactoryMap(influxdbexporter.NewFactory())
 	require.NoError(t, err)
-	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
+	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
-	appSettings := service.CollectorSettings{
+	appSettings := otelcol.CollectorSettings{
 		Factories: component.Factories{
 			Receivers:  receiverFactories,
 			Processors: processorFactories,
@@ -115,15 +118,15 @@ service:
 	}
 	envprovider.New()
 	fileprovider.New()
-	otelcol, err := service.New(appSettings)
+	collector, err := otelcol.NewCollector(appSettings)
 	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
-		_ = otelcol.Run(context.Background())
+		_ = collector.Run(context.Background())
 		close(done)
 	}()
-	t.Cleanup(otelcol.Shutdown)
+	t.Cleanup(collector.Shutdown)
 
 	go func() {
 		select {
@@ -149,16 +152,16 @@ service:
 		}
 	}
 
-	return mockDestination, mockReceiverFactory, func() { otelcol.Shutdown(); <-done }
+	return mockDestination, mockReceiverFactory, func() { collector.Shutdown(); <-done }
 }
 
 var (
-	_ component.ReceiverFactory = (*mockReceiverFactory)(nil)
-	_ http.Handler              = (*mockReceiverFactory)(nil)
+	_ receiver.Factory = (*mockReceiverFactory)(nil)
+	_ http.Handler     = (*mockReceiverFactory)(nil)
 )
 
 type mockReceiverFactory struct {
-	component.ReceiverFactory
+	receiver.Factory
 	nextMetricsConsumer consumer.Metrics
 	nextTracesConsumer  consumer.Traces
 	nextLogsConsumer    consumer.Logs
@@ -191,13 +194,13 @@ type mockReceiverConfig struct {
 	config.ReceiverSettings `mapstructure:",squash"`
 }
 
-func (m *mockReceiverFactory) CreateDefaultConfig() component.ReceiverConfig {
+func (m *mockReceiverFactory) CreateDefaultConfig() component.Config {
 	return &mockReceiverConfig{
 		ReceiverSettings: config.NewReceiverSettings(component.NewID("mock")),
 	}
 }
 
-func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Metrics) (component.MetricsReceiver, error) {
+func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params receiver.CreateSettings, cfg component.Config, nextConsumer consumer.Metrics) (receiver.Metrics, error) {
 	if m.nextMetricsConsumer == nil {
 		m.nextMetricsConsumer = nextConsumer
 	} else if m.nextMetricsConsumer != nextConsumer {
@@ -206,7 +209,7 @@ func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params 
 	return new(mockReceiver), nil
 }
 
-func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Traces) (component.TracesReceiver, error) {
+func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params receiver.CreateSettings, cfg component.Config, nextConsumer consumer.Traces) (receiver.Traces, error) {
 	if m.nextTracesConsumer == nil {
 		m.nextTracesConsumer = nextConsumer
 	} else if m.nextTracesConsumer != nextConsumer {
@@ -215,7 +218,7 @@ func (m *mockReceiverFactory) CreateTracesReceiver(ctx context.Context, params c
 	return new(mockReceiver), nil
 }
 
-func (m *mockReceiverFactory) CreateLogsReceiver(ctx context.Context, params component.ReceiverCreateSettings, cfg component.ReceiverConfig, nextConsumer consumer.Logs) (component.LogsReceiver, error) {
+func (m *mockReceiverFactory) CreateLogsReceiver(ctx context.Context, params receiver.CreateSettings, cfg component.Config, nextConsumer consumer.Logs) (receiver.Logs, error) {
 	if m.nextLogsConsumer == nil {
 		m.nextLogsConsumer = nextConsumer
 	} else if m.nextLogsConsumer != nextConsumer {
@@ -250,9 +253,9 @@ func (m *mockReceiverFactory) lineprotocol(t *testing.T) string {
 }
 
 var (
-	_ component.MetricsReceiver = (*mockReceiver)(nil)
-	_ component.TracesReceiver  = (*mockReceiver)(nil)
-	_ component.LogsReceiver    = (*mockReceiver)(nil)
+	_ receiver.Metrics = (*mockReceiver)(nil)
+	_ receiver.Traces  = (*mockReceiver)(nil)
+	_ receiver.Logs    = (*mockReceiver)(nil)
 )
 
 type mockReceiver struct {
@@ -292,31 +295,31 @@ service:
 	otelcolReceiverAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 
-	otelcolConfigProvider := func() service.ConfigProvider {
+	otelcolConfigProvider := func() otelcol.ConfigProvider {
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
 		configMapProvider := envprovider.New()
-		configProviderSettings := service.ConfigProviderSettings{
+		configProviderSettings := otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
 				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
 				Converters: []confmap.Converter{expandconverter.New()},
 			},
 		}
-		configProvider, err := service.NewConfigProvider(configProviderSettings)
+		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
 		require.NoError(t, err)
 		return configProvider
 	}()
 
-	receiverFactories, err := component.MakeReceiverFactoryMap(influxdbreceiver.NewFactory())
+	receiverFactories, err := receiver.MakeFactoryMap(influxdbreceiver.NewFactory())
 	require.NoError(t, err)
 	mockExporterFactory := new(mockExporterFactory)
-	exporterFactories, err := component.MakeExporterFactoryMap(mockExporterFactory)
+	exporterFactories, err := exporter.MakeFactoryMap(mockExporterFactory)
 	require.NoError(t, err)
-	extensionFactories, err := component.MakeExtensionFactoryMap(healthcheckextension.NewFactory())
+	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
-	appSettings := service.CollectorSettings{
+	appSettings := otelcol.CollectorSettings{
 		Factories: component.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
@@ -333,16 +336,16 @@ service:
 		},
 		ConfigProvider: otelcolConfigProvider,
 	}
-	otelcol, err := service.New(appSettings)
+	collector, err := otelcol.NewCollector(appSettings)
 	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
-		err := otelcol.Run(context.Background())
+		err := collector.Run(context.Background())
 		assert.NoError(t, err)
 		close(done)
 	}()
-	t.Cleanup(otelcol.Shutdown)
+	t.Cleanup(collector.Shutdown)
 
 	go func() {
 		select {
@@ -384,10 +387,10 @@ func (w testingLogger) Sync() error {
 	return nil
 }
 
-var _ component.ExporterFactory = (*mockExporterFactory)(nil)
+var _ exporter.Factory = (*mockExporterFactory)(nil)
 
 type mockExporterFactory struct {
-	component.ExporterFactory
+	exporter.Factory
 	*mockMetricsExporter
 }
 
@@ -411,28 +414,28 @@ type mockExporterConfig struct {
 	config.ExporterSettings `mapstructure:",squash"`
 }
 
-func (m *mockExporterFactory) CreateDefaultConfig() component.ExporterConfig {
+func (m *mockExporterFactory) CreateDefaultConfig() component.Config {
 	return &mockExporterConfig{
 		ExporterSettings: config.NewExporterSettings(component.NewID("mock")),
 	}
 }
 
-func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.MetricsExporter, error) {
+func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params exporter.CreateSettings, cfg component.Config) (exporter.Metrics, error) {
 	if m.mockMetricsExporter == nil {
 		m.mockMetricsExporter = &mockMetricsExporter{}
 	}
 	return m.mockMetricsExporter, nil
 }
 
-func (m *mockExporterFactory) CreateLogsExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.LogsExporter, error) {
+func (m *mockExporterFactory) CreateLogsExporter(ctx context.Context, params exporter.CreateSettings, cfg component.Config) (exporter.Logs, error) {
 	panic("not implemented")
 }
 
-func (m *mockExporterFactory) CreateTracesExporter(ctx context.Context, params component.ExporterCreateSettings, cfg component.ExporterConfig) (component.TracesExporter, error) {
+func (m *mockExporterFactory) CreateTracesExporter(ctx context.Context, params exporter.CreateSettings, cfg component.Config) (exporter.Traces, error) {
 	panic("not implemented")
 }
 
-var _ component.MetricsExporter = (*mockMetricsExporter)(nil)
+var _ exporter.Metrics = (*mockMetricsExporter)(nil)
 
 type mockMetricsExporter struct {
 	consumedMetrics pmetric.Metrics

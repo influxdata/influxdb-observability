@@ -15,8 +15,6 @@
 package influxdbexporter // import "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 
 import (
-	"fmt"
-
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/config/confighttp"
@@ -30,7 +28,7 @@ const (
 	stability = component.StabilityLevelBeta
 )
 
-var _ component.ExporterConfig = (*Config)(nil)
+var _ component.Config = (*Config)(nil)
 
 // Config defines configuration for the InfluxDB exporter.
 type Config struct {
@@ -51,11 +49,4 @@ type Config struct {
 	// - telegraf-prometheus-v1
 	// - telegraf-prometheus-v2
 	MetricsSchema string `mapstructure:"metrics_schema"`
-}
-
-func (cfg *Config) Validate() error {
-	if err := component.ValidateConfig(cfg); err != nil {
-		return fmt.Errorf("exporter settings are invalid :%w", err)
-	}
-	return nil
 }

@@ -13,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
 	go.opentelemetry.io/collector/pdata v0.66.0
-	go.opentelemetry.io/collector/semconv v0.66.0
+	go.opentelemetry.io/collector/semconv v0.67.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.23.0
 	google.golang.org/grpc v1.51.0
