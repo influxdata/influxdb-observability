@@ -1,5 +1,0 @@
-[[inputs.influxdb_v2_listener]]
-service_address = ":8086"
-
-[[outputs.file]]
-files = ["/dev/stdout"]
