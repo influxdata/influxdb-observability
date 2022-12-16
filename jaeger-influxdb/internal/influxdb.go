@@ -36,8 +36,7 @@ const (
 type InfluxdbStorage struct {
 	logger *zap.Logger
 
-	client influxdb2.Client
-	db     *sql.DB
+	db *sql.DB
 
 	reader           spanstore.Reader
 	readerDependency dependencystore.Reader
@@ -70,6 +69,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	if ok, err := client.Ping(ctx); err != nil || !ok {
 		return nil, fmt.Errorf("failed to ping InfluxDB: %w", err)
 	}
+	defer client.Close()
 
 	var bucket *domain.Bucket
 	var err error
@@ -91,7 +91,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 
 	dsn := fmt.Sprintf(
 		"host='%s' port=%d user='' password='%s' database='%s' passfile='' servicefile='' sslmode=%s",
-		influxdbClientHost, 5432, config.InfluxdbToken, *bucket.Id, sslmode)
+		influxdbClientHost, 5432, config.InfluxdbToken, bucket.Name, sslmode)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,6 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 
 	return &InfluxdbStorage{
 		logger:           logger,
-		client:           client,
 		db:               db,
 		reader:           reader,
 		readerDependency: readerDependency,
@@ -146,7 +145,6 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 }
 
 func (i *InfluxdbStorage) Close() error {
-	i.client.Close()
 	return i.db.Close()
 }
 
