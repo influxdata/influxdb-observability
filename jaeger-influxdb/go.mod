@@ -5,16 +5,16 @@ go 1.18
 require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/influxdata/influxdb-client-go/v2 v2.11.0
-	github.com/influxdata/influxdb-observability/common v0.2.29
+	github.com/influxdata/influxdb-observability/common v0.2.34
 	github.com/jaegertracing/jaeger v1.40.0
 	github.com/lib/pq v1.10.7
 	github.com/mattn/go-isatty v0.0.16
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
-	go.opentelemetry.io/collector/pdata v0.66.0
-	go.opentelemetry.io/collector/semconv v0.67.0
-	go.uber.org/multierr v1.8.0
+	go.opentelemetry.io/collector/pdata v1.0.0-rc2
+	go.opentelemetry.io/collector/semconv v0.68.0
+	go.uber.org/multierr v1.9.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.51.0
 )

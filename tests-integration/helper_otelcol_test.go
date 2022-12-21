@@ -20,6 +20,7 @@ import (
 	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/receiver"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
@@ -27,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
 	"go.uber.org/zap"
 
@@ -91,14 +91,14 @@ service:
 
 	receiverFactories, err := receiver.MakeFactoryMap(mockReceiverFactory)
 	require.NoError(t, err)
-	processorFactories, err := component.MakeProcessorFactoryMap()
+	processorFactories, err := processor.MakeFactoryMap()
 	require.NoError(t, err)
 	exporterFactories, err := exporter.MakeFactoryMap(influxdbexporter.NewFactory())
 	require.NoError(t, err)
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: component.Factories{
+		Factories: otelcol.Factories{
 			Receivers:  receiverFactories,
 			Processors: processorFactories,
 			Exporters:  exporterFactories,
@@ -190,14 +190,8 @@ func (m *mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
 	return component.StabilityLevelDevelopment
 }
 
-type mockReceiverConfig struct {
-	config.ReceiverSettings `mapstructure:",squash"`
-}
-
 func (m *mockReceiverFactory) CreateDefaultConfig() component.Config {
-	return &mockReceiverConfig{
-		ReceiverSettings: config.NewReceiverSettings(component.NewID("mock")),
-	}
+	return &struct{}{}
 }
 
 func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params receiver.CreateSettings, cfg component.Config, nextConsumer consumer.Metrics) (receiver.Metrics, error) {
@@ -320,7 +314,7 @@ service:
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: component.Factories{
+		Factories: otelcol.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
 			Extensions: extensionFactories,
@@ -410,14 +404,8 @@ func (m *mockExporterFactory) LogsExporterStability() component.StabilityLevel {
 	return component.StabilityLevelDevelopment
 }
 
-type mockExporterConfig struct {
-	config.ExporterSettings `mapstructure:",squash"`
-}
-
 func (m *mockExporterFactory) CreateDefaultConfig() component.Config {
-	return &mockExporterConfig{
-		ExporterSettings: config.NewExporterSettings(component.NewID("mock")),
-	}
+	return &struct{}{}
 }
 
 func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params exporter.CreateSettings, cfg component.Config) (exporter.Metrics, error) {

@@ -28,6 +28,7 @@ import (
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -66,7 +67,7 @@ func newInfluxHTTPWriter(logger common.Logger, config *Config, telemetrySettings
 
 	httpClientSettings := config.HTTPClientSettings
 	if config.Token != "" {
-		httpClientSettings.Headers["Authorization"] = "Token " + config.Token
+		httpClientSettings.Headers["Authorization"] = configopaque.String("Token " + config.Token)
 	}
 
 	return &influxHTTPWriter{

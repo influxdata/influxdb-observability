@@ -16,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	"go.opentelemetry.io/otel/sdk/metric/view"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/multierr"
 
@@ -69,7 +68,7 @@ type JaegerDependencyGraph struct {
 func NewJaegerDependencyGraph(logger common.Logger, cacheMaxTrace, queueLength int, w InfluxWriter) (*JaegerDependencyGraph, error) {
 	meterReader := metric.NewManualReader(
 		metric.WithTemporalitySelector(
-			func(kind view.InstrumentKind) metricdata.Temporality {
+			func(kind metric.InstrumentKind) metricdata.Temporality {
 				return metricdata.DeltaTemporality
 			}))
 
