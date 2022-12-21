@@ -1,4 +1,0 @@
-[[inputs.opentelemetry]]
-
-[[outputs.file]]
-files = ["/dev/stdout"]
