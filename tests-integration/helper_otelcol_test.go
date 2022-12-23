@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
 	"go.uber.org/zap"
 )
@@ -95,7 +94,7 @@ service:
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: component.Factories{
+		Factories: otelcol.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
 			Extensions: extensionFactories,
@@ -187,13 +186,10 @@ func (m *mockReceiverFactory) LogsReceiverStability() component.StabilityLevel {
 }
 
 type mockReceiverConfig struct {
-	config.ReceiverSettings `mapstructure:",squash"`
 }
 
 func (m *mockReceiverFactory) CreateDefaultConfig() component.Config {
-	return &mockReceiverConfig{
-		ReceiverSettings: config.NewReceiverSettings(component.NewID("mock")),
-	}
+	return &mockReceiverConfig{}
 }
 
 func (m *mockReceiverFactory) CreateMetricsReceiver(ctx context.Context, params receiver.CreateSettings, cfg component.Config, nextConsumer consumer.Metrics) (receiver.Metrics, error) {
@@ -316,7 +312,7 @@ service:
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: component.Factories{
+		Factories: otelcol.Factories{
 			Receivers:  receiverFactories,
 			Exporters:  exporterFactories,
 			Extensions: extensionFactories,
@@ -407,13 +403,10 @@ func (m *mockExporterFactory) LogsExporterStability() component.StabilityLevel {
 }
 
 type mockExporterConfig struct {
-	config.ExporterSettings `mapstructure:",squash"`
 }
 
 func (m *mockExporterFactory) CreateDefaultConfig() component.Config {
-	return &mockExporterConfig{
-		ExporterSettings: config.NewExporterSettings(component.NewID("mock")),
-	}
+	return &mockExporterConfig{}
 }
 
 func (m *mockExporterFactory) CreateMetricsExporter(ctx context.Context, params exporter.CreateSettings, cfg component.Config) (exporter.Metrics, error) {
