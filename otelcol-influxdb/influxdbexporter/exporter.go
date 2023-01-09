@@ -20,6 +20,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
+	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -35,7 +36,7 @@ type tracesExporter struct {
 	converter *otel2influx.OtelTracesToLineProtocol
 }
 
-func newTracesExporter(config *Config, params component.ExporterCreateSettings) (*tracesExporter, error) {
+func newTracesExporter(config *Config, params exporter.CreateSettings) (*tracesExporter, error) {
 	logger := newZapInfluxLogger(params.Logger)
 
 	writer, err := newInfluxHTTPWriter(logger, config, params.TelemetrySettings)
@@ -80,7 +81,7 @@ type metricsExporter struct {
 	converter *otel2influx.OtelMetricsToLineProtocol
 }
 
-func newMetricsExporter(config *Config, params component.ExporterCreateSettings) (*metricsExporter, error) {
+func newMetricsExporter(config *Config, params exporter.CreateSettings) (*metricsExporter, error) {
 	logger := newZapInfluxLogger(params.Logger)
 	schema, found := common.MetricsSchemata[config.MetricsSchema]
 	if !found {
@@ -126,7 +127,7 @@ type logsExporter struct {
 	converter *otel2influx.OtelLogsToLineProtocol
 }
 
-func newLogsExporter(config *Config, params component.ExporterCreateSettings) (*logsExporter, error) {
+func newLogsExporter(config *Config, params exporter.CreateSettings) (*logsExporter, error) {
 	logger := newZapInfluxLogger(params.Logger)
 
 	writer, err := newInfluxHTTPWriter(logger, config, params.TelemetrySettings)
