@@ -11,7 +11,7 @@ if ! hash go; then
 fi
 if ! hash staticcheck; then
   echo "installing staticcheck"
-  if ! go install honnef.co/go/tools/cmd/staticcheck@2022.1; then
+  if ! go install honnef.co/go/tools/cmd/staticcheck@2022.1.3; then
     echo "failed to install staticcheck"
     exit 1
   fi
