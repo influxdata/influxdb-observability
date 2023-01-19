@@ -2,8 +2,8 @@ dist:
   name: otelcol-influxdb
   module: github.com/influxdata/influxdb-observability/otelcol-influxdb
   description: OpenTelemetry Collector Distribution built for InfluxDB
-  version: 0.69.0-0.0.1-beta.0
-  otelcol_version: 0.69.0
+  version: 0.69.1-0.0.1-beta.0
+  otelcol_version: 0.69.1
   output_path: ./build
 
 receivers:
@@ -21,7 +21,7 @@ exporters:
 
 extensions:
 - import: go.opentelemetry.io/collector/extension/ballastextension
-  gomod: go.opentelemetry.io/collector v0.69.0
+  gomod: go.opentelemetry.io/collector v0.69.1
 - import: go.opentelemetry.io/collector/extension/zpagesextension
   gomod: go.opentelemetry.io/collector v0.69.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.69.0
@@ -31,7 +31,7 @@ extensions:
 
 processors:
 - import: go.opentelemetry.io/collector/processor/batchprocessor
-  gomod: go.opentelemetry.io/collector v0.69.0
+  gomod: go.opentelemetry.io/collector v0.69.1
 - import: go.opentelemetry.io/collector/processor/memorylimiterprocessor
   gomod: go.opentelemetry.io/collector v0.69.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.69.0
@@ -44,4 +44,3 @@ replaces:
 - github.com/influxdata/influxdb-observability/influx2otel => ../../influx2otel
 - github.com/influxdata/influxdb-observability/otel2influx => ../../otel2influx
 - github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../influxdbexporter
-#- cloud.google.com/go => cloud.google.com/go v0.106.0

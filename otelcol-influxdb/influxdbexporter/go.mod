@@ -7,10 +7,10 @@ require (
 	github.com/influxdata/influxdb-observability/otel2influx v0.2.35
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/stretchr/testify v1.8.1
-	go.opentelemetry.io/collector v0.69.0
-	go.opentelemetry.io/collector/component v0.69.0
-	go.opentelemetry.io/collector/confmap v0.69.0
-	go.opentelemetry.io/collector/consumer v0.69.0
+	go.opentelemetry.io/collector v0.69.1
+	go.opentelemetry.io/collector/component v0.69.1
+	go.opentelemetry.io/collector/confmap v0.69.1
+	go.opentelemetry.io/collector/consumer v0.69.1
 	go.opentelemetry.io/collector/pdata v1.0.0-rc3.0.20230109164642-7d168dd20efd
 	go.uber.org/multierr v1.9.0
 	go.uber.org/zap v1.24.0
@@ -42,8 +42,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rs/cors v1.8.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/collector/featuregate v0.69.0 // indirect
-	go.opentelemetry.io/collector/semconv v0.69.0 // indirect
+	go.opentelemetry.io/collector/featuregate v0.69.1 // indirect
+	go.opentelemetry.io/collector/semconv v0.69.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.37.0 // indirect
 	go.opentelemetry.io/otel v1.11.2 // indirect
 	go.opentelemetry.io/otel/metric v0.34.0 // indirect
