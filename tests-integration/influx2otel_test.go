@@ -13,8 +13,6 @@ import (
 	"github.com/influxdata/telegraf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/influxdata/influxdb-observability/common"
 )
 
 func TestInflux2Otel(t *testing.T) {
@@ -28,12 +26,8 @@ func TestInflux2Otel(t *testing.T) {
 				require.Equal(t, 2, response.StatusCode/100)
 
 				got := mockExporterFactory.consumedMetrics
-				common.SortResourceMetrics(got.ResourceMetrics())
-
 				expect := mt.otel
-				common.SortResourceMetrics(expect.ResourceMetrics())
-
-				assert.Equal(t, expect, got)
+				assertMetricsEqual(t, expect, got)
 			})
 
 			t.Run("telegraf", func(t *testing.T) {

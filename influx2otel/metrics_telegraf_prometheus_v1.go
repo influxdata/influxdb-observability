@@ -260,6 +260,7 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	dataPoint.SetSum(sum)
 	dataPoint.BucketCounts().FromRaw(bucketCounts)
 	dataPoint.ExplicitBounds().FromRaw(explicitBounds)
+	sortHistogramBuckets(dataPoint)
 	return nil
 }
 

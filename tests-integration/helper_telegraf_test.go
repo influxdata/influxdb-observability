@@ -30,8 +30,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/grpc"
-
-	"github.com/influxdata/influxdb-observability/common"
 )
 
 func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegraf.ValueType, expect pmetric.Metrics) {
@@ -69,16 +67,7 @@ func assertOtel2InfluxTelegraf(t *testing.T, lp string, telegrafValueType telegr
 		return
 	}
 
-	marshaller := &pmetric.JSONMarshaler{}
-	common.SortResourceMetrics(expect.ResourceMetrics())
-	expectJSON, err := marshaller.MarshalMetrics(expect)
-	require.NoError(t, err)
-
-	common.SortResourceMetrics(got.ResourceMetrics())
-	gotJSON, err := marshaller.MarshalMetrics(got)
-	require.NoError(t, err)
-
-	assert.JSONEq(t, string(expectJSON), string(gotJSON))
+	assertMetricsEqual(t, expect, got)
 }
 
 func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutputPlugin, context.CancelFunc) {

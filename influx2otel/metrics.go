@@ -3,6 +3,7 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -69,14 +70,15 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 	}
 }
 
-func resourceAttributesToKey(rAttributes pcommon.Map) string {
-	var key strings.Builder
-	rAttributes.Range(func(k string, v pcommon.Value) bool {
-		key.WriteString(k)
-		key.WriteByte(':')
+func attributeKeysToSortedStringKey(attributes pcommon.Map) string {
+	// TODO pdatautil.MapKeysHash()
+	keys := make([]string, 0, attributes.Len())
+	attributes.Range(func(k string, _ pcommon.Value) bool {
+		keys = append(keys, k)
 		return true
 	})
-	return key.String()
+	sort.Strings(keys)
+	return strings.Join(keys, ":")
 }
 
 var errValueTypeUnknown = errors.New("value type unknown")
@@ -100,9 +102,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		}
 	}
 
-	rAttributes.Sort()
-
-	rKey := resourceAttributesToKey(rAttributes)
+	rKey := attributeKeysToSortedStringKey(rAttributes)
 	var resourceMetrics pmetric.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
 		resourceMetrics = rm
@@ -235,4 +235,39 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	}
 
 	return nil
+}
+
+func sortHistogramBuckets(hdp pmetric.HistogramDataPoint) {
+	sBuckets := make(sortableBuckets, hdp.ExplicitBounds().Len())
+	for i := 0; i < hdp.ExplicitBounds().Len(); i++ {
+		sBuckets[i] = sortableBucket{hdp.BucketCounts().At(i), hdp.ExplicitBounds().At(i)}
+	}
+	sort.Sort(sBuckets)
+	counts := make([]uint64, hdp.ExplicitBounds().Len())
+	buckets := make([]float64, hdp.ExplicitBounds().Len())
+	for i, bucket := range sBuckets {
+		counts[i], buckets[i] = bucket.count, bucket.bound
+	}
+	hdp.BucketCounts().FromRaw(counts)
+	hdp.ExplicitBounds().FromRaw(buckets)
+}
+
+type sortableBucket struct {
+	count uint64
+	bound float64
+}
+
+type sortableBuckets []sortableBucket
+
+func (s sortableBuckets) Len() int {
+	return len(s)
+}
+
+func (s sortableBuckets) Less(i, j int) bool {
+	return s[i].bound < s[j].bound
+}
+
+func (s sortableBuckets) Swap(i, j int) {
+	s[i].count, s[j].count = s[j].count, s[i].count
+	s[i].bound, s[j].bound = s[j].bound, s[i].bound
 }

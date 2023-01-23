@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -61,21 +62,8 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 
 type dataPointKey string
 
-func newDataPointKey(unixNanos uint64, attributes pcommon.Map) dataPointKey {
-	attributes.Sort()
-	components := make([]string, 0, attributes.Len()*2+1)
-	components = append(components, strconv.FormatUint(unixNanos, 32))
-	var err error
-	attributes.Range(func(k string, v pcommon.Value) bool {
-		var vv string
-		vv, err = common.AttributeValueToInfluxTagValue(v)
-		if err != nil {
-			return false
-		}
-		components = append(components, k, vv)
-		return true
-	})
-	return dataPointKey(strings.Join(components, ":"))
+func newDataPointKey(ts time.Time, attributes pcommon.Map) dataPointKey {
+	return dataPointKey(fmt.Sprintf("%d:%s", ts.UnixNano(), pdatautil.MapHash(attributes)))
 }
 
 func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
@@ -194,7 +182,7 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 		return err
 	}
 
-	dpk := newDataPointKey(uint64(ts.UnixNano()), attributes)
+	dpk := newDataPointKey(ts, attributes)
 	dataPoint, found := b.histogramDataPointsByMDPK[metric][dpk]
 	if !found {
 		dataPoint = metric.Histogram().DataPoints().AppendEmpty()
@@ -213,8 +201,8 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for histogram bucket count: %q", iBucketCount, iBucketCount)
 			}
-			dataPoint.ExplicitBounds().FromRaw(append(dataPoint.ExplicitBounds().AsRaw(), explicitBound))
-			dataPoint.BucketCounts().FromRaw(append(dataPoint.BucketCounts().AsRaw(), uint64(bucketCount)))
+			dataPoint.ExplicitBounds().Append(explicitBound)
+			dataPoint.BucketCounts().Append(uint64(bucketCount))
 		} else {
 			return fmt.Errorf("histogram bucket bound has no matching count")
 		}
@@ -232,8 +220,8 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for summary (interpreted as histogram) quantile value: %q", iValue, iValue)
 			}
-			dataPoint.ExplicitBounds().FromRaw(append(dataPoint.ExplicitBounds().AsRaw(), quantile))
-			dataPoint.BucketCounts().FromRaw(append(dataPoint.BucketCounts().AsRaw(), uint64(value)))
+			dataPoint.ExplicitBounds().Append(quantile)
+			dataPoint.BucketCounts().Append(uint64(value))
 		} else {
 			return fmt.Errorf("summary (interpreted as histogram) quantile has no matching value")
 		}
@@ -293,7 +281,7 @@ func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[strin
 		return err
 	}
 
-	dpk := newDataPointKey(uint64(ts.UnixNano()), attributes)
+	dpk := newDataPointKey(ts, attributes)
 	dataPoint, found := b.summaryDataPointsByMDPK[metric][dpk]
 	if !found {
 		dataPoint = metric.Summary().DataPoints().AppendEmpty()

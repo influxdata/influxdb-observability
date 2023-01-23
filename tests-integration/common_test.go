@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/influxdata/influxdb/v2/models"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 func findOpenTCPPort(t *testing.T) int {
@@ -44,4 +46,18 @@ func parseLineProtocol(t *testing.T, line string) map[string]map[string][]models
 		fieldsByTags[tags] = append(fieldsByTags[tags], fields)
 	}
 	return fieldsByTagsByMeasurement
+}
+
+func assertMetricsEqual(t *testing.T, expect, got pmetric.Metrics) {
+	t.Helper()
+
+	assert.NoError(t,
+		pmetrictest.CompareMetrics(expect, got,
+			pmetrictest.IgnoreMetricDataPointsOrder(),
+			pmetrictest.IgnoreMetricsOrder(),
+			pmetrictest.IgnoreResourceMetricsOrder(),
+			pmetrictest.IgnoreScopeMetricsOrder(),
+			pmetrictest.IgnoreSummaryDataPointValueAtQuantileSliceOrder(),
+		),
+	)
 }
