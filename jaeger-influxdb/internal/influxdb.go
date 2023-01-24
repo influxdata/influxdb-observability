@@ -9,16 +9,24 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/apache/arrow-adbc/go/adbc"
+	"github.com/apache/arrow-adbc/go/adbc/driver/flightsql"
+	"github.com/apache/arrow-adbc/go/adbc/sqldriver"
 	"github.com/golang/groupcache/lru"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
-	_ "github.com/lib/pq"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+func init() {
+	sql.Register("flightsql", sqldriver.Driver{
+		Driver: flightsql.Driver{},
+	})
+}
 
 var _ shared.StoragePlugin = (*InfluxdbStorage)(nil)
 var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
@@ -84,15 +92,17 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		return nil, err
 	}
 
-	sslmode := "verify-full"
+	uriScheme := "grpc+tls"
 	if config.InfluxdbTLSDisable {
-		sslmode = "disable"
+		uriScheme = "grpc+tcp"
 	}
+	dsn := strings.Join([]string{
+		fmt.Sprintf("%s=%s://%s:%d/", adbc.OptionKeyURI, uriScheme, influxdbClientHost, 443),
+		fmt.Sprintf("%s=Bearer %s", flightsql.OptionAuthorizationHeader, config.InfluxdbToken),
+		fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", bucket.Name),
+	}, " ; ")
 
-	dsn := fmt.Sprintf(
-		"host='%s' port=%d user='' password='%s' database='%s' passfile='' servicefile='' sslmode=%s",
-		influxdbClientHost, 5432, config.InfluxdbToken, bucket.Name, sslmode)
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("flightsql", dsn)
 	if err != nil {
 		return nil, err
 	}

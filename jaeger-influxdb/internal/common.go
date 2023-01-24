@@ -26,7 +26,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 	// TODO add more process attributes
 	var err error
 	for k, v := range record {
-		if vv, ok := v.(string); ok && vv == "NULL" {
+		if vv, ok := v.(string); (ok && vv == "NULL") || (!ok && v == nil) {
 			continue
 		}
 		switch k {
