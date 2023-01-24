@@ -17,6 +17,6 @@ RUN apk --update --no-cache add bash
 USER 10001
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder --chmod=0755 /go/bin/jaeger-influxdb /
-COPY --from=jaegertracing/jaeger-query:1.38.1 --chmod=0755 /go/bin/query-linux /jaeger-query
+COPY --from=jaegertracing/jaeger-query:1.41 --chmod=0755 /go/bin/query-linux /jaeger-query
 COPY --chmod=0755 jaeger-influxdb/all-in-one.sh /
 ENTRYPOINT ["/all-in-one.sh"]
