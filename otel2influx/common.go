@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
-	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 	"go.uber.org/zap"
 
 	"github.com/influxdata/influxdb-observability/common"

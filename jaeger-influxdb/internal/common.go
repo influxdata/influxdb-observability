@@ -9,7 +9,7 @@ import (
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/opentracing/opentracing-go/ext"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv "go.opentelemetry.io/collector/semconv/v1.12.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )

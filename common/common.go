@@ -7,10 +7,21 @@ import (
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
+	"strings"
 )
 
-// https://github.com/open-telemetry/opentelemetry-specification/tree/v1.0.1/specification/resource/semantic_conventions
-var ResourceNamespace = regexp.MustCompile(`^(service\.|telemetry\.|container\.|process\.|host\.|os\.|cloud\.|deployment\.|k8s\.|aws\.|gcp\.|azure\.|faas\.name|faas\.id|faas\.version|faas\.instance|faas\.max_memory)`)
+// https://github.com/open-telemetry/opentelemetry-specification/tree/v1.16.0/specification/resource/semantic_conventions
+var ResourceNamespace = regexp.MustCompile(generateResourceNamespaceRegexp())
+
+func generateResourceNamespaceRegexp() string {
+	semconvResourceAttributeNames := semconv.GetResourceSemanticConventionAttributeNames()
+	components := make([]string, len(semconvResourceAttributeNames))
+	for i, attributeName := range semconvResourceAttributeNames {
+		components[i] = strings.ReplaceAll(attributeName, `.`, `\.`)
+	}
+	return `^(?:` + strings.Join(components, `|`) + `)(?:\.[a-z0-9]+)*$`
+}
 
 const (
 	MeasurementSpans      = "spans"
