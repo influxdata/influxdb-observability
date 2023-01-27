@@ -39,7 +39,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/denisenkom/go-mssqldb v0.12.2 // indirect
 	github.com/docker/docker v20.10.22+incompatible // indirect
 	github.com/docker/go-connections v0.4.1-0.20210727194412-58542c764a11 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -83,7 +82,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.70.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.70.0 // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
@@ -118,7 +117,7 @@ require (
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
-	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect
+	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -129,6 +128,6 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-	github.com/influxdata/telegraf => ../../telegraf
-//github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver => ../../opentelemetry-collector-contrib/receiver/influxdbreceiver
+	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230127232956-eb34b464abd6
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ./influxdbexporter
 )
