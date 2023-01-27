@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.2.34
+	github.com/influxdata/influxdb-observability/common v0.2.35
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/collector/component v0.70.0
 	go.opentelemetry.io/collector/consumer v0.70.0
