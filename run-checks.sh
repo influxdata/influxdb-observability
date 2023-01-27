@@ -17,7 +17,7 @@ if ! hash staticcheck; then
   fi
 fi
 
-for package in common influx2otel jaeger-influxdb otel2influx tests-integration; do
+for package in common influx2otel otel2influx tests-integration; do
   echo checking ${package}
   cd "${BASEDIR}/${package}"
   go mod tidy

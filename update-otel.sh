@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 BASEDIR=$(pwd)
 
-for module in common influx2otel jaeger-influxdb otel2influx tests-integration; do
+for module in common influx2otel otel2influx tests-integration; do
   cd ${BASEDIR}/${module}
   go list -f '{{range .Imports}}{{.}}
 {{end}}
