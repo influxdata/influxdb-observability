@@ -48,3 +48,19 @@ jobs:
         push: true
         file: jaeger-influxdb/Dockerfile.all-in-one
         tags: ${{ steps.meta-jaeger-influxdb-all-in-one.outputs.tags }}
+
+    - name: Docker meta, otelcol-influxdb
+      id: meta-otelcol-influxdb
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/otelcol-influxdb
+        tags: |
+          type=sha,prefix=
+          type=raw,value=latest
+    - name: Build and push otelcol-influxdb
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        file: otelcol-influxdb/Dockerfile
+        tags: ${{ steps.meta-otelcol-influxdb.outputs.tags }}
