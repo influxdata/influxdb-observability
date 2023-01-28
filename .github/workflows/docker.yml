@@ -3,14 +3,12 @@ name: docker
 on:
   push:
     branches:
-    - iox-wip
+    - main
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
     - name: Login to Docker Hub
@@ -18,3 +16,35 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Docker meta, jaeger-influxdb
+      id: meta-jaeger-influxdb
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/jaeger-influxdb
+        tags: |
+          type=sha,prefix=
+          type=raw,value=latest
+    - name: Build and push jaeger-influxdb
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        file: jaeger-influxdb/Dockerfile
+        tags: ${{ steps.meta-jaeger-influxdb.outputs.tags }}
+
+    - name: Docker meta, jaeger-influxdb-all-in-one
+      id: meta-jaeger-influxdb-all-in-one
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          jacobmarble/jaeger-influxdb-all-in-one
+        tags: |
+          type=sha,prefix=
+          type=raw,value=latest
+    - name: Build and push jaeger-influxdb-all-in-one
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        file: jaeger-influxdb/Dockerfile.all-in-one
+        tags: ${{ steps.meta-jaeger-influxdb-all-in-one.outputs.tags }}
