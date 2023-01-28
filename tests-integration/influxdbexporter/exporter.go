@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/influxdata/influxdb-observability/common"
+	"github.com/influxdata/influxdb-observability/otel2influx"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/exporter"
@@ -25,9 +27,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/multierr"
-
-	"github.com/influxdata/influxdb-observability/common"
-	"github.com/influxdata/influxdb-observability/otel2influx"
 )
 
 type tracesExporter struct {
@@ -36,10 +35,10 @@ type tracesExporter struct {
 	converter *otel2influx.OtelTracesToLineProtocol
 }
 
-func newTracesExporter(config *Config, params exporter.CreateSettings) (*tracesExporter, error) {
-	logger := newZapInfluxLogger(params.Logger)
+func newTracesExporter(config *Config, settings exporter.CreateSettings) (*tracesExporter, error) {
+	logger := newZapInfluxLogger(settings.Logger)
 
-	writer, err := newInfluxHTTPWriter(logger, config, params.TelemetrySettings)
+	writer, err := newInfluxHTTPWriter(logger, config, settings.TelemetrySettings)
 	if err != nil {
 		return nil, err
 	}

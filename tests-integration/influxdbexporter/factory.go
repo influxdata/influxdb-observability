@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/influxdata/influxdb-observability/common"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/configopaque"
@@ -39,7 +40,7 @@ func NewFactory() exporter.Factory {
 func createTraceExporter(ctx context.Context, set exporter.CreateSettings, config component.Config) (exporter.Traces, error) {
 	cfg := config.(*Config)
 
-	tracesExporter, err := newTracesExporter(cfg, set)
+	exporter, err := newTracesExporter(cfg, set)
 	if err != nil {
 		return nil, err
 	}
@@ -48,18 +49,18 @@ func createTraceExporter(ctx context.Context, set exporter.CreateSettings, confi
 		ctx,
 		set,
 		cfg,
-		tracesExporter.pushTraces,
+		exporter.pushTraces,
 		exporterhelper.WithQueue(cfg.QueueSettings),
 		exporterhelper.WithRetry(cfg.RetrySettings),
-		exporterhelper.WithStart(tracesExporter.Start),
-		exporterhelper.WithShutdown(tracesExporter.Shutdown),
+		exporterhelper.WithStart(exporter.Start),
+		exporterhelper.WithShutdown(exporter.Shutdown),
 	)
 }
 
 func createMetricsExporter(ctx context.Context, set exporter.CreateSettings, config component.Config) (exporter.Metrics, error) {
 	cfg := config.(*Config)
 
-	metricsExporter, err := newMetricsExporter(cfg, set)
+	exporter, err := newMetricsExporter(cfg, set)
 	if err != nil {
 		return nil, err
 	}
@@ -68,18 +69,18 @@ func createMetricsExporter(ctx context.Context, set exporter.CreateSettings, con
 		ctx,
 		set,
 		cfg,
-		metricsExporter.pushMetrics,
+		exporter.pushMetrics,
 		exporterhelper.WithQueue(cfg.QueueSettings),
 		exporterhelper.WithRetry(cfg.RetrySettings),
-		exporterhelper.WithStart(metricsExporter.Start),
-		exporterhelper.WithShutdown(metricsExporter.Shutdown),
+		exporterhelper.WithStart(exporter.Start),
+		exporterhelper.WithShutdown(exporter.Shutdown),
 	)
 }
 
 func createLogsExporter(ctx context.Context, set exporter.CreateSettings, config component.Config) (exporter.Logs, error) {
 	cfg := config.(*Config)
 
-	logsExporter, err := newLogsExporter(cfg, set)
+	exporter, err := newLogsExporter(cfg, set)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +89,11 @@ func createLogsExporter(ctx context.Context, set exporter.CreateSettings, config
 		ctx,
 		set,
 		cfg,
-		logsExporter.pushLogs,
+		exporter.pushLogs,
 		exporterhelper.WithQueue(cfg.QueueSettings),
 		exporterhelper.WithRetry(cfg.RetrySettings),
-		exporterhelper.WithStart(logsExporter.Start),
-		exporterhelper.WithShutdown(logsExporter.Shutdown),
+		exporterhelper.WithStart(exporter.Start),
+		exporterhelper.WithShutdown(exporter.Shutdown),
 	)
 }
 
@@ -106,6 +107,6 @@ func createDefaultConfig() component.Config {
 		},
 		QueueSettings: exporterhelper.NewDefaultQueueSettings(),
 		RetrySettings: exporterhelper.NewDefaultRetrySettings(),
-		MetricsSchema: "telegraf-prometheus-v1",
+		MetricsSchema: common.MetricsSchemaTelegrafPrometheusV1.String(),
 	}
 }
