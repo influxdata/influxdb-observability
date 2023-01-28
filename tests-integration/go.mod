@@ -61,9 +61,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gosnmp/gosnmp v1.35.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/influxdata/influxdb-observability/common v0.2.35 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.2.35 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.2.35 // indirect
+	github.com/influxdata/influxdb-observability/common v0.2.36 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.2.36 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.2.36 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.41.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
