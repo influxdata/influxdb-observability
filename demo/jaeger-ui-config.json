@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "dagMaxNumServices": 200,
+    "menuEnabled": true
+  },
+  "monitor": {
+    "menuEnabled": false
+  },
+  "archiveEnabled": true,
+  "menu": [
+    {
+      "label": "About InfluxDB",
+      "items": [
+        {
+          "label": "Website",
+          "url": "https://www.influxdata.com/"
+        },
+        {
+          "label": "Docs",
+          "url": "https://docs.influxdata.com/"
+        }
+      ]
+    }
+  ],
+  "search": {
+    "maxLookback": {
+      "label": "2 Days",
+      "value": "2d"
+    },
+    "maxLimit": 1000
+  }
+}

@@ -6,7 +6,7 @@ require (
 	github.com/apache/arrow-adbc/go/adbc v0.0.0-20230127181408-3adf23635040
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/influxdata/influxdb-client-go/v2 v2.11.0
-	github.com/influxdata/influxdb-observability/common v0.2.35
+	github.com/influxdata/influxdb-observability/common v0.3.0
 	github.com/jaegertracing/jaeger v1.41.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/opentracing/opentracing-go v1.2.0
