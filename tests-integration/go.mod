@@ -129,5 +129,5 @@ replace (
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
 	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230127232956-eb34b464abd6
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ./influxdbexporter
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/jacobmarble/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230128020532-fda4e04eab20
 )
