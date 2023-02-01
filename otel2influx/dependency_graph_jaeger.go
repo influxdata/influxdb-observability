@@ -11,9 +11,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 	"go.opentelemetry.io/otel/attribute"
+	api "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/asyncint64"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -58,9 +57,9 @@ type JaegerDependencyGraph struct {
 
 	meterReader      metric.Reader
 	meterProvider    *metric.MeterProvider
-	dependencyLinks  syncint64.Counter
-	reportQueueDepth asyncint64.Gauge
-	reportsDropped   syncint64.Counter
+	dependencyLinks  instrument.Int64Counter
+	reportQueueDepth instrument.Int64ObservableGauge
+	reportsDropped   instrument.Int64Counter
 
 	w InfluxWriter
 }
@@ -77,15 +76,15 @@ func NewJaegerDependencyGraph(logger common.Logger, cacheMaxTrace, queueLength i
 		metric.WithResource(resource.Empty()))
 
 	meter := meterProvider.Meter(jdgMeasurementDependencyLinks)
-	dependencyLinks, err := meter.SyncInt64().Counter(jdgMeasurementDependencyLinks)
+	dependencyLinks, err := meter.Int64Counter(jdgMeasurementDependencyLinks)
 	if err != nil {
 		return nil, err
 	}
-	reportQueueDepth, err := meter.AsyncInt64().Gauge(jdgMeasurementReportsQueueDepth)
+	reportQueueDepth, err := meter.Int64ObservableGauge(jdgMeasurementReportsQueueDepth)
 	if err != nil {
 		return nil, err
 	}
-	reportsDropped, err := meter.SyncInt64().Counter(jdgMeasurementReportsDropped)
+	reportsDropped, err := meter.Int64Counter(jdgMeasurementReportsDropped)
 	if err != nil {
 		return nil, err
 	}
@@ -108,10 +107,10 @@ func NewJaegerDependencyGraph(logger common.Logger, cacheMaxTrace, queueLength i
 
 		w: w,
 	}
-
-	err = meter.RegisterCallback([]instrument.Asynchronous{reportQueueDepth}, func(ctx context.Context) {
-		reportQueueDepth.Observe(ctx, int64(len(g.ch)))
-	})
+	_, err = meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
+		o.ObserveInt64(reportQueueDepth, int64(len(g.ch)))
+		return nil
+	}, reportQueueDepth)
 	if err != nil {
 		return nil, err
 	}
