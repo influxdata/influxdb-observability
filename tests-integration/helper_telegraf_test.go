@@ -344,6 +344,7 @@ func (m *mockInputPlugin) Gather(accumulator telegraf.Accumulator) error {
 var _ pmetricotlp.GRPCServer = (*mockOtelService)(nil)
 
 type mockOtelService struct {
+	pmetricotlp.GRPCClient
 	metricss chan pmetric.Metrics
 }
 
