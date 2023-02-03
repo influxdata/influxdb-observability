@@ -2,10 +2,6 @@
 
 This repository is a reference for converting observability signals (traces, metrics, logs) to/from a common InfluxDB schema.
 
-## TODO
-Fork this demo:
-https://github.com/open-telemetry/opentelemetry-demo
-
 ## Demo
 
 Steps to run the current demo follow.
@@ -95,3 +91,8 @@ To update all OpenTelemetry dependencies in the various modules of this reposito
 - run `update-otel.sh`
 - stage the changed `go.mod` and `go.sum` files
 - run `run-checks.sh`
+
+## TODO
+Fork this demo:
+https://github.com/open-telemetry/opentelemetry-demo
+
