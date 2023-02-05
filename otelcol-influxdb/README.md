@@ -12,9 +12,9 @@ For an example configuration, see [docker-compose.yml](../demo/docker-compose.ym
 ## Build
 
 ```console
-$ cd otelcol-influxdb
 $ go install go.opentelemetry.io/collector/cmd/builder@v0.70.0
 ...
+$ cd otelcol-influxdb
 $ builder --config build.yml
 ...
 $ ./build/otelcol-influxdb
