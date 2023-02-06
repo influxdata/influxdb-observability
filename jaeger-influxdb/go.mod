@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.0.0-20230131211202-5410feb2c21c
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-client-go/v2 v2.11.0
 	github.com/influxdata/influxdb-observability/common v0.3.0
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/jaegertracing/jaeger v1.41.0
@@ -25,7 +24,6 @@ require (
 	github.com/apache/arrow/go/v12 v12.0.0-20230131200310-5765aa29b5ca // indirect
 	github.com/apache/thrift v0.17.0 // indirect
 	github.com/bluele/gcache v0.0.2 // indirect
-	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
@@ -38,7 +36,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/klauspost/compress v1.15.13 // indirect
@@ -55,7 +52,6 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
