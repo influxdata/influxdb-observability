@@ -2,7 +2,7 @@
 FROM golang:1.19-alpine AS builder
 
 RUN apk add git
-RUN git clone --branch main --depth 1 https://github.com/jaegertracing/jaeger
+RUN git clone --branch v1.41.0 --depth 1 https://github.com/jaegertracing/jaeger
 WORKDIR /go/jaeger
 COPY demo/hotrod.patch .
 RUN git apply hotrod.patch

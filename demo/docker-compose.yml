@@ -39,9 +39,10 @@ services:
       INFLUXDB_TIMEOUT: 30s
       # required: hostname or hostname:port
       INFLUXDB_ADDR:
-      # required: either BUCKETID or BUCKETNAME
-      INFLUXDB_BUCKETID:
-      INFLUXDB_BUCKETNAME:
+      # required: bucket name
+      INFLUXDB_BUCKET:
+      # optional: bucket name for archived traces
+      INFLUXDB_BUCKET_ARCHIVE:
       # required
       INFLUXDB_TOKEN:
 
