@@ -22,15 +22,15 @@ import (
 )
 
 const (
-	jdgMeasurementDependencyLinks   = "jaeger-dependencylinks"
-	jdgMeasurementReportsQueueDepth = "jaeger-dependencylinks-reports-queuedepth"
-	jdgMeasurementReportsDropped    = "jaeger-dependencylinks-reports-dropped"
+	jdgMeasurementDependencyLinks = "jaeger-dependencylinks"
+	jdgMeasurementSpansQueueDepth = "jaeger-dependencylinks-spans-queuedepth"
+	jdgMeasurementSpansDropped    = "jaeger-dependencylinks-spans-dropped"
 )
 
 var jdgFieldKeys = map[string]string{
-	jdgMeasurementDependencyLinks:   "calls",
-	jdgMeasurementReportsQueueDepth: "reports",
-	jdgMeasurementReportsDropped:    "reports",
+	jdgMeasurementDependencyLinks: common.AttributeCallCount,
+	jdgMeasurementSpansQueueDepth: common.AttributeSpansQueueDepth,
+	jdgMeasurementSpansDropped:    common.AttributeSpansDropped,
 }
 
 type jdgSpan struct {
@@ -55,11 +55,11 @@ type JaegerDependencyGraph struct {
 	backgroundCtxCancel func()
 	backgroundErrs      chan error
 
-	meterReader      metric.Reader
-	meterProvider    *metric.MeterProvider
-	dependencyLinks  instrument.Int64Counter
-	reportQueueDepth instrument.Int64ObservableGauge
-	reportsDropped   instrument.Int64Counter
+	meterReader            metric.Reader
+	meterProvider          *metric.MeterProvider
+	counterDependencyLinks instrument.Int64Counter
+	gaugeSpansQueueDepth   instrument.Int64ObservableGauge
+	gaugeSpansDropped      instrument.Int64Counter
 
 	w InfluxWriter
 }
@@ -80,11 +80,11 @@ func NewJaegerDependencyGraph(logger common.Logger, cacheMaxTrace, queueLength i
 	if err != nil {
 		return nil, err
 	}
-	reportQueueDepth, err := meter.Int64ObservableGauge(jdgMeasurementReportsQueueDepth)
+	spansQueueDepth, err := meter.Int64ObservableGauge(jdgMeasurementSpansQueueDepth)
 	if err != nil {
 		return nil, err
 	}
-	reportsDropped, err := meter.Int64Counter(jdgMeasurementReportsDropped)
+	spansDropped, err := meter.Int64Counter(jdgMeasurementSpansDropped)
 	if err != nil {
 		return nil, err
 	}
@@ -99,18 +99,18 @@ func NewJaegerDependencyGraph(logger common.Logger, cacheMaxTrace, queueLength i
 		backgroundCtxCancel: backgroundCtxCancel,
 		backgroundErrs:      make(chan error),
 
-		meterReader:      meterReader,
-		meterProvider:    meterProvider,
-		dependencyLinks:  dependencyLinks,
-		reportQueueDepth: reportQueueDepth,
-		reportsDropped:   reportsDropped,
+		meterReader:            meterReader,
+		meterProvider:          meterProvider,
+		counterDependencyLinks: dependencyLinks,
+		gaugeSpansQueueDepth:   spansQueueDepth,
+		gaugeSpansDropped:      spansDropped,
 
 		w: w,
 	}
 	_, err = meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		o.ObserveInt64(reportQueueDepth, int64(len(g.ch)))
+		o.ObserveInt64(spansQueueDepth, int64(len(g.ch)))
 		return nil
-	}, reportQueueDepth)
+	}, spansQueueDepth)
 	if err != nil {
 		return nil, err
 	}
@@ -223,9 +223,9 @@ func (g *JaegerDependencyGraph) handleReportedSpan(ctx context.Context, report *
 		for _, childSpanID := range this.childIDs {
 			child := traceGraph[childSpanID]
 			if child.serviceName != "" && child.serviceName != report.serviceName {
-				g.dependencyLinks.Add(ctx, 1,
-					attribute.String("parent", report.serviceName),
-					attribute.String("child", child.serviceName))
+				g.counterDependencyLinks.Add(ctx, 1,
+					attribute.String(common.AttributeParentServiceName, report.serviceName),
+					attribute.String(common.AttributeChildServiceName, child.serviceName))
 			}
 		}
 	}
@@ -240,9 +240,9 @@ func (g *JaegerDependencyGraph) handleReportedSpan(ctx context.Context, report *
 		parent = &jdgSpan{}
 		traceGraph[report.parentSpanID] = parent
 	} else if parent.serviceName != "" && parent.serviceName != report.serviceName {
-		g.dependencyLinks.Add(ctx, 1,
-			attribute.String("parent", parent.serviceName),
-			attribute.String("child", report.serviceName))
+		g.counterDependencyLinks.Add(ctx, 1,
+			attribute.String(common.AttributeParentServiceName, parent.serviceName),
+			attribute.String(common.AttributeChildServiceName, report.serviceName))
 	}
 	parent.childIDs = append(parent.childIDs, report.spanID)
 }
@@ -273,7 +273,7 @@ func (g *JaegerDependencyGraph) ReportSpan(ctx context.Context, span ptrace.Span
 		serviceName:  serviceName,
 	}:
 	default:
-		g.reportsDropped.Add(ctx, 1)
+		g.gaugeSpansDropped.Add(ctx, 1)
 	}
 	// TODO add span.links using span.kind?
 }

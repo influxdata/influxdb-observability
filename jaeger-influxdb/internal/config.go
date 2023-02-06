@@ -12,14 +12,14 @@ import (
 )
 
 type Config struct {
-	LogLevel           string
-	ListenAddr         string
-	InfluxdbAddr       string
-	InfluxdbTLSDisable bool
-	InfluxdbTimeout    time.Duration
-	InfluxdbBucketid   string
-	InfluxdbBucketname string
-	InfluxdbToken      string
+	LogLevel              string
+	ListenAddr            string
+	InfluxdbAddr          string
+	InfluxdbTLSDisable    bool
+	InfluxdbTimeout       time.Duration
+	InfluxdbBucket        string
+	InfluxdbBucketArchive string
+	InfluxdbToken         string
 }
 
 func (c *Config) Init(command *cobra.Command) error {
@@ -60,19 +60,19 @@ func (c *Config) Init(command *cobra.Command) error {
 			usage:        "InfluxDB query timeout",
 		},
 		{
-			pointer: &c.InfluxdbBucketid,
-			name:    "influxdb-bucketid",
-			usage:   "InfluxDB bucket containing spans, identified by ID",
+			pointer: &c.InfluxdbBucket,
+			name:    "influxdb-bucket",
+			usage:   "InfluxDB bucket name, containing traces, logs, metrics (query only)",
 		},
 		{
-			pointer: &c.InfluxdbBucketname,
-			name:    "influxdb-bucketname",
-			usage:   "InfluxDB bucket containing spans, identified by name",
+			pointer: &c.InfluxdbBucketArchive,
+			name:    "influxdb-bucket-archive",
+			usage:   "InfluxDB bucket name, for archiving traces (optional; write and query permissions required)",
 		},
 		{
 			pointer: &c.InfluxdbToken,
 			name:    "influxdb-token",
-			usage:   "InfluxDB API token",
+			usage:   "InfluxDB API access token",
 		},
 	} {
 		switch v := f.pointer.(type) {

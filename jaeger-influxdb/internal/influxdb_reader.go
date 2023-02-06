@@ -18,7 +18,8 @@ var _ spanstore.Reader = (*influxdbReader)(nil)
 var _ dependencystore.Reader = (*influxdbDependencyReader)(nil)
 
 type influxdbReader struct {
-	logger                                *zap.Logger
+	logger *zap.Logger
+
 	db                                    *sql.DB
 	tableSpans, tableLogs, tableSpanLinks string
 }
@@ -90,7 +91,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 	var services []string
 	f := func(record map[string]interface{}) error {
-		if v, found := record[semconv.AttributeServiceName]; found {
+		if v, found := record[semconv.AttributeServiceName]; found && v != nil {
 			services = append(services, v.(string))
 		}
 		return nil
@@ -106,9 +107,9 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParameters spanstore.OperationQueryParameters) ([]spanstore.Operation, error) {
 	var operations []spanstore.Operation
 	f := func(record map[string]interface{}) error {
-		if v, found := record[common.AttributeName]; found {
+		if v, found := record[common.AttributeName]; found && v != nil {
 			operation := spanstore.Operation{Name: v.(string)}
-			if spanKind, found := record[common.AttributeSpanKind]; found {
+			if spanKind, found := record[common.AttributeSpanKind]; found && spanKind != nil {
 				operation.SpanKind = spanKind.(string)
 			}
 			operations = append(operations, operation)
@@ -201,7 +202,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
 	var traceIDs []model.TraceID
 	f := func(record map[string]interface{}) error {
-		if v, found := record[common.AttributeTraceID]; found {
+		if v, found := record[common.AttributeTraceID]; found && v != nil {
 			traceID, err := model.TraceIDFromString(v.(string))
 			if err != nil {
 				return err
@@ -229,21 +230,21 @@ func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs 
 
 	f := func(record map[string]interface{}) error {
 		var parentService string
-		if v, found := record["parent"]; !found {
+		if v, found := record[common.AttributeParentServiceName]; !found || v == nil {
 			idr.logger.Warn("parent service not found in dependency link")
 			return nil
 		} else {
 			parentService = v.(string)
 		}
 		var childService string
-		if v, found := record["child"]; !found {
+		if v, found := record[common.AttributeChildServiceName]; !found || v == nil {
 			idr.logger.Warn("child service not found in dependency link")
 			return nil
 		} else {
 			childService = v.(string)
 		}
 		var calls int64
-		if v, found := record["calls"]; !found {
+		if v, found := record[common.AttributeCallCount]; !found || v == nil {
 			idr.logger.Warn("calls not found in dependency link")
 			return nil
 		} else {

@@ -92,24 +92,24 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 		}
 	}()
 
-	measurement := common.MeasurementSpans
-	tags := make(map[string]string, 2)
-	fields := make(map[string]interface{}, len(scopeFields)+span.Attributes().Len()+9)
-	for k, v := range scopeFields {
-		fields[k] = v
-	}
-
 	traceID := span.TraceID()
 	if traceID.IsEmpty() {
 		return errors.New("span has no trace ID")
 	}
-	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
-
 	spanID := span.SpanID()
 	if spanID.IsEmpty() {
 		return errors.New("span has no span ID")
 	}
-	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
+
+	measurement := common.MeasurementSpans
+	tags := map[string]string{
+		common.AttributeTraceID: hex.EncodeToString(traceID[:]),
+		common.AttributeSpanID:  hex.EncodeToString(spanID[:]),
+	}
+	fields := make(map[string]interface{}, len(scopeFields)+span.Attributes().Len()+9)
+	for k, v := range scopeFields {
+		fields[k] = v
+	}
 
 	if traceState := span.TraceState().AsRaw(); traceState != "" {
 		fields[common.AttributeTraceState] = traceState

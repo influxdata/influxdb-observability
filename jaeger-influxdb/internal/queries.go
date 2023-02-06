@@ -17,31 +17,32 @@ func traceIDToString(traceID model.TraceID) string {
 	return fmt.Sprintf("%016x%016x", traceID.High, traceID.Low)
 }
 
-func queryGetTraceSpans(tableSpans string, traceIDs ...model.TraceID) string {
-	predicates := make([]string, len(traceIDs))
-	for i, traceID := range traceIDs {
-		predicates[i] = fmt.Sprintf(`"%s" = '%s'`, common.AttributeTraceID, traceIDToString(traceID))
+func queryGetAllWhereTraceID(table string, traceIDs ...model.TraceID) string {
+	var whereClause string
+	if len(traceIDs) > 0 {
+		predicates := make([]string, len(traceIDs))
+		for i, traceID := range traceIDs {
+			predicates[i] = fmt.Sprintf(`"%s" = '%s'`, common.AttributeTraceID, traceIDToString(traceID))
+		}
+		whereClause = strings.Join(predicates, " OR ")
+	} else {
+		whereClause = "false"
 	}
+	// TODO WHERE trace_id IN (value, value, ...)
 	return fmt.Sprintf("SELECT * FROM %s WHERE %s",
-		tableSpans, strings.Join(predicates, " OR "))
+		table, whereClause)
+}
+
+func queryGetTraceSpans(tableSpans string, traceIDs ...model.TraceID) string {
+	return queryGetAllWhereTraceID(tableSpans, traceIDs...)
 }
 
 func queryGetTraceEvents(tableLogs string, traceIDs ...model.TraceID) string {
-	predicates := make([]string, len(traceIDs))
-	for i, traceID := range traceIDs {
-		predicates[i] = fmt.Sprintf(`"%s" = '%s'`, common.AttributeTraceID, traceIDToString(traceID))
-	}
-	return fmt.Sprintf("SELECT * FROM %s WHERE %s",
-		tableLogs, strings.Join(predicates, " OR "))
+	return queryGetAllWhereTraceID(tableLogs, traceIDs...)
 }
 
 func queryGetTraceLinks(tableSpanLinks string, traceIDs ...model.TraceID) string {
-	predicates := make([]string, len(traceIDs))
-	for i, traceID := range traceIDs {
-		predicates[i] = fmt.Sprintf(`"%s" = '%s'`, common.AttributeTraceID, traceIDToString(traceID))
-	}
-	return fmt.Sprintf("SELECT * FROM %s WHERE %s",
-		tableSpanLinks, strings.Join(predicates, " OR "))
+	return queryGetAllWhereTraceID(tableSpanLinks, traceIDs...)
 }
 
 func queryGetServices(tableSpans string) string {
@@ -56,12 +57,10 @@ func queryGetOperations(tableSpans, serviceName string) string {
 
 func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
 	// TODO limit time range
-	return fmt.Sprintf(`
-select parent, child, sum(calls) as calls
-from '%s'
-group by parent, child
-`,
-		tableDependencyLinks)
+	return fmt.Sprintf(`SELECT "%s", "%s", SUM("%s") as "%s" FROM '%s' GROUP BY "%s", "%s"`,
+		common.AttributeParentServiceName, common.AttributeChildServiceName, common.AttributeCallCount, common.AttributeCallCount,
+		tableDependencyLinks,
+		common.AttributeParentServiceName, common.AttributeChildServiceName)
 }
 
 func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) string {
@@ -102,18 +101,4 @@ func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) s
 	query += fmt.Sprintf(` GROUP BY "%s" ORDER BY t DESC LIMIT %d`, common.AttributeTraceID, tqp.NumTraces)
 
 	return query
-}
-
-func archiveTraceDetails(bucketName, tableSource, tableDestination string, traceID model.TraceID) string {
-	return fmt.Sprintf(`
-from(bucket: "%s")
-  |> range(start: -8760h)
-  |> filter(fn: (r) => r._measurement == "%s" and r.trace_id == "%s")
-  |> map(fn: (r) => ({ r with _measurement: "%s" }))
-  |> to(bucket: "%s")
-`,
-		bucketName,
-		tableSource, traceIDToString(traceID),
-		tableDestination,
-		bucketName)
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -13,8 +14,6 @@ import (
 	"github.com/apache/arrow-adbc/go/adbc/driver/flightsql"
 	"github.com/apache/arrow-adbc/go/adbc/sqldriver"
 	"github.com/golang/groupcache/lru"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
@@ -33,63 +32,39 @@ var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
 
 const (
 	tableSpans                 = "spans"
-	tableSpansArchive          = "archive-spans"
 	tableLogs                  = "logs"
-	tableLogsArchive           = "archive-logs"
 	tableSpanLinks             = "span-links"
-	tableSpanLinksArchive      = "archive-span-links"
 	tableJaegerDependencyLinks = "jaeger-dependencylinks"
 )
 
 type InfluxdbStorage struct {
 	logger *zap.Logger
 
-	db *sql.DB
-
+	db               *sql.DB
 	reader           spanstore.Reader
 	readerDependency dependencystore.Reader
 	writer           spanstore.Writer
-	readerArchive    spanstore.Reader
-	writerArchive    spanstore.Writer
+
+	dbArchive     *sql.DB
+	readerArchive spanstore.Reader
+	writerArchive spanstore.Writer
 }
 
 func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, error) {
-	var influxdbClientHost string
-	if config.InfluxdbAddr == "" {
-		return nil, errors.New("InfluxDB address unspecified")
-	} else if strings.Contains(config.InfluxdbAddr, ":") {
-		influxdbHost, influxdbPort, err := net.SplitHostPort(config.InfluxdbAddr)
-		if err != nil || influxdbHost == "" {
-			return nil, fmt.Errorf("invalid InfluxDB address '%s': %w", config.InfluxdbAddr, err)
-		}
-		if influxdbPort == "" {
-			influxdbClientHost = influxdbHost
-		}
-		influxdbClientHost = net.JoinHostPort(influxdbHost, influxdbPort)
-	} else {
-		influxdbClientHost = config.InfluxdbAddr
-	}
+	logger := LoggerFromContext(ctx)
 
-	clientURL := (&url.URL{Scheme: "https", Host: influxdbClientHost}).String()
-	options := influxdb2.DefaultOptions()
-	options.HTTPOptions().SetHTTPRequestTimeout(uint(config.InfluxdbTimeout.Seconds()))
-	client := influxdb2.NewClientWithOptions(clientURL, config.InfluxdbToken, options)
-	if ok, err := client.Ping(ctx); err != nil || !ok {
-		return nil, fmt.Errorf("failed to ping InfluxDB: %w", err)
-	}
-	defer client.Close()
-
-	var bucket *domain.Bucket
-	var err error
-	if config.InfluxdbBucketid != "" {
-		bucket, err = client.BucketsAPI().FindBucketByID(ctx, config.InfluxdbBucketid)
-	} else if config.InfluxdbBucketname != "" {
-		bucket, err = client.BucketsAPI().FindBucketByName(ctx, config.InfluxdbBucketname)
-	} else {
-		err = errors.New("provide bucket ID or bucket name via flags")
-	}
+	influxdbAddr, err := composeHostPortFromAddr(config.InfluxdbAddr)
 	if err != nil {
 		return nil, err
+	}
+	if config.InfluxdbBucket == "" {
+		return nil, fmt.Errorf("influxdb-bucket not specified, either by flag or env var")
+	}
+	if config.InfluxdbBucket == config.InfluxdbBucketArchive {
+		return nil, fmt.Errorf("primary bucket and archive bucket must be different, but both are set to '%s'", config.InfluxdbBucket)
+	}
+	if config.InfluxdbBucketArchive == "" {
+		logger.Warn("influxdb-bucket-archive not specified, so trace archiving is disabled")
 	}
 
 	uriScheme := "grpc+tls"
@@ -97,17 +72,21 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		uriScheme = "grpc+tcp"
 	}
 	dsn := strings.Join([]string{
-		fmt.Sprintf("%s=%s://%s:%d/", adbc.OptionKeyURI, uriScheme, influxdbClientHost, 443),
+		fmt.Sprintf("%s=%s://%s/", adbc.OptionKeyURI, uriScheme, influxdbAddr),
 		fmt.Sprintf("%s=Bearer %s", flightsql.OptionAuthorizationHeader, config.InfluxdbToken),
-		fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", bucket.Name),
+		fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", config.InfluxdbBucket),
 	}, " ; ")
 
 	db, err := sql.Open("flightsql", dsn)
 	if err != nil {
-		return nil, err
+		row := db.QueryRowContext(ctx, "SELECT 1")
+		var v int
+		err = multierr.Combine(row.Scan(&v))
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to contact InfluxDB query service: %w", err)
 	}
 
-	logger := LoggerFromContext(ctx)
 	reader := &influxdbReader{
 		logger:         logger.With(zap.String("influxdb", "reader")),
 		db:             db,
@@ -121,41 +100,72 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		tableDependencyLinks: tableJaegerDependencyLinks,
 	}
 	writer := &influxdbWriterNoop{
-		logger: logger.With(zap.String("influxdb", "reader-dependency")),
+		logger: logger.With(zap.String("influxdb", "writer")),
 	}
-	readerArchive := &influxdbReader{
-		logger:         logger.With(zap.String("influxdb", "reader-archive")),
-		db:             db,
-		tableSpans:     tableSpansArchive,
-		tableLogs:      tableLogsArchive,
-		tableSpanLinks: tableSpanLinksArchive,
-	}
-	writerArchive := &influxdbWriterArchive{
-		logger:                logger.With(zap.String("influxdb", "writer-archive")),
-		queryAPI:              client.QueryAPI(*bucket.OrgID),
-		recentTraces:          lru.New(100),
-		bucketName:            bucket.Name,
-		tableSpans:            tableSpans,
-		tableLogs:             tableLogs,
-		tableSpanLinks:        tableSpanLinks,
-		tableSpansArchive:     tableSpansArchive,
-		tableLogsArchive:      tableLogsArchive,
-		tableSpanLinksArchive: tableSpanLinksArchive,
+
+	var readerArchive spanstore.Reader
+	var writerArchive spanstore.Writer
+	var dbArchive *sql.DB
+
+	if config.InfluxdbBucketArchive != "" {
+		dsnArchive := strings.Join([]string{
+			fmt.Sprintf("%s=%s://%s/", adbc.OptionKeyURI, uriScheme, influxdbAddr),
+			fmt.Sprintf("%s=Bearer %s", flightsql.OptionAuthorizationHeader, config.InfluxdbToken),
+			fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", config.InfluxdbBucketArchive),
+		}, " ; ")
+
+		dbArchive, err = sql.Open("flightsql", dsnArchive)
+		if err != nil {
+			return nil, err
+		}
+
+		readerArchive = &influxdbReader{
+			logger: logger.With(zap.String("influxdb", "reader-archive")),
+
+			db:             dbArchive,
+			tableSpans:     tableSpans,
+			tableLogs:      tableLogs,
+			tableSpanLinks: tableSpanLinks,
+		}
+		writerArchive = &influxdbWriterArchive{
+			logger:       logger.With(zap.String("influxdb", "writer-archive")),
+			recentTraces: lru.New(100),
+			httpClient:   &http.Client{Timeout: config.InfluxdbTimeout},
+
+			dbSrc:             db,
+			bucketNameSrc:     config.InfluxdbBucket,
+			tableSpansSrc:     tableSpans,
+			tableLogsSrc:      tableLogs,
+			tableSpanLinksSrc: tableSpanLinks,
+
+			writeURLArchive:       composeWriteURL(influxdbAddr, config.InfluxdbBucketArchive),
+			bucketNameArchive:     config.InfluxdbBucketArchive,
+			tableSpansArchive:     tableSpans,
+			tableLogsArchive:      tableLogs,
+			tableSpanLinksArchive: tableSpanLinks,
+		}
 	}
 
 	return &InfluxdbStorage{
-		logger:           logger,
+		logger: logger,
+
 		db:               db,
 		reader:           reader,
 		readerDependency: readerDependency,
 		writer:           writer,
-		readerArchive:    readerArchive,
-		writerArchive:    writerArchive,
+
+		dbArchive:     dbArchive,
+		readerArchive: readerArchive,
+		writerArchive: writerArchive,
 	}, nil
 }
 
 func (i *InfluxdbStorage) Close() error {
-	return i.db.Close()
+	err := i.db.Close()
+	if i.dbArchive != nil {
+		err = multierr.Append(err, i.dbArchive.Close())
+	}
+	return err
 }
 
 func (i *InfluxdbStorage) SpanReader() spanstore.Reader {
@@ -191,18 +201,22 @@ func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record m
 	}
 	m := make(map[string]interface{}, len(columns))
 
+	rowValues := make([]interface{}, len(columns))
+	for i := range rowValues {
+		rowValues[i] = new(interface{})
+	}
+
 	for rows.Next() {
-		dest := make([]interface{}, len(columns))
-		destP := make([]interface{}, len(columns))
-		for i := range dest {
-			destP[i] = &dest[i]
-		}
-		if err = rows.Scan(destP...); err != nil {
+		if err = rows.Scan(rowValues[:]...); err != nil {
 			return err
 		}
 		for i, columnName := range columns {
-			v := destP[i].(*interface{})
-			m[columnName] = *v
+			v := rowValues[i].(*interface{})
+			if v == nil || *v == nil {
+				delete(m, columnName)
+			} else {
+				m[columnName] = *v
+			}
 		}
 		if err = f(m); err != nil {
 			return err
@@ -210,4 +224,29 @@ func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record m
 	}
 
 	return multierr.Combine(rows.Err(), rows.Close())
+}
+
+func composeWriteURL(influxdbClientHost, influxdbBucket string) string {
+	writeURL := &url.URL{Scheme: "https", Host: influxdbClientHost, Path: "/api/v2/write"}
+
+	queryValues := writeURL.Query()
+	queryValues.Set("precision", "ns")
+	queryValues.Set("bucket", influxdbBucket)
+	writeURL.RawQuery = queryValues.Encode()
+
+	return writeURL.String()
+}
+
+func composeHostPortFromAddr(influxdbAddr string) (string, error) {
+	if influxdbAddr == "" {
+		return "", errors.New("influxdb-addr not specified, either by flag or env var")
+	}
+	if !strings.Contains(influxdbAddr, ":") {
+		return influxdbAddr + ":443", nil
+	}
+	_, _, err := net.SplitHostPort(influxdbAddr)
+	if err != nil {
+		return "", fmt.Errorf("influxdb-addr value is invalid '%s': %w", influxdbAddr, err)
+	}
+	return influxdbAddr, nil
 }

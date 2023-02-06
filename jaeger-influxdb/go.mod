@@ -3,10 +3,11 @@ module github.com/influxdata/influxdb-observability/jaeger-influxdb
 go 1.18
 
 require (
-	github.com/apache/arrow-adbc/go/adbc v0.0.0-20230127181408-3adf23635040
+	github.com/apache/arrow-adbc/go/adbc v0.0.0-20230131211202-5410feb2c21c
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/influxdata/influxdb-client-go/v2 v2.11.0
 	github.com/influxdata/influxdb-observability/common v0.3.0
+	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/jaegertracing/jaeger v1.41.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/opentracing/opentracing-go v1.2.0
@@ -21,7 +22,7 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v11 v11.0.0-20230126180639-8f537ca93922 // indirect
+	github.com/apache/arrow/go/v12 v12.0.0-20230131200310-5765aa29b5ca // indirect
 	github.com/apache/thrift v0.17.0 // indirect
 	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
@@ -37,7 +38,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
+	github.com/influxdata/line-protocol v0.0.0-20210922203350-b1ad95c89adf // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/klauspost/compress v1.15.13 // indirect
