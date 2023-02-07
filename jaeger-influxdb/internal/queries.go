@@ -20,17 +20,18 @@ func traceIDToString(traceID model.TraceID) string {
 func queryGetAllWhereTraceID(table string, traceIDs ...model.TraceID) string {
 	var whereClause string
 	if len(traceIDs) > 0 {
-		predicates := make([]string, len(traceIDs))
+		traceIDStrings := make([]string, len(traceIDs))
 		for i, traceID := range traceIDs {
-			predicates[i] = fmt.Sprintf(`"%s" = '%s'`, common.AttributeTraceID, traceIDToString(traceID))
+			traceIDStrings[i] = traceIDToString(traceID)
 		}
-		whereClause = strings.Join(predicates, " OR ")
+		whereClause = fmt.Sprintf(`"%s" IN ('%s')`,
+			common.AttributeTraceID, strings.Join(traceIDStrings, `','`))
 	} else {
 		whereClause = "false"
 	}
-	// TODO WHERE trace_id IN (value, value, ...)
-	return fmt.Sprintf("SELECT * FROM %s WHERE %s",
+	query := fmt.Sprintf("SELECT * FROM %s WHERE %s",
 		table, whereClause)
+	return query
 }
 
 func queryGetTraceSpans(tableSpans string, traceIDs ...model.TraceID) string {
@@ -56,10 +57,14 @@ func queryGetOperations(tableSpans, serviceName string) string {
 }
 
 func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
-	// TODO limit time range
-	return fmt.Sprintf(`SELECT "%s", "%s", SUM("%s") as "%s" FROM '%s' GROUP BY "%s", "%s"`,
+	return fmt.Sprintf(`
+SELECT "%s", "%s", SUM("%s") AS "%s"
+FROM '%s'
+WHERE "%s" >= to_timestamp(%d) AND "%s" <= to_timestamp(%d)
+GROUP BY "%s", "%s"`,
 		common.AttributeParentServiceName, common.AttributeChildServiceName, common.AttributeCallCount, common.AttributeCallCount,
 		tableDependencyLinks,
+		common.AttributeTime, endTs.Add(-lookback).UnixNano(), common.AttributeTime, endTs.UnixNano(),
 		common.AttributeParentServiceName, common.AttributeChildServiceName)
 }
 

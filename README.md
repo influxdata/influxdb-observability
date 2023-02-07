@@ -8,16 +8,20 @@ Steps to run the current demo follow.
 
 In an InfluxDB Cloud 2 account backed by IOx, create a bucket named `otel` and a token with permission to read and write to that bucket.
 
-In demo/docker-compose.yml, set values for these keys:
+In demo/docker-compose.yml, set values for these keys.
+The key `INFLUXDB_BUCKET_ARCHIVE` is optional;
+if set, it should point to an InfluxDB bucket with longer retention policy than `INFLUXDB_BUCKET`,
+so that the "Archive Trace" button in Jaeger works properly:
 ```yaml
 INFLUXDB_ADDR: <region specific hostname - no https prefix>
-INFLUXDB_BUCKETNAME: otel
+INFLUXDB_BUCKET: otel
+INFLUXDB_BUCKET_ARCHIVE: otel-archive
 INFLUXDB_TOKEN: <the API token you just created>
 ```
 
 In demo/otelcol-config.yml, set the similar values for these keys:
 ```yaml
-endpoint: https://<region specific URL - https://hostname>
+endpoint: https://< region specific URL - https://region.csp.cloud2.influxdata.com/ >
 bucket: otel
 token: <the API token you just created>
 ```
