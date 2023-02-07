@@ -48,9 +48,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gosnmp/gosnmp v1.35.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/influxdata/influxdb-observability/common v0.3.0 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.3.0 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.3.0 // indirect
+	github.com/influxdata/influxdb-observability/common v0.3.1 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.3.1 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.3.1 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.41.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -114,7 +114,7 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-	github.com/influxdata/telegraf => ../../telegraf
+	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230207002138-58355b47e851
 
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230202181017-094beb773994
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20230202181017-094beb773994
