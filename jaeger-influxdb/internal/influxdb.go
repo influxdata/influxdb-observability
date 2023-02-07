@@ -131,6 +131,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 			logger:       logger.With(zap.String("influxdb", "writer-archive")),
 			recentTraces: lru.New(100),
 			httpClient:   &http.Client{Timeout: config.InfluxdbTimeout},
+			authToken:    config.InfluxdbToken,
 
 			dbSrc:             db,
 			bucketNameSrc:     config.InfluxdbBucket,

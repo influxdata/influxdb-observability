@@ -38,6 +38,7 @@ type influxdbWriterArchive struct {
 	recentTraces   *lru.Cache
 	recentTracesMu sync.Mutex
 	httpClient     *http.Client
+	authToken      string
 
 	dbSrc                                                         *sql.DB
 	bucketNameSrc, tableSpansSrc, tableLogsSrc, tableSpanLinksSrc string
@@ -287,6 +288,7 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Token %s", iwa.authToken))
 	if res, err := iwa.httpClient.Do(req); err != nil {
 		return err
 	} else if body, err := io.ReadAll(res.Body); err != nil {
