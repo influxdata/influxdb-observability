@@ -89,14 +89,14 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/featuregate v0.70.1-0.20230201185304-c0a08e3068c1 // indirect
 	go.opentelemetry.io/collector/semconv v0.70.1-0.20230201185304-c0a08e3068c1 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.39.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.12.0 // indirect
-	go.opentelemetry.io/otel v1.12.1-0.20230131161239-aa5122490eb4 // indirect
+	go.opentelemetry.io/otel v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/prometheus v0.35.0 // indirect
-	go.opentelemetry.io/otel/metric v0.35.1-0.20230131161239-aa5122490eb4 // indirect
+	go.opentelemetry.io/otel/metric v0.36.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.12.1-0.20230131161239-aa5122490eb4 // indirect
 	go.opentelemetry.io/otel/sdk/metric v0.35.1-0.20230131161239-aa5122490eb4 // indirect
-	go.opentelemetry.io/otel/trace v1.12.1-0.20230131161239-aa5122490eb4 // indirect
+	go.opentelemetry.io/otel/trace v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
