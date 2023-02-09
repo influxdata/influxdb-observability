@@ -12,10 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: [ "1.18", "1.19" ]
+        go: [ "1.19", "1.20" ]
         package: [ "common", "influx2otel", "otel2influx", "tests-integration" ]
         exclude:
-        - go: 1.19
+        - go: 1.20
           package: tests-integration
     runs-on: ubuntu-latest
     steps:
