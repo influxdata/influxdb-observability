@@ -5,17 +5,17 @@ go 1.18
 require (
 	github.com/influxdata/influxdb/v2 v2.6.1
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v0.0.0-20230201165843-e1db44c3b28e
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.70.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.70.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.70.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.70.0
+	github.com/influxdata/telegraf v1.25.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.71.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.71.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.71.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.71.0
 	github.com/stretchr/testify v1.8.1
-	go.opentelemetry.io/collector v0.70.1-0.20230201185304-c0a08e3068c1
-	go.opentelemetry.io/collector/component v0.70.1-0.20230201185304-c0a08e3068c1
-	go.opentelemetry.io/collector/confmap v0.70.1-0.20230201185304-c0a08e3068c1
-	go.opentelemetry.io/collector/consumer v0.70.1-0.20230201185304-c0a08e3068c1
-	go.opentelemetry.io/collector/pdata v1.0.0-rc4.0.20230201185304-c0a08e3068c1
+	go.opentelemetry.io/collector v0.71.0
+	go.opentelemetry.io/collector/component v0.71.0
+	go.opentelemetry.io/collector/confmap v0.71.0
+	go.opentelemetry.io/collector/consumer v0.71.0
+	go.opentelemetry.io/collector/pdata v1.0.0-rc5
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.52.3
 )
@@ -66,8 +66,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.70.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.70.1-0.20230201205438-79d9b3ccb4ca // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.71.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.71.0 // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
@@ -78,7 +78,7 @@ require (
 	github.com/prometheus/prometheus v1.8.2-0.20210430082741-2a4b8e12bbf2 // indirect
 	github.com/prometheus/statsd_exporter v0.22.7 // indirect
 	github.com/rs/cors v1.8.3 // indirect
-	github.com/shirou/gopsutil/v3 v3.22.12 // indirect
+	github.com/shirou/gopsutil/v3 v3.23.1 // indirect
 	github.com/sleepinggenius2/gosmi v0.4.4 // indirect
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -87,16 +87,16 @@ require (
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/collector/featuregate v0.70.1-0.20230201185304-c0a08e3068c1 // indirect
-	go.opentelemetry.io/collector/semconv v0.70.1-0.20230201185304-c0a08e3068c1 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0 // indirect
-	go.opentelemetry.io/contrib/propagators/b3 v1.12.0 // indirect
-	go.opentelemetry.io/otel v1.12.1-0.20230131161239-aa5122490eb4 // indirect
-	go.opentelemetry.io/otel/exporters/prometheus v0.35.0 // indirect
-	go.opentelemetry.io/otel/metric v0.35.1-0.20230131161239-aa5122490eb4 // indirect
-	go.opentelemetry.io/otel/sdk v1.12.1-0.20230131161239-aa5122490eb4 // indirect
-	go.opentelemetry.io/otel/sdk/metric v0.35.1-0.20230131161239-aa5122490eb4 // indirect
-	go.opentelemetry.io/otel/trace v1.12.1-0.20230131161239-aa5122490eb4 // indirect
+	go.opentelemetry.io/collector/featuregate v0.71.0 // indirect
+	go.opentelemetry.io/collector/semconv v0.71.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.39.0 // indirect
+	go.opentelemetry.io/contrib/propagators/b3 v1.14.0 // indirect
+	go.opentelemetry.io/otel v1.13.0 // indirect
+	go.opentelemetry.io/otel/exporters/prometheus v0.36.0 // indirect
+	go.opentelemetry.io/otel/metric v0.36.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.13.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v0.36.0 // indirect
+	go.opentelemetry.io/otel/trace v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
@@ -114,18 +114,5 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-	github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230207002138-58355b47e851
-
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230202181017-094beb773994
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20230202181017-094beb773994
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal => github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20230202181017-094beb773994
-
-	go.opentelemetry.io/collector => go.opentelemetry.io/collector v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/component => go.opentelemetry.io/collector/component v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/confmap => go.opentelemetry.io/collector/confmap v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/consumer => go.opentelemetry.io/collector/consumer v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/extension/zpagesextension => go.opentelemetry.io/collector/extension/zpagesextension v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/featuregate => go.opentelemetry.io/collector/featuregate v0.70.1-0.20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/pdata => go.opentelemetry.io/collector/pdata v0.0.0-20230130215412-26bd7b2bf678
-	go.opentelemetry.io/collector/semconv => go.opentelemetry.io/collector/semconv v0.70.1-0.20230130215412-26bd7b2bf678
+	github.com/influxdata/telegraf => github.com/influxdata/telegraf v0.0.0-20230209193518-fa26b6498b6b
 )

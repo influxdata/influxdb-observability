@@ -2,86 +2,44 @@ dist:
   name: otelcol-influxdb
   module: github.com/influxdata/influxdb-observability/otelcol-influxdb
   description: OpenTelemetry Collector Distribution built for InfluxDB
-  version: 0.70.0-0.0.1-beta.0
-  otelcol_version: 0.70.0
+  version: 0.71.0-0.0.1-beta.0
+  otelcol_version: 0.71.0
   output_path: ./build
 
 receivers:
 - import: go.opentelemetry.io/collector/receiver/otlpreceiver
-  gomod: go.opentelemetry.io/collector v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.71.0
 
 exporters:
 - import: go.opentelemetry.io/collector/exporter/otlpexporter
-  gomod: go.opentelemetry.io/collector v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.71.0
 
 extensions:
 - import: go.opentelemetry.io/collector/extension/ballastextension
-  gomod: go.opentelemetry.io/collector v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
 - import: go.opentelemetry.io/collector/extension/zpagesextension
-  gomod: go.opentelemetry.io/collector v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.71.0
 
 processors:
 - import: go.opentelemetry.io/collector/processor/batchprocessor
-  gomod: go.opentelemetry.io/collector v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
 - import: go.opentelemetry.io/collector/processor/memorylimiterprocessor
-  gomod: go.opentelemetry.io/collector v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.70.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.70.0
+  gomod: go.opentelemetry.io/collector v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.71.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.71.0
 
 replaces:
 - github.com/influxdata/influxdb-observability/common => ../../common
 - github.com/influxdata/influxdb-observability/influx2otel => ../../influx2otel
 - github.com/influxdata/influxdb-observability/otel2influx => ../../otel2influx
-#- go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0
-
-#- go.opentelemetry.io/collector => go.opentelemetry.io/collector v0.70.1-0.20230130215412-26bd7b2bf678
-#- go.opentelemetry.io/collector/confmap => go.opentelemetry.io/collector/confmap v0.70.1-0.20230130215412-26bd7b2bf678
-#- go.opentelemetry.io/collector/featuregate => go.opentelemetry.io/collector/featuregate v0.70.1-0.20230130215412-26bd7b2bf678
-
-- go.opentelemetry.io/collector => go.opentelemetry.io/collector v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/component => go.opentelemetry.io/collector/component v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/confmap => go.opentelemetry.io/collector/confmap v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/consumer => go.opentelemetry.io/collector/consumer v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/connector/forwardconnector => go.opentelemetry.io/collector/connector/forwardconnector v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/exporter/loggingexporter => go.opentelemetry.io/collector/exporter/loggingexporter v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/exporter/otlpexporter => go.opentelemetry.io/collector/exporter/otlpexporter v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/exporter/otlphttpexporter => go.opentelemetry.io/collector/exporter/otlphttpexporter v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/extension/ballastextension => go.opentelemetry.io/collector/extension/ballastextension v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/extension/zpagesextension => go.opentelemetry.io/collector/extension/zpagesextension v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/featuregate => go.opentelemetry.io/collector/featuregate v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/pdata => go.opentelemetry.io/collector/pdata v0.0.0-20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/processor/batchprocessor => go.opentelemetry.io/collector/processor/batchprocessor v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/processor/memorylimiterprocessor => go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/semconv => go.opentelemetry.io/collector/semconv v0.70.1-0.20230130215412-26bd7b2bf678
-- go.opentelemetry.io/collector/receiver/otlpreceiver => go.opentelemetry.io/collector/receiver/otlpreceiver v0.70.1-0.20230130215412-26bd7b2bf678
-
-- github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension => github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor => github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor => github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor => github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor => github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver => github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver => github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver => github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver => github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter => github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal => github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter => github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl => github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger => github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.0.0-20230202181017-094beb773994
-- github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/zipkin => github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/zipkin v0.0.0-20230202181017-094beb773994
