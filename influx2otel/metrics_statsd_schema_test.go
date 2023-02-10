@@ -14,7 +14,8 @@ import (
 )
 
 func TestStatsdTimingSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -45,6 +46,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
@@ -54,6 +56,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
@@ -63,6 +66,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
@@ -72,6 +76,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
@@ -81,6 +86,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
@@ -90,6 +96,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(100)
 
@@ -99,6 +106,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "timing")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(20)
 
@@ -106,7 +114,8 @@ func TestStatsdTimingSchema(t *testing.T) {
 }
 
 func TestStatsCounter(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -135,6 +144,7 @@ func TestStatsCounter(t *testing.T) {
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "counter")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(10)
 
@@ -142,7 +152,8 @@ func TestStatsCounter(t *testing.T) {
 }
 
 func TestStatsGauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -170,6 +181,7 @@ func TestStatsGauge(t *testing.T) {
 
 	dp.Attributes().PutStr("metric_type", "gauge")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(333)
 
@@ -177,7 +189,8 @@ func TestStatsGauge(t *testing.T) {
 }
 
 func TestStatsdSetsSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -205,6 +218,7 @@ func TestStatsdSetsSchema(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("metric_type", "sets")
 	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(1)
 

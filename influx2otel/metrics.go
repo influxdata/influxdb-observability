@@ -15,12 +15,14 @@ import (
 )
 
 type LineProtocolToOtelMetrics struct {
-	logger common.Logger
+	logger    common.Logger
+	startTime time.Time
 }
 
-func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetrics, error) {
+func NewLineProtocolToOtelMetrics(logger common.Logger, startTime time.Time) (*LineProtocolToOtelMetrics, error) {
 	return &LineProtocolToOtelMetrics{
-		logger: logger,
+		logger:    logger,
+		startTime: startTime,
 	}, nil
 }
 
@@ -32,7 +34,8 @@ func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 		histogramDataPointsByMDPK: make(map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint),
 		summaryDataPointsByMDPK:   make(map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint),
 
-		logger: c.logger,
+		logger:    c.logger,
+		startTime: c.startTime,
 	}
 }
 
@@ -43,7 +46,8 @@ type MetricsBatch struct {
 	histogramDataPointsByMDPK map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint
 	summaryDataPointsByMDPK   map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint
 
-	logger common.Logger
+	logger    common.Logger
+	startTime time.Time
 }
 
 func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
@@ -213,6 +217,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
+		dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)

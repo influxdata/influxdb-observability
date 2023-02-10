@@ -86,6 +86,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
+		dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -121,6 +122,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		}
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
+		dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -156,6 +158,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
+		dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -191,6 +194,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		}
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
+		dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -255,6 +259,7 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	}
 	dataPoint := metric.Histogram().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
+	dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)
@@ -313,6 +318,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	}
 	dataPoint := metric.Summary().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
+	dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(b.startTime))
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 	dataPoint.SetCount(count)
 	dataPoint.SetSum(sum)

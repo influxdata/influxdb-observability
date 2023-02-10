@@ -14,7 +14,8 @@ import (
 )
 
 func TestUnknownSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -47,6 +48,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("cpu", "cpu4")
 	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(0.10090817356207936)
 	m = ilMetrics.Metrics().AppendEmpty()
@@ -55,6 +57,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("cpu", "cpu4")
 	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(0.3027245206862381)
 	m = ilMetrics.Metrics().AppendEmpty()
@@ -63,6 +66,7 @@ func TestUnknownSchema(t *testing.T) {
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("cpu", "cpu4")
 	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(7)
 
