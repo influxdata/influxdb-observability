@@ -14,7 +14,8 @@ import (
 )
 
 func TestAddPoint_v2_gauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -57,10 +58,12 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "0")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "1")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(11.9)
 
@@ -68,7 +71,8 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedGauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -111,10 +115,12 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "0")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "1")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(11.9)
 
@@ -122,7 +128,8 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 }
 
 func TestAddPoint_v2_sum(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -170,11 +177,13 @@ func TestAddPoint_v2_sum(t *testing.T) {
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "400")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(3)
 
@@ -182,7 +191,8 @@ func TestAddPoint_v2_sum(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedSum(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -228,11 +238,13 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(1027)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "400")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(3)
 
@@ -240,7 +252,8 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 }
 
 func TestAddPoint_v2_histogram(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -354,6 +367,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
@@ -364,7 +378,8 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedHistogram(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -478,6 +493,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
@@ -488,7 +504,8 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 }
 
 func TestAddPoint_v2_summary(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -601,6 +618,7 @@ func TestAddPoint_v2_summary(t *testing.T) {
 	dp := m.Summary().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
@@ -624,7 +642,8 @@ func TestAddPoint_v2_summary(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedSummary(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	startTime := time.Now()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger), startTime)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -738,6 +757,7 @@ func TestAddPoint_v2_untypedSummary(t *testing.T) {
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "200")
 	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
