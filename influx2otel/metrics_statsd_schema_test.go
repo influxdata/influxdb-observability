@@ -141,6 +141,43 @@ func TestStatsCounter(t *testing.T) {
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
+func TestStatsDeltaCounter(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	// statsd metric:
+	// gorets:1|c
+	b := c.NewBatch()
+	err = b.AddPoint("gorets",
+		map[string]string{
+			"metric_type": "counter",
+			"type":        "app",
+			"temporality": "delta",
+		},
+		map[string]interface{}{
+			"value": int64(10),
+		},
+		time.Unix(0, 1395066363000000123),
+		common.InfluxMetricValueTypeSum)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	ilMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("gorets_value")
+	m.SetEmptySum()
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	m.Sum().SetIsMonotonic(true)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("metric_type", "counter")
+	dp.Attributes().PutStr("type", "app")
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetIntValue(10)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
 func TestStatsGauge(t *testing.T) {
 	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
 	require.NoError(t, err)
@@ -207,6 +244,45 @@ func TestStatsdSetsSchema(t *testing.T) {
 	dp.Attributes().PutStr("type", "app")
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetIntValue(1)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
+func TestDeltaTemporalityStatsdCounter(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	// statsd metric:
+	// gorets:1|c
+	b := c.NewBatch()
+	err = b.AddPoint("gorets",
+		map[string]string{
+			"metric_type": "counter",
+			"type":        "app",
+			"temporality": "delta",
+		},
+		map[string]interface{}{
+			"value":      int64(10),
+			"start_time": "2023-04-13T22:34:00.000535129+03:00",
+		},
+		time.Unix(0, 1395066363000000123),
+		common.InfluxMetricValueTypeSum)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	ilMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("gorets_value")
+	m.SetEmptySum()
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	m.Sum().SetIsMonotonic(true)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("metric_type", "counter")
+	dp.Attributes().PutStr("type", "app")
+	dp.SetStartTimestamp(pcommon.Timestamp(1681414440000535129))
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetIntValue(10)
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
