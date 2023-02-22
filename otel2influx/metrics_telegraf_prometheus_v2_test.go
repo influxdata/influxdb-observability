@@ -32,12 +32,10 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
-	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
-	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(11.9)
 
