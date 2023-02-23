@@ -2,6 +2,7 @@ package otel2influx_test
 
 import (
 	"context"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"time"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -49,3 +50,8 @@ func (b *MockInfluxWriterBatch) WritePoint(ctx context.Context, measurement stri
 func (b *MockInfluxWriterBatch) FlushBatch(ctx context.Context) error {
 	return nil
 }
+
+var (
+	timestamp      = pcommon.Timestamp(1395066363000000123)
+	startTimestamp = pcommon.Timestamp(1395066363000000001)
+)

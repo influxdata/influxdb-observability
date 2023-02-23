@@ -49,6 +49,7 @@ const (
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/metrics/v1/metrics.proto
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/logs/v1/logs.proto
 	AttributeTime                   = "time"
+	AttributeStartTimeUnixNano      = "start_time_unix_nano"
 	AttributeTraceID                = "trace_id"
 	AttributeSpanID                 = "span_id"
 	AttributeTraceState             = "trace_state"
