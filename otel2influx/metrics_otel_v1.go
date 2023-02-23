@@ -93,11 +93,13 @@ func (m *metricWriterOtelV1) writeSum(ctx context.Context, measurementName strin
 		// TODO datapoint flags
 		dataPoint := pm.Sum().DataPoints().At(i)
 
-		fields := make(map[string]interface{}, len(scopeFields)+2)
+		fields := make(map[string]interface{}, len(scopeFields)+3)
+		if dataPoint.StartTimestamp() != 0 {
+			fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
+		}
 		for k, v := range scopeFields {
 			fields[k] = v
 		}
-		fields["start_time_unix_nano"] = dataPoint.StartTimestamp().AsTime().UnixNano()
 		valueFieldKey, value := buildValue(dataPoint)
 		fields[valueFieldKey] = value
 
@@ -134,7 +136,10 @@ func (m *metricWriterOtelV1) writeHistogram(ctx context.Context, measurementName
 			panic(fmt.Sprintf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len()))
 		}
 
-		fields := make(map[string]interface{}, len(scopeFields)+explicitBounds.Len()+5)
+		fields := make(map[string]interface{}, len(scopeFields)+explicitBounds.Len()+6)
+		if dataPoint.StartTimestamp() != 0 {
+			fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
+		}
 		for k, v := range scopeFields {
 			fields[k] = v
 		}
@@ -152,7 +157,6 @@ func (m *metricWriterOtelV1) writeHistogram(ctx context.Context, measurementName
 			fields["min"] = dataPoint.Min()
 			fields["max"] = dataPoint.Max()
 		}
-		fields["start_time_unix_nano"] = dataPoint.StartTimestamp().AsTime().UnixNano()
 
 		tags := make(map[string]string, dataPoint.Attributes().Len()+len(resourceTags))
 		for k, v := range resourceTags {

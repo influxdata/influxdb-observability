@@ -176,3 +176,9 @@ func convertScopeFields(is pcommon.InstrumentationScope) map[string]interface{} 
 	// TODO dropped attributes counts
 	return fields
 }
+
+type basicDataPoint interface {
+	Timestamp() pcommon.Timestamp
+	StartTimestamp() pcommon.Timestamp
+	Attributes() pcommon.Map
+}

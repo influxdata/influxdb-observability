@@ -2,11 +2,8 @@ package otel2influx_test
 
 import (
 	"context"
-	"testing"
-	"time"
-
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,11 +29,13 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(23.9)
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(11.9)
 
 	err = c.WriteMetrics(context.Background(), metrics)
@@ -52,9 +51,10 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 				"engine_id":            "0",
 			},
 			fields: map[string]interface{}{
-				"cache_age_seconds": float64(23.9),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"cache_age_seconds":               float64(23.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 		{
@@ -66,9 +66,10 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 				"engine_id":            "1",
 			},
 			fields: map[string]interface{}{
-				"cache_age_seconds": float64(11.9),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"cache_age_seconds":               float64(11.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 	}
@@ -95,11 +96,13 @@ func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
 	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 0)
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(23.9)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(11.9)
 
 	err = c.WriteMetrics(context.Background(), metrics)
@@ -115,9 +118,10 @@ func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
 				"engine_id":            "0",
 			},
 			fields: map[string]interface{}{
-				"cache_age_seconds": float64(23.9),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"cache_age_seconds":               float64(23.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 		{
@@ -129,9 +133,10 @@ func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
 				"engine_id":            "1",
 			},
 			fields: map[string]interface{}{
-				"cache_age_seconds": float64(11.9),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"cache_age_seconds":               float64(11.9),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
 		},
 	}
@@ -159,12 +164,14 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 	dp := m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
 	dp.Attributes().PutStr("method", "post")
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(1027)
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 400)
 	dp.Attributes().PutStr("method", "post")
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(3)
 
 	err = c.WriteMetrics(context.Background(), metrics)
@@ -181,9 +188,10 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
-				"http_requests_total": float64(1027),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"http_requests_total":             float64(1027),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSum,
 		},
 		{
@@ -196,9 +204,10 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 				"code":                 "400",
 			},
 			fields: map[string]interface{}{
-				"http_requests_total": float64(3),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"http_requests_total":             float64(3),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSum,
 		},
 	}
@@ -225,7 +234,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
 	dp.Attributes().PutStr("method", "post")
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetCount(144320)
 	dp.SetSum(53423)
 	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
@@ -245,10 +255,11 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:     int64(startTimestamp),
 				"http_request_duration_seconds_count": float64(144320),
 				"http_request_duration_seconds_sum":   float64(53423),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -262,9 +273,10 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"le":                   "0.05",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(24054),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -278,9 +290,10 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"le":                   "0.1",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(33444),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -294,9 +307,10 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"le":                   "0.2",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(100392),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -310,9 +324,10 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"le":                   "0.5",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(129389),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -326,9 +341,10 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				"le":                   "1",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(133988),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 	}
@@ -355,7 +371,8 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
 	dp.Attributes().PutStr("method", "post")
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetCount(144320)
 	dp.SetSum(53423)
 	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988})
@@ -375,10 +392,11 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:     int64(startTimestamp),
 				"http_request_duration_seconds_count": float64(144320),
 				"http_request_duration_seconds_sum":   float64(53423),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -392,9 +410,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"le":                   "0.05",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(24054),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -408,9 +427,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"le":                   "0.1",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(33444),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -424,9 +444,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"le":                   "0.2",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(100392),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -440,9 +461,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"le":                   "0.5",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(129389),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 		{
@@ -456,9 +478,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 				"le":                   "1",
 			},
 			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano:      int64(startTimestamp),
 				"http_request_duration_seconds_bucket": float64(133988),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
 		},
 	}
@@ -484,7 +507,8 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 	dp := m.Summary().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 200)
 	dp.Attributes().PutStr("method", "post")
-	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
 	qv := dp.QuantileValues().AppendEmpty()
@@ -517,10 +541,11 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"code":                 "200",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds_count": float64(2693),
-				"rpc_duration_seconds_sum":   float64(17560473),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds_count":      float64(2693),
+				"rpc_duration_seconds_sum":        float64(17560473),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
@@ -534,9 +559,10 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"quantile":             "0.01",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds": float64(3102),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds":            float64(3102),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
@@ -550,9 +576,10 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"quantile":             "0.05",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds": float64(3272),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds":            float64(3272),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
@@ -566,9 +593,10 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"quantile":             "0.5",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds": float64(4773),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds":            float64(4773),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
@@ -582,9 +610,10 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"quantile":             "0.9",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds": float64(9001),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds":            float64(9001),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 		{
@@ -598,9 +627,10 @@ func TestWriteMetric_v2_summary(t *testing.T) {
 				"quantile":             "0.99",
 			},
 			fields: map[string]interface{}{
-				"rpc_duration_seconds": float64(76656),
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"rpc_duration_seconds":            float64(76656),
 			},
-			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
 		},
 	}

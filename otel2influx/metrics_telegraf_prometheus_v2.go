@@ -36,8 +36,8 @@ func (c *metricWriterTelegrafPrometheusV2) writeMetric(ctx context.Context, reso
 	}
 }
 
-func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, timestamp pcommon.Timestamp, attributes pcommon.Map) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
-	ts = timestamp.AsTime()
+func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, dataPoint basicDataPoint) (tags map[string]string, fields map[string]interface{}, ts time.Time, err error) {
+	ts = dataPoint.Timestamp().AsTime()
 	if ts.IsZero() {
 		err = errors.New("metric has no timestamp")
 		return
@@ -45,8 +45,11 @@ func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(resource p
 
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
+	if dataPoint.StartTimestamp() != 0 {
+		fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
+	}
 
-	attributes.Range(func(k string, v pcommon.Value) bool {
+	dataPoint.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k == "" {
 			c.logger.Debug("metric attribute key is empty")
 		} else {
@@ -73,7 +76,7 @@ func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(resource p
 func (c *metricWriterTelegrafPrometheusV2) writeGauge(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, gauge pmetric.Gauge, batch InfluxWriterBatch) error {
 	for i := 0; i < gauge.DataPoints().Len(); i++ {
 		dataPoint := gauge.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint)
 		if err != nil {
 			return err
 		}
@@ -104,7 +107,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeGaugeFromSum(ctx context.Context
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
 		dataPoint := sum.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint)
 		if err != nil {
 			return err
 		}
@@ -135,7 +138,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeSum(ctx context.Context, resourc
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
 		dataPoint := sum.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint)
 		if err != nil {
 			return err
 		}
@@ -166,7 +169,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 
 	for i := 0; i < histogram.DataPoints().Len(); i++ {
 		dataPoint := histogram.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint)
 		if err != nil {
 			return err
 		}
@@ -220,7 +223,7 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 func (c *metricWriterTelegrafPrometheusV2) writeSummary(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, summary pmetric.Summary, batch InfluxWriterBatch) error {
 	for i := 0; i < summary.DataPoints().Len(); i++ {
 		dataPoint := summary.DataPoints().At(i)
-		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint.Timestamp(), dataPoint.Attributes())
+		tags, fields, ts, err := c.initMetricTagsAndTimestamp(resource, instrumentationLibrary, dataPoint)
 		if err != nil {
 			return err
 		}
