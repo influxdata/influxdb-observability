@@ -10,6 +10,8 @@ for module in common influx2otel jaeger-influxdb otel2influx tests-integration; 
   go list -f '{{range .Imports}}{{.}}
 {{end}}
 {{range .TestImports}}{{.}}
+{{end}}
+{{range .XTestImports}}{{.}}
 {{end}}' ./... | sort | uniq | grep 'github.com/open-telemetry\|go.opentelemetry.io' | xargs go get -t
 
 done
