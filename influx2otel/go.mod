@@ -6,7 +6,7 @@ require (
 	github.com/influxdata/influxdb-observability/common v0.3.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.71.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.71.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/collector/pdata v1.0.0-rc6
 	go.opentelemetry.io/collector/semconv v0.72.0
 )
