@@ -1,6 +1,6 @@
 module github.com/influxdata/influxdb-observability/jaeger-influxdb
 
-go 1.18
+go 1.19
 
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.0.0-20230131211202-5410feb2c21c
