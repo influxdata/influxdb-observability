@@ -46,7 +46,7 @@ func init() {
 		dp2.SetCount(144320)
 		dp2.SetSum(53423)
 		dp2.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
-		dp2.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+		dp2.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 		m = ilMetrics.Metrics().AppendEmpty()
 		m.SetName("http_requests_total")
 		m.SetEmptySum()

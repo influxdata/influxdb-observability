@@ -207,9 +207,14 @@ func (c *metricWriterTelegrafPrometheusV2) writeHistogram(ctx context.Context, r
 				f[k] = v
 			}
 
+			var bucketCount uint64
+			for j := 0; j <= i; j++ {
+				bucketCount += bucketCounts.At(j)
+			}
+
 			boundTagValue := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
 			t[common.MetricHistogramBoundKeyV2] = boundTagValue
-			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCounts.At(i))
+			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCount)
 
 			if err = batch.WritePoint(ctx, common.MeasurementPrometheus, t, f, ts, common.InfluxMetricValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)

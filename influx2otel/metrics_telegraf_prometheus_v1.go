@@ -248,6 +248,21 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	}
 
 	bucketCounts = append(bucketCounts, count)
+	sortHistogramBuckets(bucketCounts, explicitBounds)
+
+	bucketsAreCumulative := true
+	for i := 0; i < len(bucketCounts)-1; i++ {
+		if bucketCounts[i] > bucketCounts[i+1] {
+			// this can happen when an untyped summary is handled as a histogram
+			bucketsAreCumulative = false
+			break
+		}
+	}
+	if bucketsAreCumulative {
+		for i := len(bucketCounts) - 1; i > 0; i-- {
+			bucketCounts[i] -= bucketCounts[i-1]
+		}
+	}
 
 	metric, attributes, err := b.lookupMetric(measurement, tags, common.InfluxMetricValueTypeHistogram)
 	if err != nil {
@@ -260,7 +275,6 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	dataPoint.SetSum(sum)
 	dataPoint.BucketCounts().FromRaw(bucketCounts)
 	dataPoint.ExplicitBounds().FromRaw(explicitBounds)
-	sortHistogramBuckets(dataPoint)
 	return nil
 }
 

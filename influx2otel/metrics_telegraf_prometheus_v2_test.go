@@ -357,7 +357,7 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
@@ -481,7 +481,7 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetCount(144320)
 	dp.SetSum(53423)
-	dp.BucketCounts().FromRaw([]uint64{24054, 33444, 100392, 129389, 133988, 144320})
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 	assertMetricsEqual(t, expect, b.GetMetrics())

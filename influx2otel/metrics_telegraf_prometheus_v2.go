@@ -2,6 +2,7 @@ package influx2otel
 
 import (
 	"fmt"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"strconv"
 	"strings"
 	"time"
@@ -201,8 +202,7 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 			if !ok {
 				return fmt.Errorf("invalid value type %T for histogram bucket count: %q", iBucketCount, iBucketCount)
 			}
-			dataPoint.ExplicitBounds().Append(explicitBound)
-			dataPoint.BucketCounts().Append(uint64(bucketCount))
+			addCountToHistogramV2(dataPoint, explicitBound, uint64(bucketCount))
 		} else {
 			return fmt.Errorf("histogram bucket bound has no matching count")
 		}
@@ -250,6 +250,35 @@ func (b *MetricsBatch) convertHistogramV2(tags map[string]string, fields map[str
 	}
 
 	return nil
+}
+
+func addCountToHistogramV2(dataPoint pmetric.HistogramDataPoint, explicitBound float64, bucketCount uint64) {
+	// find insertion point - we will insert at this index
+	var insert int
+	for ; insert < dataPoint.BucketCounts().Len() && explicitBound > dataPoint.ExplicitBounds().At(insert); insert++ {
+	}
+
+	// correct the value of bucketCount:
+	// subtract the sum of counts from all lower bound buckets
+	for i := 0; i < insert; i++ {
+		bucketCount -= dataPoint.BucketCounts().At(i)
+	}
+
+	// correct the value of the bucket following the inserted bucket:
+	// subtract the corrected bucketCount from the next bucket
+	if dataPoint.BucketCounts().Len() > insert {
+		dataPoint.BucketCounts().SetAt(insert, dataPoint.BucketCounts().At(insert)-bucketCount)
+	}
+
+	// insert the new bucket
+	dataPoint.BucketCounts().Append(0)
+	dataPoint.ExplicitBounds().Append(0)
+	for j := dataPoint.BucketCounts().Len() - 1; j > insert; j-- {
+		dataPoint.BucketCounts().SetAt(j, dataPoint.BucketCounts().At(j-1))
+		dataPoint.ExplicitBounds().SetAt(j, dataPoint.ExplicitBounds().At(j-1))
+	}
+	dataPoint.BucketCounts().SetAt(insert, bucketCount)
+	dataPoint.ExplicitBounds().SetAt(insert, explicitBound)
 }
 
 func (b *MetricsBatch) convertSummaryV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
