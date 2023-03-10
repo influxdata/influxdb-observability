@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/influxdata/influxdb/v2 v2.6.1
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v1.25.1
+	github.com/influxdata/telegraf v1.25.3
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230310141600-36479b5c55a9
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.73.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.73.0
@@ -38,7 +38,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
-	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -101,7 +101,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.3.0 // indirect
+	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
@@ -116,5 +116,4 @@ replace (
 	github.com/influxdata/influxdb-observability/common => ../common
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
-	github.com/influxdata/telegraf => github.com/influxdata/telegraf v0.0.0-20230209193518-fa26b6498b6b
 )
