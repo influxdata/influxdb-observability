@@ -174,7 +174,16 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
 						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
-							dataPoint.BucketCounts().Append(dataPoint.Count())
+							infBucketCount := dataPoint.Count()
+							for l := 0; l < dataPoint.BucketCounts().Len(); l++ {
+								infBucketCount -= dataPoint.BucketCounts().At(l)
+							}
+							if infBucketCount <= dataPoint.Count() {
+								dataPoint.BucketCounts().Append(infBucketCount)
+							} else {
+								// this can happen when an untyped summary is handled as a histogram
+								dataPoint.BucketCounts().Append(dataPoint.Count())
+							}
 						}
 					}
 				}
@@ -226,19 +235,15 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	return nil
 }
 
-func sortHistogramBuckets(hdp pmetric.HistogramDataPoint) {
-	sBuckets := make(sortableBuckets, hdp.ExplicitBounds().Len())
-	for i := 0; i < hdp.ExplicitBounds().Len(); i++ {
-		sBuckets[i] = sortableBucket{hdp.BucketCounts().At(i), hdp.ExplicitBounds().At(i)}
+func sortHistogramBuckets(bucketCounts []uint64, explicitBounds []float64) {
+	sBuckets := make(sortableBuckets, len(explicitBounds))
+	for i := 0; i < len(explicitBounds); i++ {
+		sBuckets[i] = sortableBucket{bucketCounts[i], explicitBounds[i]}
 	}
 	sort.Sort(sBuckets)
-	counts := make([]uint64, hdp.ExplicitBounds().Len())
-	buckets := make([]float64, hdp.ExplicitBounds().Len())
 	for i, bucket := range sBuckets {
-		counts[i], buckets[i] = bucket.count, bucket.bound
+		bucketCounts[i], explicitBounds[i] = bucket.count, bucket.bound
 	}
-	hdp.BucketCounts().FromRaw(counts)
-	hdp.ExplicitBounds().FromRaw(buckets)
 }
 
 type sortableBucket struct {

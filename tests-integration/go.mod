@@ -6,10 +6,10 @@ require (
 	github.com/influxdata/influxdb/v2 v2.6.1
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/influxdata/telegraf v1.25.1
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.73.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230310141600-36479b5c55a9
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.73.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.73.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.73.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.0.0-20230310141600-36479b5c55a9
 	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/collector v0.73.0
 	go.opentelemetry.io/collector/component v0.73.0
@@ -50,9 +50,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gosnmp/gosnmp v1.35.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/influxdata/influxdb-observability/common v0.3.1 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.3.1 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.3.1 // indirect
+	github.com/influxdata/influxdb-observability/common v0.3.2 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.3.2 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.3.2 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.41.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -69,7 +69,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.73.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/influx v0.73.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.73.0 // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -103,7 +102,7 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect

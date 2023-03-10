@@ -185,8 +185,13 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len())
 		}
 		for i := 0; i < explicitBounds.Len(); i++ {
+			var bucketCount uint64
+			for j := 0; j <= i; j++ {
+				bucketCount += bucketCounts.At(j)
+			}
+
 			boundFieldKey := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
-			fields[boundFieldKey] = float64(bucketCounts.At(i))
+			fields[boundFieldKey] = float64(bucketCount)
 		}
 
 		if err = batch.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeHistogram); err != nil {
