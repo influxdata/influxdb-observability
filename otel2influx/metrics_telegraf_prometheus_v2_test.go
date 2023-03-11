@@ -238,6 +238,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 	dp.SetTimestamp(timestamp)
 	dp.SetCount(144320)
 	dp.SetSum(53423)
+	dp.SetMin(0)
+	dp.SetMax(100)
 	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
@@ -258,6 +260,8 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				common.AttributeStartTimeUnixNano:     int64(startTimestamp),
 				"http_request_duration_seconds_count": float64(144320),
 				"http_request_duration_seconds_sum":   float64(53423),
+				"http_request_duration_seconds_min":   float64(0),
+				"http_request_duration_seconds_max":   float64(100),
 			},
 			ts:    timestamp.AsTime().UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,

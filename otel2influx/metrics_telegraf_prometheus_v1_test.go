@@ -240,6 +240,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 	dp.SetTimestamp(timestamp)
 	dp.SetCount(144320)
 	dp.SetSum(53423)
+	dp.SetMin(0)
+	dp.SetMax(100)
 	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
@@ -265,6 +267,8 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 				"0.2":                             float64(100392),
 				"0.5":                             float64(129389),
 				"1":                               float64(133988),
+				"min":                             float64(0),
+				"max":                             float64(100),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeHistogram,
