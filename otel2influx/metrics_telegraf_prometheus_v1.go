@@ -53,12 +53,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(resource p
 		if k == "" {
 			c.logger.Debug("metric attribute key is empty")
 		} else {
-			var vv string
-			vv, err = common.AttributeValueToInfluxTagValue(v)
-			if err != nil {
-				return false
-			}
-			tags[k] = vv
+			tags[k] = v.AsString()
 		}
 		return true
 	})
@@ -176,6 +171,12 @@ func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, r
 
 		fields[common.MetricHistogramCountFieldKey] = float64(dataPoint.Count())
 		fields[common.MetricHistogramSumFieldKey] = dataPoint.Sum()
+		if dataPoint.HasMin() {
+			fields[common.MetricHistogramMinFieldKey] = dataPoint.Min()
+		}
+		if dataPoint.HasMax() {
+			fields[common.MetricHistogramMaxFieldKey] = dataPoint.Max()
+		}
 		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()
 		if bucketCounts.Len() > 0 &&
 			bucketCounts.Len() != explicitBounds.Len() &&
