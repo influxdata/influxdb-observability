@@ -42,8 +42,8 @@ github.com/HdrHistogram/hdrhistogram-go v1.1.2 h1:5IcZpTvzydCQeHzK4Ef/D5rrSqwxob
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c h1:RGWPOewvKIROun94nF7v2cua9qP+thov/7M50KEoeSU=
 github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
 github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
-github.com/apache/arrow-adbc/go/adbc v0.0.0-20230131211202-5410feb2c21c h1:wKF9HUvutpunE0pJxR+rDy1mvR3EtuWXoe143WoNUfw=
-github.com/apache/arrow-adbc/go/adbc v0.0.0-20230131211202-5410feb2c21c/go.mod h1:r6QzkjR0jamhCSFPYLVFKwlsYnSPTgntzyHfTfjwue4=
+github.com/apache/arrow-adbc/go/adbc v0.2.0 h1:5TbvfKQLVoulPL5wgMtFiCotFb5DA+t7QUxoErfkLpg=
+github.com/apache/arrow-adbc/go/adbc v0.2.0/go.mod h1:r6QzkjR0jamhCSFPYLVFKwlsYnSPTgntzyHfTfjwue4=
 github.com/apache/arrow/go/v12 v12.0.0-20230131200310-5765aa29b5ca h1:rLD16hTZFW/66Y6PJfUO7vmn8x1b7Lf1MBKIV6k0WTo=
 github.com/apache/arrow/go/v12 v12.0.0-20230131200310-5765aa29b5ca/go.mod h1:qwJWRMGOu/SUTlFiQBgCjtOoxYqdG2KqXiDB3+e7BNA=
 github.com/apache/thrift v0.17.0 h1:cMd2aj52n+8VoAtvSvLn4kDC3aZ6IAkBuqWQ2IDu7wo=
