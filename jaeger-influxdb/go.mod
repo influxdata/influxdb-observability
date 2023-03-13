@@ -8,7 +8,7 @@ require (
 	github.com/influxdata/influxdb-observability/common v0.3.0
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/jaegertracing/jaeger v1.41.0
-	github.com/mattn/go-isatty v0.0.16
+	github.com/mattn/go-isatty v0.0.17
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
