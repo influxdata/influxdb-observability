@@ -3,16 +3,20 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/common"
     schedule:
+      day: "tuesday"
       interval: "weekly"
   - package-ecosystem: "gomod"
     directory: "/influx2otel"
     schedule:
+      day: "tuesday"
       interval: "weekly"
   - package-ecosystem: "gomod"
     directory: "/jaeger-influxdb"
     schedule:
+      day: "tuesday"
       interval: "weekly"
   - package-ecosystem: "gomod"
     directory: "/otel2influx"
     schedule:
+      day: "tuesday"
       interval: "weekly"
