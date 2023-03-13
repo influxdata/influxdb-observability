@@ -9,6 +9,10 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "gomod"
+    directory: "/jaeger-influxdb"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
     directory: "/otel2influx"
     schedule:
       interval: "weekly"
