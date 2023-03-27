@@ -18,6 +18,9 @@ func traceIDToString(traceID model.TraceID) string {
 }
 
 func queryGetAllWhereTraceID(table string, traceIDs ...model.TraceID) string {
+	if len(traceIDs) == 0 {
+		return fmt.Sprintf(`SELECT * FROM %s WHERE false`, table)
+	}
 	traceIDStrings := make([]string, len(traceIDs))
 	for i, traceID := range traceIDs {
 		traceIDStrings[i] = traceIDToString(traceID)
