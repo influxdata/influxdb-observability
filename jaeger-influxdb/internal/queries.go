@@ -18,20 +18,12 @@ func traceIDToString(traceID model.TraceID) string {
 }
 
 func queryGetAllWhereTraceID(table string, traceIDs ...model.TraceID) string {
-	var whereClause string
-	if len(traceIDs) > 0 {
-		traceIDStrings := make([]string, len(traceIDs))
-		for i, traceID := range traceIDs {
-			traceIDStrings[i] = traceIDToString(traceID)
-		}
-		whereClause = fmt.Sprintf(`"%s" IN ('%s')`,
-			common.AttributeTraceID, strings.Join(traceIDStrings, `','`))
-	} else {
-		whereClause = "false"
+	traceIDStrings := make([]string, len(traceIDs))
+	for i, traceID := range traceIDs {
+		traceIDStrings[i] = traceIDToString(traceID)
 	}
-	query := fmt.Sprintf("SELECT * FROM %s WHERE %s",
-		table, whereClause)
-	return query
+	return fmt.Sprintf(`SELECT * FROM %s WHERE "%s" IN ('%s')`,
+		table, common.AttributeTraceID, strings.Join(traceIDStrings, `','`))
 }
 
 func queryGetTraceSpans(tableSpans string, traceIDs ...model.TraceID) string {

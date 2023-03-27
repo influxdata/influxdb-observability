@@ -12,7 +12,7 @@ import (
 
 	"github.com/apache/arrow-adbc/go/adbc"
 	"github.com/apache/arrow-adbc/go/adbc/driver/flightsql"
-	"github.com/apache/arrow-adbc/go/adbc/sqldriver"
+	_ "github.com/apache/arrow-adbc/go/adbc/sqldriver/flightsql"
 	"github.com/golang/groupcache/lru"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
@@ -20,12 +20,6 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
-
-func init() {
-	sql.Register("flightsql", sqldriver.Driver{
-		Driver: flightsql.Driver{},
-	})
-}
 
 var _ shared.StoragePlugin = (*InfluxdbStorage)(nil)
 var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
@@ -82,6 +76,9 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		row := db.QueryRowContext(ctx, "SELECT 1")
 		var v int
 		err = multierr.Combine(row.Scan(&v))
+		if err == nil && v != 1 {
+			err = errors.New("failed to ping database")
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to contact InfluxDB query service: %w", err)
