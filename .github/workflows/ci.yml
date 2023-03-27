@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         go: [ "1.19", "1.20" ]
-        package: [ "common", "influx2otel", "otel2influx", "tests-integration" ]
-        exclude:
-        - go: 1.20
-          package: tests-integration
+        package: [ "common", "influx2otel", "otel2influx", "jaeger-influxdb", "tests-integration" ]
+#        exclude:
+#        - go: 1.20
+#          package: tests-integration
     runs-on: ubuntu-latest
     steps:
 
@@ -31,7 +31,7 @@ jobs:
     - name: Test
       run: >
         cd ${{ matrix.package }} &&
-        go test
+        go test ./...
 
     - name: Fmt
       run: >
@@ -40,10 +40,10 @@ jobs:
     - name: Vet
       run: >
         cd ${{ matrix.package }} &&
-        go vet
+        go vet ./...
 
     - name: staticcheck
       run: >
-        go install honnef.co/go/tools/cmd/staticcheck@2023.1.2 &&
+        go install honnef.co/go/tools/cmd/staticcheck@2023.1.3 &&
         cd ${{ matrix.package }} &&
-        staticcheck
+        staticcheck -f stylish ./...
