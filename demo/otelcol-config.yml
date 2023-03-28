@@ -2,11 +2,7 @@ receivers:
   otlp:
     protocols:
       grpc:
-
-  jaeger:
-    protocols:
-      thrift_compact:
-      thrift_http:
+      http:
 
   otlp/noop:
     protocols:
@@ -39,7 +35,7 @@ service:
 
   pipelines:
     traces:
-      receivers: [otlp, jaeger]
+      receivers: [otlp]
       processors: [spanmetrics]
       exporters: [influxdb]
 
