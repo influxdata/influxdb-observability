@@ -19,14 +19,6 @@ services:
     volumes:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
-  #  grafana-jaeger-influxdb:
-  #    image: grafana/grafana-oss:9.2.2
-  #    stop_grace_period: 1s
-  #    ports:
-  #    - "3000:3000" # web UI
-  #    depends_on:
-  #    - jaeger-query
-
   jaeger-influxdb:
     build:
       context: .
@@ -57,18 +49,8 @@ services:
     depends_on:
     - otelcol-influxdb
     environment:
-      JAEGER_AGENT_HOST: otelcol-influxdb
-      JAEGER_AGENT_PORT: 6831
-
-#  microsim:
-#    build:
-#      context: .
-#      dockerfile: demo/Dockerfile.microsim
-#    image: microsim:local
-#    stop_grace_period: 1s
-#    depends_on:
-#    - otelcol-influxdb
-#    command: -d 24h -j http://otelcol-influxdb:14268/api/traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelcol-influxdb:4318
+    command: [ "all", "--otel-exporter=otlp"]
 
   otelcol-influxdb:
     build:
