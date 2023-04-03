@@ -91,8 +91,8 @@ Changes can be tested on a local branch using the `run-checks.sh` tool.
 `run-checks.sh` verifies `go mod tidy` using `git diff`,
 so any changes must be staged for commit in order for `run-checks.sh` to pass.
 
-To update all OpenTelemetry dependencies in the various modules of this repository:
-- run `update-otel.sh`
+To update critical dependencies (OpenTelemetry, Jaeger, and intra-repo modules) in the various modules of this repository:
+- run `update-deps.sh`
 - stage the changed `go.mod` and `go.sum` files
 - run `run-checks.sh`
 
