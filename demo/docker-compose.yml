@@ -49,8 +49,8 @@ services:
     depends_on:
     - otelcol-influxdb
     environment:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelcol-influxdb:4318
-    command: [ "all", "--otel-exporter=otlp"]
+      JAEGER_AGENT_HOST: otelcol-influxdb
+      JAEGER_AGENT_PORT: 6831
 
   otelcol-influxdb:
     build:

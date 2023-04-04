@@ -1,18 +1,13 @@
 --- a/examples/hotrod/cmd/root.go
 +++ b/examples/hotrod/cmd/root.go
-@@ -98,12 +98,9 @@ func onInitialize() {
+@@ -81,7 +81,9 @@ func init() {
+ 	RootCmd.PersistentFlags().StringVarP(&jaegerUI, "jaeger-ui", "j", "http://localhost:16686", "Address of Jaeger UI to create [find trace] links")
+
+ 	rand.Seed(int64(time.Now().Nanosecond()))
+-	logger, _ = zap.NewDevelopment(
++	loggerConfig := zap.NewProductionConfig()
++	loggerConfig.Level.SetLevel(zapcore.FatalLevel)
++	logger, _ = loggerConfig.Build(
  		zap.AddStacktrace(zapcore.FatalLevel),
  		zap.AddCallerSkip(1),
- 	}
--	if !verbose {
--		zapOptions = append(zapOptions,
--			zap.IncreaseLevel(zap.LevelEnablerFunc(func(l zapcore.Level) bool { return l != zapcore.DebugLevel })),
--		)
--	}
--	logger, _ = zap.NewDevelopment(zapOptions...)
-+	loggerConfig := zap.NewProductionConfig()
-+	loggerConfig.Level.SetLevel(zapcore.ErrorLevel)
-+	logger, _ = loggerConfig.Build(zapOptions...)
-
- 	jaegerclientenv2otel.MapJaegerToOtelEnvVars(logger)
-
+ 	)
