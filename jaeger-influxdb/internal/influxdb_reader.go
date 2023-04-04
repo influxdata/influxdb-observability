@@ -44,13 +44,11 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 
 	// Get events
 	f = func(record map[string]interface{}) error {
-		_, spanID, log, err := recordToLog(record)
-		if err != nil {
+		if _, spanID, log, err := recordToLog(record); err != nil {
 			ir.logger.Warn("failed to convert event to Log", zap.Error(err))
 		} else if span, ok := spansBySpanID[spanID]; !ok {
 			ir.logger.Warn("span event contains unknown span ID")
 		} else {
-			// TODO filter span attributes duplicated in logs
 			span.Logs = append(span.Logs, *log)
 		}
 		return nil

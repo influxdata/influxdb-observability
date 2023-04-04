@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/jaegertracing/jaeger/model"
@@ -191,7 +193,40 @@ func recordToLog(record map[string]interface{}) (model.TraceID, model.SpanID, *m
 			} else {
 				log.Fields = append(log.Fields, model.String("message", vv))
 			}
-		case common.AttributeAttributes, semconv.AttributeServiceName:
+		case common.AttributeAttributes:
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(v.(string)), &m); err != nil {
+				return model.TraceID{}, 0, nil, fmt.Errorf("")
+			}
+			for k, v := range m {
+				switch vv := v.(type) {
+				case nil:
+					log.Fields = append(log.Fields, model.String(k, ""))
+				case bool:
+					log.Fields = append(log.Fields, model.Bool(k, vv))
+				case float64:
+					if intPart, fracPart := math.Modf(vv); fracPart == 0 {
+						log.Fields = append(log.Fields, model.Int64(k, int64(intPart)))
+					} else {
+						log.Fields = append(log.Fields, model.Float64(k, vv))
+					}
+				case string:
+					log.Fields = append(log.Fields, model.String(k, vv))
+				case []interface{}:
+					s := make([]string, len(vv))
+					for i, vvv := range vv {
+						if vvv == nil {
+							s[i] = ""
+						} else {
+							s[i] = fmt.Sprint(vvv)
+						}
+					}
+					log.Fields = append(log.Fields, model.String(k, strings.Join(s, ",")))
+				default:
+					// ignore
+				}
+			}
+		case semconv.AttributeServiceName:
 			// The span has this information, no need to duplicate
 		default:
 			log.Fields = append(log.Fields, kvToKeyValue(k, v))
