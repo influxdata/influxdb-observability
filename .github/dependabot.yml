@@ -5,18 +5,22 @@ updates:
     schedule:
       day: "tuesday"
       interval: "weekly"
+    open-pull-requests-limit: 0
   - package-ecosystem: "gomod"
     directory: "/influx2otel"
     schedule:
       day: "tuesday"
       interval: "weekly"
+    open-pull-requests-limit: 0
   - package-ecosystem: "gomod"
     directory: "/jaeger-influxdb"
     schedule:
       day: "tuesday"
       interval: "weekly"
+    open-pull-requests-limit: 0
   - package-ecosystem: "gomod"
     directory: "/otel2influx"
     schedule:
       day: "tuesday"
       interval: "weekly"
+    open-pull-requests-limit: 0
