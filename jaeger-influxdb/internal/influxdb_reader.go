@@ -38,8 +38,15 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		return nil
 	}
 	err := executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceID), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
 		return nil, err
+	}
+	if len(spansBySpanID) == 0 {
+		return nil, spanstore.ErrTraceNotFound
 	}
 
 	// Get events
@@ -54,8 +61,12 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		return nil
 	}
 	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceID), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
-		ir.logger.Info("ignoring query error", zap.String("table", ir.tableLogs), zap.Error(err))
+		return nil, err
 	}
 
 	// Get links
@@ -72,8 +83,12 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 	}
 
 	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceID), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
-		ir.logger.Info("ignoring query error", zap.String("table", ir.tableSpanLinks), zap.Error(err))
+		return nil, err
 	}
 
 	// Assemble trace
@@ -96,6 +111,10 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 	}
 
 	err := executeQuery(ctx, ir.db, queryGetServices(ir.tableSpans), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +135,10 @@ func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParam
 	}
 
 	err := executeQuery(ctx, ir.db, queryGetOperations(ir.tableSpans, operationQueryParameters.ServiceName), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +150,9 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 	traceIDs, err := ir.FindTraceIDs(ctx, traceQueryParameters)
 	if err != nil {
 		return nil, err
+	}
+	if len(traceIDs) == 0 {
+		return nil, nil
 	}
 
 	// Get traces
@@ -143,8 +169,12 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 	}
 
 	err = executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceIDs...), f)
+	// do not check isTableNotFound; this query should only be executed if FindTraceIDs succeeded
 	if err != nil {
 		return nil, err
+	}
+	if len(spansBySpanIDByTraceID) == 0 {
+		return nil, nil
 	}
 
 	// Get events
@@ -162,8 +192,12 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 	}
 
 	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceIDs...), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
-		ir.logger.Info("ignoring query error", zap.String("table", ir.tableLogs), zap.Error(err))
+		return nil, err
 	}
 
 	// Get links
@@ -181,8 +215,12 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 	}
 
 	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceIDs...), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
-		ir.logger.Info("ignoring query error", zap.String("table", ir.tableSpanLinks), zap.Error(err))
+		return nil, err
 	}
 
 	traces := make([]*model.Trace, 0, len(spansBySpanIDByTraceID))
@@ -211,6 +249,10 @@ func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters
 	}
 
 	err := executeQuery(ctx, ir.db, queryFindTraceIDs(ir.tableSpans, traceQueryParameters), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +301,10 @@ func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs 
 	}
 
 	err := executeQuery(ctx, idr.ir.db, queryGetDependencies(idr.tableDependencyLinks, endTs, lookback), f)
+	if isTableNotFound(err) {
+		// ignore; the table hasn't been written to yet, so it doesn't exist (schema-on-write)
+		err = nil
+	}
 	if err != nil {
 		return nil, err
 	}

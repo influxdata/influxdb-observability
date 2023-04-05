@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/apache/arrow-adbc/go/adbc"
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/opentracing/opentracing-go/ext"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -290,4 +292,14 @@ func recordToSpanRef(record map[string]interface{}) (model.TraceID, model.SpanID
 	}
 
 	return traceID, spanID, spanRef, nil
+}
+
+var errTableNotFound = regexp.MustCompile(`table '\S+' not found`)
+
+func isTableNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	aerr, ok := err.(adbc.Error)
+	return ok && errTableNotFound.MatchString(aerr.Msg)
 }
