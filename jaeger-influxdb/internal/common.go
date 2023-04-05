@@ -194,34 +194,38 @@ func recordToLog(record map[string]interface{}) (model.TraceID, model.SpanID, *m
 				log.Fields = append(log.Fields, model.String("message", vv))
 			}
 		case common.AttributeAttributes:
-			var m map[string]interface{}
-			if err := json.Unmarshal([]byte(v.(string)), &m); err != nil {
-				return model.TraceID{}, 0, nil, fmt.Errorf("")
+			vv, ok := v.(string)
+			if !ok {
+				return model.TraceID{}, 0, nil, fmt.Errorf("log attributes attribute is type %T", v)
 			}
-			for k, v := range m {
-				switch vv := v.(type) {
+			var m map[string]interface{}
+			if err = json.Unmarshal([]byte(vv), &m); err != nil {
+				return model.TraceID{}, 0, nil, fmt.Errorf("failed to unmarshal attributes from JSON: %w", err)
+			}
+			for mk, mv := range m {
+				switch mvv := mv.(type) {
 				case nil:
-					log.Fields = append(log.Fields, model.String(k, ""))
+					log.Fields = append(log.Fields, model.String(mk, ""))
 				case bool:
-					log.Fields = append(log.Fields, model.Bool(k, vv))
+					log.Fields = append(log.Fields, model.Bool(mk, mvv))
 				case float64:
-					if intPart, fracPart := math.Modf(vv); fracPart == 0 {
-						log.Fields = append(log.Fields, model.Int64(k, int64(intPart)))
+					if intPart, fracPart := math.Modf(mvv); fracPart == 0 {
+						log.Fields = append(log.Fields, model.Int64(mk, int64(intPart)))
 					} else {
-						log.Fields = append(log.Fields, model.Float64(k, vv))
+						log.Fields = append(log.Fields, model.Float64(mk, mvv))
 					}
 				case string:
-					log.Fields = append(log.Fields, model.String(k, vv))
+					log.Fields = append(log.Fields, model.String(mk, mvv))
 				case []interface{}:
-					s := make([]string, len(vv))
-					for i, vvv := range vv {
-						if vvv == nil {
+					s := make([]string, len(mvv))
+					for i := range mvv {
+						if mvv[i] == nil {
 							s[i] = ""
 						} else {
-							s[i] = fmt.Sprint(vvv)
+							s[i] = fmt.Sprint(mvv[i])
 						}
 					}
-					log.Fields = append(log.Fields, model.String(k, strings.Join(s, ",")))
+					log.Fields = append(log.Fields, model.String(mk, strings.Join(s, ",")))
 				default:
 					// ignore
 				}
