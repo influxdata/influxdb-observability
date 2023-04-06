@@ -297,9 +297,6 @@ func recordToSpanRef(record map[string]interface{}) (model.TraceID, model.SpanID
 var errTableNotFound = regexp.MustCompile(`table '\S+' not found`)
 
 func isTableNotFound(err error) bool {
-	if err == nil {
-		return false
-	}
 	aerr, ok := err.(adbc.Error)
 	return ok && errTableNotFound.MatchString(aerr.Msg)
 }
