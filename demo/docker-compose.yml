@@ -30,13 +30,13 @@ services:
       LISTEN_ADDR: :17271
       INFLUXDB_TIMEOUT: 30s
       # required: hostname or hostname:port
-      INFLUXDB_ADDR:
+      INFLUXDB_ADDR: stag-us-east-1-4.aws.cloud2.influxdata.com
       # required: bucket name
-      INFLUXDB_BUCKET:
+      INFLUXDB_BUCKET: otel
       # optional: bucket name for archived traces
       INFLUXDB_BUCKET_ARCHIVE:
       # required
-      INFLUXDB_TOKEN:
+      INFLUXDB_TOKEN: 7s1xK6thz8r7YNVRk94JEKEFQVA7WDsOHaeSFBHVrPoxYsu1IfWee-vDZhj20O6qB_E2qAILz2cZ1QJlZIM3oA==
 
   hotrod:
     build:
@@ -57,6 +57,7 @@ services:
       context: .
       dockerfile: otelcol-influxdb/Dockerfile
     image: otelcol-influxdb:local
+#    image: otel/opentelemetry-collector-contrib:0.74.0
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:

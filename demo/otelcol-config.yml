@@ -27,9 +27,9 @@ processors:
 
 exporters:
   influxdb:
-    endpoint:
-    bucket:
-    token:
+    endpoint: https://stag-us-east-1-4.aws.cloud2.influxdata.com/
+    bucket: otel
+    token: 7s1xK6thz8r7YNVRk94JEKEFQVA7WDsOHaeSFBHVrPoxYsu1IfWee-vDZhj20O6qB_E2qAILz2cZ1QJlZIM3oA==
     metrics_schema: otel-v1
 
 service:
