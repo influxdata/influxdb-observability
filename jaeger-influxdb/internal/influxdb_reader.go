@@ -20,6 +20,8 @@ var _ dependencystore.Reader = (*influxdbDependencyReader)(nil)
 type influxdbReader struct {
 	logger *zap.Logger
 
+	executeQuery func(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error
+
 	db                                    *sql.DB
 	tableSpans, tableLogs, tableSpanLinks string
 }
@@ -37,7 +39,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		}
 		return nil
 	}
-	err := executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceID), f)
+	err := ir.executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceID), f)
 	switch {
 	case err != nil && !isTableNotFound(err): // ignore table not found (schema-on-write)
 		return nil, err
@@ -56,7 +58,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		}
 		return nil
 	}
-	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceID), f)
+	err = ir.executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceID), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -74,7 +76,7 @@ func (ir *influxdbReader) GetTrace(ctx context.Context, traceID model.TraceID) (
 		return nil
 	}
 
-	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceID), f)
+	err = ir.executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceID), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 		return nil
 	}
 
-	err := executeQuery(ctx, ir.db, queryGetServices(ir.tableSpans), f)
+	err := ir.executeQuery(ctx, ir.db, queryGetServices(ir.tableSpans), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -118,7 +120,7 @@ func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParam
 		return nil
 	}
 
-	err := executeQuery(ctx, ir.db, queryGetOperations(ir.tableSpans, operationQueryParameters.ServiceName), f)
+	err := ir.executeQuery(ctx, ir.db, queryGetOperations(ir.tableSpans, operationQueryParameters.ServiceName), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -145,7 +147,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 		return nil
 	}
 
-	err = executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceIDs...), f)
+	err = ir.executeQuery(ctx, ir.db, queryGetTraceSpans(ir.tableSpans, traceIDs...), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -164,7 +166,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 		return nil
 	}
 
-	err = executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceIDs...), f)
+	err = ir.executeQuery(ctx, ir.db, queryGetTraceEvents(ir.tableLogs, traceIDs...), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -183,7 +185,7 @@ func (ir *influxdbReader) FindTraces(ctx context.Context, traceQueryParameters *
 		return nil
 	}
 
-	err = executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceIDs...), f)
+	err = ir.executeQuery(ctx, ir.db, queryGetTraceLinks(ir.tableSpanLinks, traceIDs...), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -213,7 +215,7 @@ func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters
 		return nil
 	}
 
-	err := executeQuery(ctx, ir.db, queryFindTraceIDs(ir.tableSpans, traceQueryParameters), f)
+	err := ir.executeQuery(ctx, ir.db, queryFindTraceIDs(ir.tableSpans, traceQueryParameters), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -261,7 +263,7 @@ func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs 
 		return nil
 	}
 
-	err := executeQuery(ctx, idr.ir.db, queryGetDependencies(idr.tableDependencyLinks, endTs, lookback), f)
+	err := idr.ir.executeQuery(ctx, idr.ir.db, queryGetDependencies(idr.tableDependencyLinks, endTs, lookback), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}

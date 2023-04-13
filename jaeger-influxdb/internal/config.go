@@ -56,7 +56,7 @@ func (c *Config) Init(command *cobra.Command) error {
 		{
 			pointer:      &c.InfluxdbTimeout,
 			name:         "influxdb-timeout",
-			defaultValue: 30 * time.Second,
+			defaultValue: 15 * time.Second,
 			usage:        "InfluxDB query timeout",
 		},
 		{
