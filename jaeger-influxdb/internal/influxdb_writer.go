@@ -15,7 +15,6 @@ import (
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -34,7 +33,10 @@ func (iwn *influxdbWriterNoop) WriteSpan(_ context.Context, _ *model.Span) error
 }
 
 type influxdbWriterArchive struct {
-	logger         *zap.Logger
+	logger *zap.Logger
+
+	executeQuery func(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error
+
 	recentTraces   *lru.Cache
 	recentTracesMu sync.Mutex
 	httpClient     *http.Client
@@ -45,32 +47,6 @@ type influxdbWriterArchive struct {
 
 	writeURLArchive                                                               string
 	bucketNameArchive, tableSpansArchive, tableLogsArchive, tableSpanLinksArchive string
-}
-
-func scanRowToMap(columnTypes []*sql.ColumnType, rowScannable []interface{}, rows *sql.Rows) (map[string]interface{}, error) {
-	if len(columnTypes) == 0 {
-		var err error
-		columnTypes, err = rows.ColumnTypes()
-		if err != nil {
-			return nil, err
-		}
-		rowScannable = make([]interface{}, len(columnTypes))
-		for i := range rowScannable {
-			rowScannable[i] = new(interface{})
-		}
-	}
-
-	if err := rows.Scan(rowScannable...); err != nil {
-		return nil, err
-	}
-
-	m := make(map[string]interface{}, len(columnTypes))
-	for i, ct := range columnTypes {
-		v := *(rowScannable[i].(*interface{}))
-		m[ct.Name()] = v
-	}
-
-	return m, nil
 }
 
 func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Span) error {
@@ -88,87 +64,58 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 
 	// trace spans
 
-	query := queryGetTraceSpans(iwa.tableSpansSrc, span.TraceID)
-	iwa.logger.Warn(query)
-	rows, err := iwa.dbSrc.QueryContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var ct []*sql.ColumnType
-	var rs []interface{}
-
-	for rows.Next() {
-		row, err := scanRowToMap(ct, rs, rows)
-		if err != nil {
-			return err
-		}
-
-		lpEncoder.StartLine(iwa.tableSpansArchive)
-		var tagCount int
-		for _, k := range []string{common.AttributeTraceID, common.AttributeSpanID} {
-			if stringValue, ok := row[k].(string); ok {
-				lpEncoder.AddTag(k, stringValue)
-				tagCount++
-			} else {
-				iwa.logger.Sugar().Warn("expected column %s to have type string but got %T", k, row[k])
-			}
-		}
-		if tagCount != 2 {
-			return fmt.Errorf("expected 2 tags, but got %d; should find columns %s, %s",
-				tagCount, common.AttributeTraceID, common.AttributeSpanID)
-		}
-		for k, v := range row {
-			switch k {
-			case common.AttributeTraceID, common.AttributeSpanID, common.AttributeTime:
-			default:
-				if v == nil {
-					continue
-				}
-				if fieldValue, ok := lineprotocol.NewValue(v); ok {
-					lpEncoder.AddField(k, fieldValue)
+	err := iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceSpans(iwa.tableSpansSrc, span.TraceID),
+		func(row map[string]interface{}) error {
+			lpEncoder.StartLine(iwa.tableSpansArchive)
+			var tagCount int
+			for _, k := range []string{common.AttributeTraceID, common.AttributeSpanID} {
+				if stringValue, ok := row[k].(string); ok {
+					lpEncoder.AddTag(k, stringValue)
+					tagCount++
 				} else {
-					iwa.logger.Sugar().Warn("failed to cast column %s (%T) to line protocol field value", k, v)
+					iwa.logger.Sugar().Warn("expected column %s to have type string but got %T", k, row[k])
 				}
 			}
-		}
-		foundTime := false
-		if v, ok := row[common.AttributeTime]; ok && v != nil {
-			if timeValue, ok := v.(time.Time); ok {
-				foundTime = true
-				lpEncoder.EndLine(timeValue)
-			} else {
-				iwa.logger.Sugar().Warn("expected column %s to have type time but got %T", common.AttributeTime, v)
+			if tagCount != 2 {
+				return fmt.Errorf("expected 2 tags, but got %d; should find columns %s, %s",
+					tagCount, common.AttributeTraceID, common.AttributeSpanID)
 			}
-		}
-		if !foundTime {
-			return fmt.Errorf("time value not found in row")
-		}
-	}
-	if err = multierr.Combine(rows.Err(), rows.Close()); err != nil {
-		return err
+			for k, v := range row {
+				switch k {
+				case common.AttributeTraceID, common.AttributeSpanID, common.AttributeTime:
+				default:
+					if v == nil {
+						continue
+					}
+					if fieldValue, ok := lineprotocol.NewValue(v); ok {
+						lpEncoder.AddField(k, fieldValue)
+					} else {
+						iwa.logger.Sugar().Warn("failed to cast column %s (%T) to line protocol field value", k, v)
+					}
+				}
+			}
+			foundTime := false
+			if v, ok := row[common.AttributeTime]; ok && v != nil {
+				if timeValue, ok := v.(time.Time); ok {
+					foundTime = true
+					lpEncoder.EndLine(timeValue)
+				} else {
+					iwa.logger.Sugar().Warn("expected column %s to have type time but got %T", common.AttributeTime, v)
+				}
+			}
+			if !foundTime {
+				return fmt.Errorf("time value not found in row")
+			}
+			return nil
+		})
+	if err != nil {
+		return fmt.Errorf("failed to query spans table: %w", err)
 	}
 
 	// trace events
 
-	query = queryGetTraceEvents(iwa.tableLogsSrc, span.TraceID)
-	iwa.logger.Warn(query)
-	rows, err = iwa.dbSrc.QueryContext(ctx, query)
-	if err != nil {
-		iwa.logger.Error("failed to query logs (span events) table", zap.Error(err))
-	} else {
-		defer rows.Close()
-
-		ct = ct[:]
-		rs = rs[:]
-
-		for rows.Next() {
-			row, err := scanRowToMap(ct, rs, rows)
-			if err != nil {
-				return err
-			}
-
+	err = iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceEvents(iwa.tableLogsSrc, span.TraceID),
+		func(row map[string]interface{}) error {
 			lpEncoder.StartLine(iwa.tableLogsArchive)
 			var tagCount int
 			for _, k := range []string{common.AttributeTraceID, common.AttributeSpanID} {
@@ -209,31 +156,16 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 			if !foundTime {
 				return fmt.Errorf("time value not found in row")
 			}
-		}
-		if err = multierr.Combine(rows.Err(), rows.Close()); err != nil {
-			return err
-		}
+			return nil
+		})
+	if err != nil {
+		iwa.logger.Error("failed to query logs (span events) table", zap.Error(err))
 	}
 
 	// trace span links
 
-	query = queryGetTraceLinks(iwa.tableSpanLinksSrc, span.TraceID)
-	iwa.logger.Warn(query)
-	rows, err = iwa.dbSrc.QueryContext(ctx, query)
-	if err != nil {
-		iwa.logger.Error("failed to query span links table", zap.Error(err))
-	} else {
-		defer rows.Close()
-
-		ct = ct[:]
-		rs = rs[:]
-
-		for rows.Next() {
-			row, err := scanRowToMap(ct, rs, rows)
-			if err != nil {
-				return err
-			}
-
+	err = iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceLinks(iwa.tableSpanLinksSrc, span.TraceID),
+		func(row map[string]interface{}) error {
 			lpEncoder.StartLine(iwa.tableSpanLinksArchive)
 			var tagCount int
 			for _, k := range []string{common.AttributeTraceID, common.AttributeSpanID, common.AttributeLinkedTraceID, common.AttributeLinkedSpanID} {
@@ -274,10 +206,10 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 			if !foundTime {
 				return fmt.Errorf("time value not found in row")
 			}
-		}
-		if err = multierr.Combine(rows.Err(), rows.Close()); err != nil {
-			return err
-		}
+			return nil
+		})
+	if err != nil {
+		iwa.logger.Error("failed to query span links table", zap.Error(err))
 	}
 
 	if err = lpEncoder.Err(); err != nil {

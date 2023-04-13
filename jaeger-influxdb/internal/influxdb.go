@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow-adbc/go/adbc"
 	"github.com/apache/arrow-adbc/go/adbc/driver/flightsql"
@@ -33,6 +34,8 @@ const (
 
 type InfluxdbStorage struct {
 	logger *zap.Logger
+
+	queryTimeout time.Duration
 
 	db               *sql.DB
 	reader           spanstore.Reader
@@ -61,6 +64,11 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		logger.Warn("influxdb-bucket-archive not specified, so trace archiving is disabled")
 	}
 
+	is := &InfluxdbStorage{
+		logger:       logger,
+		queryTimeout: config.InfluxdbTimeout,
+	}
+
 	uriScheme := "grpc+tls"
 	if config.InfluxdbTLSDisable {
 		uriScheme = "grpc+tcp"
@@ -86,6 +94,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 
 	reader := &influxdbReader{
 		logger:         logger.With(zap.String("influxdb", "reader")),
+		executeQuery:   is.executeQuery,
 		db:             db,
 		tableSpans:     tableSpans,
 		tableLogs:      tableLogs,
@@ -99,6 +108,11 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	writer := &influxdbWriterNoop{
 		logger: logger.With(zap.String("influxdb", "writer")),
 	}
+
+	is.db = db
+	is.reader = reader
+	is.readerDependency = readerDependency
+	is.writer = writer
 
 	var readerArchive spanstore.Reader
 	var writerArchive spanstore.Writer
@@ -117,8 +131,8 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		}
 
 		readerArchive = &influxdbReader{
-			logger: logger.With(zap.String("influxdb", "reader-archive")),
-
+			logger:         logger.With(zap.String("influxdb", "reader-archive")),
+			executeQuery:   is.executeQuery,
 			db:             dbArchive,
 			tableSpans:     tableSpans,
 			tableLogs:      tableLogs,
@@ -126,6 +140,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		}
 		writerArchive = &influxdbWriterArchive{
 			logger:       logger.With(zap.String("influxdb", "writer-archive")),
+			executeQuery: is.executeQuery,
 			recentTraces: lru.New(100),
 			httpClient:   &http.Client{Timeout: config.InfluxdbTimeout},
 			authToken:    config.InfluxdbToken,
@@ -142,51 +157,49 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 			tableLogsArchive:      tableLogs,
 			tableSpanLinksArchive: tableSpanLinks,
 		}
+
+		is.dbArchive = dbArchive
+		is.readerArchive = readerArchive
+		is.writerArchive = writerArchive
 	}
 
-	return &InfluxdbStorage{
-		logger: logger,
-
-		db:               db,
-		reader:           reader,
-		readerDependency: readerDependency,
-		writer:           writer,
-
-		dbArchive:     dbArchive,
-		readerArchive: readerArchive,
-		writerArchive: writerArchive,
-	}, nil
+	return is, nil
 }
 
-func (i *InfluxdbStorage) Close() error {
-	err := i.db.Close()
-	if i.dbArchive != nil {
-		err = multierr.Append(err, i.dbArchive.Close())
+func (is *InfluxdbStorage) Close() error {
+	err := is.db.Close()
+	if is.dbArchive != nil {
+		err = multierr.Append(err, is.dbArchive.Close())
 	}
 	return err
 }
 
-func (i *InfluxdbStorage) SpanReader() spanstore.Reader {
-	return i.reader
+func (is *InfluxdbStorage) SpanReader() spanstore.Reader {
+	return is.reader
 }
 
-func (i *InfluxdbStorage) DependencyReader() dependencystore.Reader {
-	return i.readerDependency
+func (is *InfluxdbStorage) DependencyReader() dependencystore.Reader {
+	return is.readerDependency
 }
 
-func (i *InfluxdbStorage) SpanWriter() spanstore.Writer {
-	return i.writer
+func (is *InfluxdbStorage) SpanWriter() spanstore.Writer {
+	return is.writer
 }
 
-func (i *InfluxdbStorage) ArchiveSpanReader() spanstore.Reader {
-	return i.readerArchive
+func (is *InfluxdbStorage) ArchiveSpanReader() spanstore.Reader {
+	return is.readerArchive
 }
 
-func (i *InfluxdbStorage) ArchiveSpanWriter() spanstore.Writer {
-	return i.writerArchive
+func (is *InfluxdbStorage) ArchiveSpanWriter() spanstore.Writer {
+	return is.writerArchive
 }
 
-func executeQuery(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error {
+func (is *InfluxdbStorage) executeQuery(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error {
+	ctx, cancel := context.WithTimeout(ctx, is.queryTimeout)
+	defer cancel()
+
+	is.logger.Debug("executing query", zap.String("query", query))
+
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return err
