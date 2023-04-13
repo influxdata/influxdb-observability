@@ -26,17 +26,11 @@ services:
     image: jaeger-influxdb:local
     stop_grace_period: 10s
     environment:
-      LOG_LEVEL: info
+      LOG_LEVEL: debug
       LISTEN_ADDR: :17271
       INFLUXDB_TIMEOUT: 30s
-      # required: hostname or hostname:port
-      INFLUXDB_ADDR: stag-us-east-1-4.aws.cloud2.influxdata.com
-      # required: bucket name
-      INFLUXDB_BUCKET: otel
-      # optional: bucket name for archived traces
-      INFLUXDB_BUCKET_ARCHIVE:
-      # required
-      INFLUXDB_TOKEN: 7s1xK6thz8r7YNVRk94JEKEFQVA7WDsOHaeSFBHVrPoxYsu1IfWee-vDZhj20O6qB_E2qAILz2cZ1QJlZIM3oA==
+    env_file:
+    - .env
 
   hotrod:
     build:
@@ -57,8 +51,28 @@ services:
       context: .
       dockerfile: otelcol-influxdb/Dockerfile
     image: otelcol-influxdb:local
-#    image: otel/opentelemetry-collector-contrib:0.74.0
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
     - ./demo/otelcol-config.yml:/config.yml:ro
+    env_file:
+    - .env
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=influxdata-flightsql-datasource
+      - INFLUX_HOST=${INFLUXDB_ADDR}
+      - INFLUX_TOKEN=${INFLUXDB_TOKEN}
+      - INFLUX_ORG=${INFLUXDB_ORG}
+      - INFLUX_BUCKET=${INFLUXDB_BUCKET}
+    volumes: 
+      - ./demo/grafana/plugins/influxdata-flightsql-datasource:/var/lib/grafana/plugins/influxdata-flightsql-datasource
+      - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana:/var/lib/grafana/
+    restart: always
+volumes:
+  grafana:
