@@ -31,7 +31,6 @@ services:
       INFLUXDB_TIMEOUT: 30s
     env_file:
     - .env
-
   hotrod:
     build:
       context: .
