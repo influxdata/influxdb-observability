@@ -1,7 +1,7 @@
 {
   "__inputs": [
     {
-      "name": "FlightSQL",
+      "name": "DS_FLIGHTSQL",
       "label": "FlightSQL",
       "description": "",
       "type": "datasource",
@@ -9,7 +9,7 @@
       "pluginName": "FlightSQL"
     },
     {
-      "name": "Jaeger",
+      "name": "DS_JAEGER",
       "label": "Jaeger",
       "description": "",
       "type": "datasource",
@@ -29,7 +29,13 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "9.4.3"
+      "version": "9.4.7"
+    },
+    {
+      "type": "panel",
+      "id": "histogram",
+      "name": "Histogram",
+      "version": ""
     },
     {
       "type": "datasource",
@@ -94,7 +100,7 @@
     {
       "datasource": {
         "type": "influxdata-flightsql-datasource",
-        "uid": "${FlightSQL}"
+        "uid": "${DS_FLIGHTSQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -132,7 +138,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 17,
         "w": 5,
         "x": 0,
         "y": 0
@@ -155,12 +161,12 @@
           }
         ]
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
             "type": "influxdata-flightsql-datasource",
-            "uid": "${FlightSQL}"
+            "uid": "${DS_FLIGHTSQL}"
           },
           "format": "table",
           "queryText": "SELECT DISTINCT(\"service.name\") FROM \"spans\" WHERE $__timeRange(time)",
@@ -175,7 +181,7 @@
     {
       "datasource": {
         "type": "influxdata-flightsql-datasource",
-        "uid": "${FlightSQL}"
+        "uid": "${DS_FLIGHTSQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -230,7 +236,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 7,
         "w": 19,
         "x": 5,
         "y": 0
@@ -267,7 +273,7 @@
         {
           "datasource": {
             "type": "influxdata-flightsql-datasource",
-            "uid": "${FlightSQL}"
+            "uid": "${DS_FLIGHTSQL}"
           },
           "format": "table",
           "queryText": "SELECT \"duration_nano\", \"span_id\" ,time FROM \"spans\" WHERE $__timeRange(time) AND \"service.name\" = '$Service' order by time",
@@ -305,7 +311,85 @@
     {
       "datasource": {
         "type": "jaeger",
-        "uid": "${Jaeger}"
+        "uid": "${DS_JAEGER}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 19,
+        "x": 5,
+        "y": 7
+      },
+      "id": 13,
+      "options": {
+        "bucketOffset": 0,
+        "combine": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "${DS_JAEGER}"
+          },
+          "queryType": "search",
+          "refId": "A",
+          "service": "$Service"
+        }
+      ],
+      "title": "Service Latency Histogram",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "Trace ID"
+            ]
+          }
+        }
+      ],
+      "type": "histogram"
+    },
+    {
+      "datasource": {
+        "type": "jaeger",
+        "uid": "${DS_JAEGER}"
       },
       "fieldConfig": {
         "defaults": {
@@ -359,7 +443,7 @@
         "h": 14,
         "w": 10,
         "x": 0,
-        "y": 10
+        "y": 17
       },
       "id": 7,
       "options": {
@@ -373,12 +457,12 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
             "type": "jaeger",
-            "uid": "${Jaeger}"
+            "uid": "${DS_JAEGER}"
           },
           "queryType": "search",
           "refId": "A",
@@ -391,20 +475,20 @@
     {
       "datasource": {
         "type": "jaeger",
-        "uid": "${Jaeger}"
+        "uid": "${DS_JAEGER}"
       },
       "gridPos": {
         "h": 14,
         "w": 14,
         "x": 10,
-        "y": 10
+        "y": 17
       },
       "id": 11,
       "targets": [
         {
           "datasource": {
             "type": "jaeger",
-            "uid": "${Jaeger}"
+            "uid": "${DS_JAEGER}"
           },
           "query": "$TraceID",
           "refId": "A"
@@ -416,20 +500,20 @@
     {
       "datasource": {
         "type": "jaeger",
-        "uid": "${Jaeger}"
+        "uid": "${DS_JAEGER}"
       },
       "gridPos": {
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 31
       },
       "id": 9,
       "targets": [
         {
           "datasource": {
             "type": "jaeger",
-            "uid": "${Jaeger}"
+            "uid": "${DS_JAEGER}"
           },
           "query": "$TraceID",
           "refId": "A"
@@ -469,33 +553,33 @@
       {
         "current": {
           "selected": false,
-          "text": "",
-          "value": ""
+          "text": "120011cb7f5fefbd",
+          "value": "120011cb7f5fefbd"
         },
         "hide": 0,
         "label": "TraceID",
         "name": "TraceID",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "",
             "value": ""
           }
         ],
-        "query": "",
+        "query": "120011cb7f5fefbd",
         "skipUrlSync": false,
         "type": "textbox"
       }
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Open Telemetry",
   "uid": "jJwDAiE4z",
-  "version": 25,
+  "version": 5,
   "weekStart": ""
 }

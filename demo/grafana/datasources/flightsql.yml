@@ -17,4 +17,5 @@ datasources:
       secure: true
       token: ${INFLUX_TOKEN}
     readOnly: false
+    editable: true
 

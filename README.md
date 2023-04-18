@@ -12,19 +12,19 @@ In demo/docker-compose.yml, set values for these keys.
 The key `INFLUXDB_BUCKET_ARCHIVE` is optional;
 if set, it should point to an InfluxDB bucket with longer retention policy than `INFLUXDB_BUCKET`,
 so that the "Archive Trace" button in Jaeger works properly:
-```yaml
-INFLUXDB_ADDR: <region specific hostname - no https prefix>
-INFLUXDB_BUCKET: otel
-INFLUXDB_BUCKET_ARCHIVE: otel-archive
-INFLUXDB_TOKEN: <the API token you just created>
+
+The community addition focuses on the useability of the demo with Grafana. With this being said to improve demo setup we have introduced a `.env` file that will allow you to set the following variables:
+
+```bash
+export INFLUXDB_ADDR=eu-central-1-1.aws.cloud2.influxdata.com
+export INFLUXDB_TOKEN=
+export INFLUXDB_ORG=Jay-IOx
+export INFLUXDB_BUCKET=otel 
+export INFLUXDB_BUCKET_ARCHIVE=otel-archive
 ```
 
-In demo/otelcol-config.yml, set the similar values for these keys:
-```yaml
-endpoint: https://< region specific URL - https://region.csp.cloud2.influxdata.com/ >
-bucket: otel
-token: <the API token you just created>
-```
+Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
+
 
 Build the needed docker images:
 ```console
@@ -46,6 +46,13 @@ Click any trace.
 
 View the dependency graph.
 Click "System Architecture".
+
+Grafana is available at http://localhost:3000. The default username and password are both `admin`. The default datasource of flightSQL is already confgiured.
+
+**Note: You can find a dashboard to import under `demo/grafana/dashboards/Open Telemetry-1681814438598.json`**
+
+If you would like to access the Trace node tree. Then Make sure to enable it within the Jaeger datasource. Head to data sources and click on the Jaeger datasource. Then enable `Enable Node Graph`. Then click save and test.
+
 
 The images `otelcol-influxdb` and `jaeger-influxdb` are automatically built and pushed to Docker at https://hub.docker.com/r/jacobmarble/otelcol-influxdb and https://hub.docker.com/r/jacobmarble/jaeger-influxdb .
 
