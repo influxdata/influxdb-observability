@@ -39,11 +39,13 @@ services:
     stop_grace_period: 1s
     ports:
     - "8080:8080" # web UI
+    - "8083:8083"
     depends_on:
     - otelcol-influxdb
     environment:
       JAEGER_AGENT_HOST: otelcol-influxdb
       JAEGER_AGENT_PORT: 6831
+    command: ["all", "-m", "prometheus"]
 
   otelcol-influxdb:
     build:

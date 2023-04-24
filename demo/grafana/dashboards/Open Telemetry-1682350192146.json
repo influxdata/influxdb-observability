@@ -26,6 +26,12 @@
       "version": ""
     },
     {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
@@ -138,7 +144,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 17,
+        "h": 13,
         "w": 5,
         "x": 0,
         "y": 0
@@ -236,8 +242,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 19,
+        "h": 8,
+        "w": 14,
         "x": 5,
         "y": 0
       },
@@ -310,6 +316,76 @@
     },
     {
       "datasource": {
+        "type": "influxdata-flightsql-datasource",
+        "uid": "${DS_FLIGHTSQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^error_percentage$/",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdata-flightsql-datasource",
+            "uid": "${DS_FLIGHTSQL}"
+          },
+          "format": "table",
+          "queryText": "SELECT\n  (COUNT(CASE WHEN \"otel.status_code\" = 'Error' THEN 1 END) * 100.0) / COUNT(*) as error_percentage FROM spans\n  WHERE $__timeRange(time) AND \"service.name\" = '$Service' ",
+          "rawEditor": true,
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Error Rate",
+      "transformations": [],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
         "type": "jaeger",
         "uid": "${DS_JAEGER}"
       },
@@ -346,10 +422,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 5,
         "w": 19,
         "x": 5,
-        "y": 7
+        "y": 8
       },
       "id": 13,
       "options": {
@@ -440,10 +516,10 @@
         ]
       },
       "gridPos": {
-        "h": 14,
+        "h": 8,
         "w": 10,
         "x": 0,
-        "y": 17
+        "y": 13
       },
       "id": 7,
       "options": {
@@ -478,10 +554,10 @@
         "uid": "${DS_JAEGER}"
       },
       "gridPos": {
-        "h": 14,
+        "h": 8,
         "w": 14,
         "x": 10,
-        "y": 17
+        "y": 13
       },
       "id": 11,
       "targets": [
@@ -506,7 +582,7 @@
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 21
       },
       "id": 9,
       "targets": [
@@ -523,7 +599,7 @@
       "type": "traces"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -561,9 +637,9 @@
         "name": "TraceID",
         "options": [
           {
-            "selected": false,
-            "text": "",
-            "value": ""
+            "selected": true,
+            "text": "120011cb7f5fefbd",
+            "value": "120011cb7f5fefbd"
           }
         ],
         "query": "120011cb7f5fefbd",
@@ -573,13 +649,13 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Open Telemetry",
   "uid": "jJwDAiE4z",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
