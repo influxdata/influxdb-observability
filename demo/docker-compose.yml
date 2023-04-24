@@ -64,13 +64,11 @@ services:
     ports:
       - 3000:3000
     environment:
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=influxdata-flightsql-datasource
       - INFLUX_HOST=${INFLUXDB_ADDR}
       - INFLUX_TOKEN=${INFLUXDB_TOKEN}
       - INFLUX_ORG=${INFLUXDB_ORG}
       - INFLUX_BUCKET=${INFLUXDB_BUCKET}
     volumes: 
-      - ./demo/grafana/plugins/influxdata-flightsql-datasource:/var/lib/grafana/plugins/influxdata-flightsql-datasource
       - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
       - grafana:/var/lib/grafana/
     restart: always

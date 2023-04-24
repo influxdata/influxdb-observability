@@ -25,16 +25,6 @@ export INFLUXDB_BUCKET_ARCHIVE=otel-archive
 
 Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
 
-Install the `flight-sql-plugin` for Grafana. Since the plugin is currently experimental you will need to install it. This can be done by using the setup script.
-```
-cd demo/grafana/plugins/
-chmod +x setup.sh
-./setup.sh
-```
-Once complete head back to the top directory of the repo:
-```bash
-cd ../../../
-```
 
 Build the needed docker images:
 ```console
