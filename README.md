@@ -16,11 +16,11 @@ so that the "Archive Trace" button in Jaeger works properly:
 The community addition focuses on the useability of the demo with Grafana. With this being said to improve demo setup we have introduced a `.env` file that will allow you to set the following variables:
 
 ```bash
-export INFLUXDB_ADDR=eu-central-1-1.aws.cloud2.influxdata.com
-export INFLUXDB_TOKEN=
-export INFLUXDB_ORG=Jay-IOx
-export INFLUXDB_BUCKET=otel 
-export INFLUXDB_BUCKET_ARCHIVE=otel-archive
+INFLUXDB_ADDR=eu-central-1-1.aws.cloud2.influxdata.com
+INFLUXDB_TOKEN=xxxxxxx
+INFLUXDB_ORG=xxxxxxxx
+INFLUXDB_BUCKET=otel 
+INFLUXDB_BUCKET_ARCHIVE=otel-archive
 ```
 
 Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
