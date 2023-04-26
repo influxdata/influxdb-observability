@@ -6,7 +6,7 @@ datasources:
     url: http://jaeger-query:16686
     readOnly: false
     editable: true
-    isDefault: true
+    isDefault: false
     jsonData:
       tracesToLogs:
         # Field with internal link pointing to a logs data source in Grafana.
@@ -15,6 +15,5 @@ datasources:
         filterByTraceID: true
         filterBySpanID: false
       nodeGraph:
-        show: true
-
+        enabled: true
 
