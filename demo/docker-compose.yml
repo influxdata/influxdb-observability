@@ -68,6 +68,7 @@ services:
       - INFLUX_TOKEN=${INFLUXDB_TOKEN}
       - INFLUX_ORG=${INFLUXDB_ORG}
       - INFLUX_BUCKET=${INFLUXDB_BUCKET}
+      - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
     volumes: 
       - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
       - grafana:/var/lib/grafana/
