@@ -20,10 +20,7 @@ services:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
   jaeger-influxdb:
-    build:
-      context: .
-      dockerfile: jaeger-influxdb/Dockerfile
-    image: jaeger-influxdb:local
+    image: jacobmarble/jaeger-influxdb:latest
     stop_grace_period: 10s
     environment:
       LOG_LEVEL: debug
@@ -32,10 +29,7 @@ services:
     env_file:
     - .env
   hotrod:
-    build:
-      context: .
-      dockerfile: demo/Dockerfile.hotrod
-    image: hotrod:local
+    image: jaegertracing/example-hotrod:1.41.0
     stop_grace_period: 1s
     ports:
     - "8080:8080" # web UI
@@ -48,10 +42,7 @@ services:
     command: ["all", "-m", "prometheus"]
 
   otelcol-influxdb:
-    build:
-      context: .
-      dockerfile: otelcol-influxdb/Dockerfile
-    image: otelcol-influxdb:local
+    image: jacobmarble/otelcol-influxdb:latest
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
