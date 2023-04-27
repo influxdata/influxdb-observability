@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -30,6 +31,9 @@ const (
 	tableLogs                  = "logs"
 	tableSpanLinks             = "span-links"
 	tableJaegerDependencyLinks = "jaeger-dependencylinks"
+
+	uriSchemeSecure    = "grpc+tls"
+	uriSchemeNotSecure = "grpc+tcp"
 )
 
 type InfluxdbStorage struct {
@@ -50,7 +54,7 @@ type InfluxdbStorage struct {
 func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, error) {
 	logger := LoggerFromContext(ctx)
 
-	influxdbAddr, err := composeHostPortFromAddr(config.InfluxdbAddr)
+	influxdbAddr, err := composeHostPortFromAddr(logger, config.InfluxdbAddr, config.InfluxdbTLSDisable)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +73,9 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		queryTimeout: config.InfluxdbTimeout,
 	}
 
-	uriScheme := "grpc+tls"
+	uriScheme := uriSchemeSecure
 	if config.InfluxdbTLSDisable {
-		uriScheme = "grpc+tcp"
+		uriScheme = uriSchemeNotSecure
 	}
 	dsn := strings.Join([]string{
 		fmt.Sprintf("%s=%s://%s/", adbc.OptionKeyURI, uriScheme, influxdbAddr),
@@ -248,16 +252,64 @@ func composeWriteURL(influxdbClientHost, influxdbBucket string) string {
 	return writeURL.String()
 }
 
-func composeHostPortFromAddr(influxdbAddr string) (string, error) {
-	if influxdbAddr == "" {
-		return "", errors.New("influxdb-addr not specified, either by flag or env var")
+func composeHostPortFromAddr(logger *zap.Logger, influxdbAddr string, notSecureFlagHint bool) (string, error) {
+	errInvalid := func(err error) error {
+		if err == nil {
+			return fmt.Errorf("influxdb-addr value is invalid '%s'", influxdbAddr)
+		}
+		return fmt.Errorf("influxdb-addr value is invalid '%s': %w", influxdbAddr, err)
 	}
-	if !strings.Contains(influxdbAddr, ":") {
-		return influxdbAddr + ":443", nil
+	hostPort := influxdbAddr
+
+	if hostPort == "" {
+		return "", errInvalid(nil)
 	}
-	_, _, err := net.SplitHostPort(influxdbAddr)
-	if err != nil {
-		return "", fmt.Errorf("influxdb-addr value is invalid '%s': %w", influxdbAddr, err)
+
+	reValidURL := regexp.MustCompile(`^(?:([\w+-]*):)?//([\w.-]*)(?::(\w*))?/?$`)
+
+	if parts := reValidURL.FindStringSubmatch(hostPort); len(parts) == 4 {
+		// Forgive format scheme://host:port, but not unconditionally
+		scheme, host, port := parts[1], parts[2], parts[3]
+
+		validURLSchemes := map[string]bool{
+			"http":             true,
+			"grpc":             true,
+			uriSchemeNotSecure: true,
+			"https":            false,
+			uriSchemeSecure:    false,
+		}
+
+		if notSecureURLScheme, found := validURLSchemes[scheme]; !found || notSecureURLScheme != notSecureFlagHint {
+			return "", errInvalid(fmt.Errorf("URL scheme '%s' is not recognized", scheme))
+		}
+		if host == "" {
+			return "", errInvalid(errors.New("host is missing"))
+		}
+		if port == "" {
+			hostPort = host
+		} else {
+			hostPort = net.JoinHostPort(host, port)
+		}
+		if scheme == "http" || scheme == "https" {
+			logger.Warn(fmt.Sprintf("influxdb-addr value '%s' will be handled as '%s'", influxdbAddr, hostPort))
+		}
 	}
-	return influxdbAddr, nil
+
+	if !strings.Contains(hostPort, ":") {
+		// If no port specified, assume default port
+		hostPort += ":443"
+	}
+
+	if host, port, err := net.SplitHostPort(hostPort); err == nil {
+		switch {
+		case host == "":
+			return "", errInvalid(errors.New("host is missing"))
+		case port == "":
+			return "", errInvalid(errors.New("port is missing"))
+		default:
+			return net.JoinHostPort(host, port), nil
+		}
+	} else {
+		return "", errInvalid(err)
+	}
 }

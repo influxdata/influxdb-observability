@@ -12,6 +12,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
+	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0011
 	go.opentelemetry.io/collector/semconv v0.76.1
 	go.uber.org/multierr v1.11.0
@@ -24,6 +25,7 @@ require (
 	github.com/apache/arrow/go/v12 v12.0.0-20230307201612-6fdf1e520a76 // indirect
 	github.com/apache/thrift v0.18.1 // indirect
 	github.com/bluele/gcache v0.0.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
