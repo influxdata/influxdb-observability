@@ -39,6 +39,8 @@ const (
 	columnServiceGraphServer         = "server"
 	columnServiceGraphCount          = "value_cumulative_monotonic_int"
 
+	sqlDriver = "flightsql"
+
 	uriSchemeSecure    = "grpc+tls"
 	uriSchemeNotSecure = "grpc+tcp"
 )
@@ -49,13 +51,12 @@ type InfluxdbStorage struct {
 	queryTimeout time.Duration
 
 	db               *sql.DB
-	reader           spanstore.Reader
-	readerDependency dependencystore.Reader
-	writer           spanstore.Writer
+	reader           *influxdbReader
+	readerDependency *influxdbDependencyReader
 
 	dbArchive     *sql.DB
-	readerArchive spanstore.Reader
-	writerArchive spanstore.Writer
+	readerArchive *influxdbReader
+	writerArchive *influxdbWriterArchive
 }
 
 func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, error) {
@@ -90,7 +91,7 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", config.InfluxdbBucket),
 	}, " ; ")
 
-	db, err := sql.Open("flightsql", dsn)
+	db, err := sql.Open(sqlDriver, dsn)
 	if err != nil {
 		row := db.QueryRowContext(ctx, "SELECT 1")
 		var v int
@@ -104,29 +105,24 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	}
 
 	reader := &influxdbReader{
-		logger:         logger.With(zap.String("influxdb", "reader")),
-		executeQuery:   is.executeQuery,
-		db:             db,
+		logger: logger.With(zap.String("influxdb", "reader")),
+		executeQuery: func(ctx context.Context, query string, f func(record map[string]interface{}) error) error {
+			return is.executeQuery(ctx, db, query, f)
+		},
 		tableSpans:     tableSpans,
 		tableLogs:      tableLogs,
 		tableSpanLinks: tableSpanLinks,
 	}
 	readerDependency := &influxdbDependencyReader{
 		logger: logger.With(zap.String("influxdb", "reader-dependency")),
-		ir:     reader,
-	}
-	writer := &influxdbWriterNoop{
-		logger: logger.With(zap.String("influxdb", "writer")),
+		executeQuery: func(ctx context.Context, query string, f func(record map[string]interface{}) error) error {
+			return is.executeQuery(ctx, db, query, f)
+		},
 	}
 
 	is.db = db
 	is.reader = reader
 	is.readerDependency = readerDependency
-	is.writer = writer
-
-	var readerArchive spanstore.Reader
-	var writerArchive spanstore.Writer
-	var dbArchive *sql.DB
 
 	if config.InfluxdbBucketArchive != "" {
 		dsnArchive := strings.Join([]string{
@@ -135,27 +131,29 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 			fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", config.InfluxdbBucketArchive),
 		}, " ; ")
 
-		dbArchive, err = sql.Open("flightsql", dsnArchive)
+		dbArchive, err := sql.Open(sqlDriver, dsnArchive)
 		if err != nil {
 			return nil, err
 		}
 
-		readerArchive = &influxdbReader{
-			logger:         logger.With(zap.String("influxdb", "reader-archive")),
-			executeQuery:   is.executeQuery,
-			db:             dbArchive,
+		readerArchive := &influxdbReader{
+			logger: logger.With(zap.String("influxdb", "reader-archive")),
+			executeQuery: func(ctx context.Context, query string, f func(record map[string]interface{}) error) error {
+				return is.executeQuery(ctx, dbArchive, query, f)
+			},
 			tableSpans:     tableSpans,
 			tableLogs:      tableLogs,
 			tableSpanLinks: tableSpanLinks,
 		}
-		writerArchive = &influxdbWriterArchive{
-			logger:       logger.With(zap.String("influxdb", "writer-archive")),
-			executeQuery: is.executeQuery,
+		writerArchive := &influxdbWriterArchive{
+			logger: logger.With(zap.String("influxdb", "writer-archive")),
+			executeQuery: func(ctx context.Context, query string, f func(record map[string]interface{}) error) error {
+				return is.executeQuery(ctx, db, query, f)
+			},
 			recentTraces: lru.New(100),
 			httpClient:   &http.Client{Timeout: config.InfluxdbTimeout},
 			authToken:    config.InfluxdbToken,
 
-			dbSrc:             db,
 			bucketNameSrc:     config.InfluxdbBucket,
 			tableSpansSrc:     tableSpans,
 			tableLogsSrc:      tableLogs,
@@ -193,7 +191,7 @@ func (is *InfluxdbStorage) DependencyReader() dependencystore.Reader {
 }
 
 func (is *InfluxdbStorage) SpanWriter() spanstore.Writer {
-	return is.writer
+	return nil
 }
 
 func (is *InfluxdbStorage) ArchiveSpanReader() spanstore.Reader {
