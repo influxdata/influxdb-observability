@@ -5,15 +5,15 @@ go 1.20
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.3.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.3.5
+	github.com/influxdata/influxdb-observability/common v0.3.6
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/jaegertracing/jaeger v1.43.0
+	github.com/jaegertracing/jaeger v1.44.0
 	github.com/mattn/go-isatty v0.0.18
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	go.opentelemetry.io/collector/pdata v1.0.0-rc9
-	go.opentelemetry.io/collector/semconv v0.75.0
+	go.opentelemetry.io/collector/semconv v0.76.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.54.0
@@ -28,7 +28,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v23.1.21+incompatible // indirect
 	github.com/hashicorp/go-hclog v1.4.0 // indirect
