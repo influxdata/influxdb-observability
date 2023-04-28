@@ -17,7 +17,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "9.4.7"
+      "version": "9.5.1"
     },
     {
       "type": "panel",
@@ -29,7 +29,7 @@
       "type": "datasource",
       "id": "influxdata-flightsql-datasource",
       "name": "FlightSQL",
-      "version": "0.1.9"
+      "version": "1.0.1"
     },
     {
       "type": "datasource",
@@ -133,6 +133,7 @@
       },
       "id": 2,
       "options": {
+        "cellHeight": "sm",
         "footer": {
           "countRows": false,
           "fields": "",
@@ -149,7 +150,7 @@
           }
         ]
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.1",
       "targets": [
         {
           "datasource": {
@@ -181,7 +182,6 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "axisSoftMax": 81776000,
             "fillOpacity": 80,
             "gradientMode": "none",
             "hideFrom": {
@@ -233,7 +233,7 @@
       "options": {
         "barRadius": 0,
         "barWidth": 0.3,
-        "colorByField": "duration_nano (lastNotNull)",
+        "colorByField": "duration (lastNotNull)",
         "fullHighlight": false,
         "groupWidth": 0.7,
         "legend": {
@@ -264,7 +264,7 @@
             "uid": "FlightSQL"
           },
           "format": "table",
-          "queryText": "SELECT \"duration_nano\", \"span_id\" ,time FROM \"spans\" WHERE $__timeRange(time) AND \"service.name\" = '$Service' order by time",
+          "queryText": "SELECT \"duration_nano\"/ 1000000 as \"duration\", \"span_id\" ,time FROM \"spans\" WHERE $__timeRange(time) AND \"service.name\" = '$Service' order by time",
           "rawEditor": true,
           "rawQuery": true,
           "refId": "A"
@@ -276,6 +276,12 @@
           "id": "groupBy",
           "options": {
             "fields": {
+              "duration": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
               "duration_nano": {
                 "aggregations": [
                   "lastNotNull"
@@ -348,7 +354,7 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.1",
       "targets": [
         {
           "datasource": {
@@ -432,16 +438,7 @@
         }
       ],
       "title": "Service Latency Histogram",
-      "transformations": [
-        {
-          "id": "partitionByValues",
-          "options": {
-            "fields": [
-              "Trace ID"
-            ]
-          }
-        }
-      ],
+      "transformations": [],
       "type": "histogram"
     },
     {
@@ -505,6 +502,7 @@
       },
       "id": 7,
       "options": {
+        "cellHeight": "sm",
         "footer": {
           "countRows": false,
           "fields": "",
@@ -515,7 +513,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.1",
       "targets": [
         {
           "datasource": {
@@ -631,13 +629,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Open Telemetry",
   "uid": "jJwDAiE4z",
-  "version": 6,
+  "version": 3,
   "weekStart": ""
 }
