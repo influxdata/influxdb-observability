@@ -12,7 +12,6 @@ import (
 	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 	"go.opentelemetry.io/otel/attribute"
 	api "go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -57,9 +56,9 @@ type JaegerDependencyGraph struct {
 
 	meterReader            metric.Reader
 	meterProvider          *metric.MeterProvider
-	counterDependencyLinks instrument.Int64Counter
-	gaugeSpansQueueDepth   instrument.Int64ObservableGauge
-	gaugeSpansDropped      instrument.Int64Counter
+	counterDependencyLinks api.Int64Counter
+	gaugeSpansQueueDepth   api.Int64ObservableGauge
+	gaugeSpansDropped      api.Int64Counter
 
 	w InfluxWriter
 }
@@ -224,9 +223,9 @@ func (g *JaegerDependencyGraph) handleReportedSpan(ctx context.Context, report *
 		for _, childSpanID := range this.childIDs {
 			child := traceGraph[childSpanID]
 			if child.serviceName != "" && child.serviceName != report.serviceName {
-				g.counterDependencyLinks.Add(ctx, 1,
+				g.counterDependencyLinks.Add(ctx, 1, api.WithAttributes(
 					attribute.String(common.AttributeParentServiceName, report.serviceName),
-					attribute.String(common.AttributeChildServiceName, child.serviceName))
+					attribute.String(common.AttributeChildServiceName, child.serviceName)))
 			}
 		}
 	}
@@ -241,9 +240,9 @@ func (g *JaegerDependencyGraph) handleReportedSpan(ctx context.Context, report *
 		parent = &jdgSpan{}
 		traceGraph[report.parentSpanID] = parent
 	} else if parent.serviceName != "" && parent.serviceName != report.serviceName {
-		g.counterDependencyLinks.Add(ctx, 1,
+		g.counterDependencyLinks.Add(ctx, 1, api.WithAttributes(
 			attribute.String(common.AttributeParentServiceName, parent.serviceName),
-			attribute.String(common.AttributeChildServiceName, report.serviceName))
+			attribute.String(common.AttributeChildServiceName, report.serviceName)))
 	}
 	parent.childIDs = append(parent.childIDs, report.spanID)
 }
