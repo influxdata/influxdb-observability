@@ -18,6 +18,7 @@ import (
 	"github.com/golang/groupcache/lru"
 	"github.com/jaegertracing/jaeger/plugin/storage/grpc/shared"
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
+	"github.com/jaegertracing/jaeger/storage/metricsstore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -25,6 +26,7 @@ import (
 
 var _ shared.StoragePlugin = (*InfluxdbStorage)(nil)
 var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
+var _ shared.MetricsReaderPlugin = (*InfluxdbStorage)(nil)
 
 const (
 	tableSpans     = "spans"
@@ -53,6 +55,7 @@ type InfluxdbStorage struct {
 	db               *sql.DB
 	reader           *influxdbReader
 	readerDependency *influxdbDependencyReader
+	readerMetrics    *influxdbMetricsReader
 
 	dbArchive     *sql.DB
 	readerArchive *influxdbReader
@@ -119,10 +122,20 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 			return is.executeQuery(ctx, db, query, f)
 		},
 	}
+	readerMetrics := &influxdbMetricsReader{
+		logger: logger.With(zap.String("influxdb", "reader")),
+		executeQuery: func(ctx context.Context, query string, f func(record map[string]interface{}) error) error {
+			return is.executeQuery(ctx, db, query, f)
+		},
+		tableSpans:     tableSpans,
+		tableLogs:      tableLogs,
+		tableSpanLinks: tableSpanLinks,
+	}
 
 	is.db = db
 	is.reader = reader
 	is.readerDependency = readerDependency
+	is.readerMetrics = readerMetrics
 
 	if config.InfluxdbBucketArchive != "" {
 		dsnArchive := strings.Join([]string{
@@ -188,6 +201,10 @@ func (is *InfluxdbStorage) SpanReader() spanstore.Reader {
 
 func (is *InfluxdbStorage) DependencyReader() dependencystore.Reader {
 	return is.readerDependency
+}
+
+func (is *InfluxdbStorage) MetricsReader() metricsstore.Reader {
+	return is.readerMetrics
 }
 
 func (is *InfluxdbStorage) SpanWriter() spanstore.Writer {

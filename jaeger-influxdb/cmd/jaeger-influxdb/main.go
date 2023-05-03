@@ -24,6 +24,7 @@ import (
 const serviceName = "jaeger-influxdb"
 
 func main() {
+	// TODO instrument with tracing
 	config := new(internal.Config)
 	command := &cobra.Command{
 		Use:   serviceName,
@@ -102,7 +103,7 @@ func run(ctx context.Context, config *internal.Config) error {
 	}
 	defer backend.Close()
 	logger := internal.LoggerFromContext(ctx)
-	grpcHandler := shared.NewGRPCHandlerWithPlugins(backend, backend, nil)
+	grpcHandler := shared.NewGRPCHandlerWithPlugins(backend, backend, nil, backend)
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			res, err := handler(internal.LoggerWithContext(ctx, logger), req)
