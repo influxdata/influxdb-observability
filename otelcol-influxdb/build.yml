@@ -2,36 +2,36 @@ dist:
   name: otelcol-influxdb
   module: github.com/influxdata/influxdb-observability/otelcol-influxdb
   description: OpenTelemetry Collector Distribution built for InfluxDB
-  version: 0.75.0-0.0.0-beta.0
-  otelcol_version: 0.75.0
+  version: 0.77.0-0.0.0-beta.0
+  otelcol_version: 0.77.0
   output_path: ./build
 
 receivers:
-- gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.75.0
+- gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.77.0
 
 exporters:
-- gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.75.0
+- gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.77.0
 
 extensions:
-- gomod: go.opentelemetry.io/collector/extension/ballastextension v0.75.0
-- gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.75.0
+- gomod: go.opentelemetry.io/collector/extension/ballastextension v0.77.0
+- gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.77.0
 
 processors:
-- gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.75.0
-- gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.75.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.75.0
+- gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.77.0
+- gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.77.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.77.0
 
 replaces:
 - github.com/influxdata/influxdb-observability/common => ../../common

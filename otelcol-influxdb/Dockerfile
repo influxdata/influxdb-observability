@@ -7,7 +7,7 @@ RUN \
   --mount=type=cache,id=influxdb-observability-gocache,sharing=locked,target=/root/.cache/go-build \
   --mount=type=cache,id=influxdb-observability-gomodcache,sharing=locked,target=/go/pkg/mod \
   du -cshx /root/.cache/go-build /go/pkg/mod && \
-  go install go.opentelemetry.io/collector/cmd/builder@v0.75.0 && \
+  go install go.opentelemetry.io/collector/cmd/builder@v0.77.0 && \
   du -cshx /root/.cache/go-build /go/pkg/mod
 
 COPY . /project

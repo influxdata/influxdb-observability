@@ -16,7 +16,7 @@ RUN \
 FROM alpine:3.16
 RUN apk --update --no-cache add bash ca-certificates
 USER 10001
-COPY --from=jaegertracing/jaeger-query:1.43 --chmod=0755 /go/bin/query-linux /jaeger-query
+COPY --from=jaegertracing/jaeger-query:1.45 --chmod=0755 /go/bin/query-linux /jaeger-query
 COPY --chmod=0755 jaeger-influxdb/all-in-one.sh /
 COPY --from=builder --chmod=0755 /go/bin/jaeger-influxdb /
 ENTRYPOINT ["/all-in-one.sh"]
