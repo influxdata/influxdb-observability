@@ -45,6 +45,7 @@ jobs:
         tags: |
           type=sha,prefix=
           type=raw,value=latest
+          type=semver,pattern={{version}}
     - name: Build and push jaeger-influxdb-all-in-one
       uses: docker/build-push-action@v3
       with:
