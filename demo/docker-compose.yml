@@ -1,7 +1,7 @@
 version: '3'
 services:
   jaeger-query:
-    image: jaegertracing/jaeger-query:1.43
+    image: jaegertracing/jaeger-query:1.45
     stop_grace_period: 10s
     ports:
     - "16686:16686" # web UI

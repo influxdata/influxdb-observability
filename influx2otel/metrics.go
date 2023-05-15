@@ -46,6 +46,7 @@ type MetricsBatch struct {
 	logger common.Logger
 }
 
+// measurement - metric name
 func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
 	if measurement == common.MeasurementPrometheus {
 		err := b.addPointTelegrafPrometheusV2(measurement, tags, fields, ts, vType)
@@ -76,6 +77,8 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 	var ilName, ilVersion string
 	rAttributes := pcommon.NewMap()
 	mAttributes := pcommon.NewMap()
+
+	var isDelta bool
 	for k, v := range tags {
 		switch {
 		case k == common.MetricHistogramBoundKeyV2 || k == common.MetricSummaryQuantileKeyV2:
@@ -86,6 +89,9 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 			ilVersion = v
 		case common.ResourceNamespace.MatchString(k):
 			rAttributes.PutStr(k, v)
+		case k == "temporality" && v == "delta":
+			isDelta = true
+		case k == "start_time":
 		default:
 			mAttributes.PutStr(k, v)
 		}
@@ -145,10 +151,18 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		case common.InfluxMetricValueTypeSum:
 			metric.SetEmptySum()
 			metric.Sum().SetIsMonotonic(true)
-			metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			if isDelta {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			} else {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			}
 		case common.InfluxMetricValueTypeHistogram:
 			metric.SetEmptyHistogram()
-			metric.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			if isDelta {
+				metric.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			} else {
+				metric.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			}
 		case common.InfluxMetricValueTypeSummary:
 			metric.SetEmptySummary()
 		default:
@@ -200,6 +214,9 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	}
 
 	for k, v := range fields {
+		if k == "start_time" {
+			continue
+		}
 		var floatValue *float64
 		var intValue *int64
 		switch vv := v.(type) {
@@ -223,6 +240,16 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
+		// set start_time, if exists and is RFC3339
+		// used by statsd input plugin
+		if startTimeObj, ok := fields["start_time"]; ok {
+			if startTimeStr, ok := startTimeObj.(string); ok {
+				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
+					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
+				}
+			}
+		}
+
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
 		} else if intValue != nil {

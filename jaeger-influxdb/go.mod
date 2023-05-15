@@ -5,16 +5,16 @@ go 1.20
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.3.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.3.7
+	github.com/influxdata/influxdb-observability/common v0.3.8
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/jaegertracing/jaeger v1.44.0
+	github.com/jaegertracing/jaeger v1.45.0
 	github.com/mattn/go-isatty v0.0.18
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0011
-	go.opentelemetry.io/collector/semconv v0.76.1
+	go.opentelemetry.io/collector/semconv v0.77.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.54.0
@@ -37,10 +37,10 @@ require (
 	github.com/hashicorp/go-plugin v1.4.8 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
-	github.com/klauspost/compress v1.16.0 // indirect
+	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

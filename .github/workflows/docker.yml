@@ -2,8 +2,8 @@ name: docker
 
 on:
   push:
-    branches:
-    - main
+    tags:
+    - 'v*'
 
 jobs:
   docker:
@@ -24,8 +24,7 @@ jobs:
         images: |
           jacobmarble/jaeger-influxdb
         tags: |
-          type=sha,prefix=
-          type=raw,value=latest
+          type=semver,pattern={{version}}
     - name: Build and push jaeger-influxdb
       uses: docker/build-push-action@v3
       with:
@@ -40,8 +39,7 @@ jobs:
         images: |
           jacobmarble/jaeger-influxdb-all-in-one
         tags: |
-          type=sha,prefix=
-          type=raw,value=latest
+          type=semver,pattern={{version}}
     - name: Build and push jaeger-influxdb-all-in-one
       uses: docker/build-push-action@v3
       with:
@@ -56,8 +54,7 @@ jobs:
         images: |
           jacobmarble/otelcol-influxdb
         tags: |
-          type=sha,prefix=
-          type=raw,value=latest
+          type=semver,pattern={{version}}
     - name: Build and push otelcol-influxdb
       uses: docker/build-push-action@v3
       with:
