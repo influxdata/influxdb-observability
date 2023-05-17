@@ -25,4 +25,5 @@ service:
   pipelines:
     traces:
       receivers: [otlp, jaeger]
+      processors: [spanmetrics]
       exporters: [influxdb]
