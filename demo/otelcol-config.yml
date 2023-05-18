@@ -9,6 +9,22 @@ receivers:
       grpc:
       http:
 
+  otlp/noop:
+    protocols:
+      grpc:
+        endpoint: localhost:9999
+
+processors:
+  spanmetrics:
+    metrics_exporter: influxdb
+    latency_histogram_buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 2500ms, 5000s, 10000s]
+    dimensions:
+    - name: http.method
+      default: GET
+    - name: http.status_code
+    dimensions_cache_size: 1000
+    aggregation_temporality: "AGGREGATION_TEMPORALITY_DELTA"
+
 exporters:
   influxdb:
     endpoint: https://${INFLUXDB_ADDR}/
@@ -25,4 +41,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp, jaeger]
+      processors: [spanmetrics]
+      exporters: [influxdb]
+
+    metrics:
+      receivers: [otlp/noop]
       exporters: [influxdb]
