@@ -14,6 +14,7 @@ exporters:
     endpoint:
     bucket: otel
     token:
+    metrics_schema: otel-v1
 
 service:
   telemetry:
