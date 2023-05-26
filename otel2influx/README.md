@@ -66,8 +66,6 @@ For example:
 - `Metric.unit` is ignored
 - `Metric` values are assigned field keys `gauge`, `counter`, `count`, `sum`, `inf`
   - Metric conversion follows Prometheus conventions for compatibility
-- `Metric` instances with aggregation temporality type `DELTA` are dropped
-  - The Prometheus OpenTelemetry exporter also drops these
 - `LogRecord.flags` is ignored
   - This is an enum with no values defines yet
 

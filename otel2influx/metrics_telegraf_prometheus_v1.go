@@ -96,9 +96,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeGauge(ctx context.Context, resou
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, sum pmetric.Sum, batch InfluxWriterBatch) error {
-	if sum.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
-		return fmt.Errorf("unsupported sum (as gauge) aggregation temporality %q", sum.AggregationTemporality())
-	}
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
 		dataPoint := sum.DataPoints().At(i)
@@ -127,9 +124,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeGaugeFromSum(ctx context.Context
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, sum pmetric.Sum, batch InfluxWriterBatch) error {
-	if sum.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
-		return fmt.Errorf("unsupported sum aggregation temporality %q", sum.AggregationTemporality())
-	}
 
 	for i := 0; i < sum.DataPoints().Len(); i++ {
 		dataPoint := sum.DataPoints().At(i)
@@ -158,9 +152,6 @@ func (c *metricWriterTelegrafPrometheusV1) writeSum(ctx context.Context, resourc
 }
 
 func (c *metricWriterTelegrafPrometheusV1) writeHistogram(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, measurement string, histogram pmetric.Histogram, batch InfluxWriterBatch) error {
-	if histogram.AggregationTemporality() != pmetric.AggregationTemporalityCumulative {
-		return fmt.Errorf("unsupported histogram aggregation temporality %q", histogram.AggregationTemporality())
-	}
 
 	for i := 0; i < histogram.DataPoints().Len(); i++ {
 		dataPoint := histogram.DataPoints().At(i)
