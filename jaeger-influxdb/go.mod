@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.3.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.3.14
+	github.com/influxdata/influxdb-observability/common v0.3.15
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/jaegertracing/jaeger v1.45.0
 	github.com/mattn/go-isatty v0.0.18

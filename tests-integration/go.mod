@@ -7,9 +7,9 @@ require (
 	github.com/influxdata/line-protocol/v2 v2.2.1
 	github.com/influxdata/telegraf v1.25.3
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.78.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.77.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.78.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.78.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.77.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.78.0
 	github.com/stretchr/testify v1.8.3
 	go.opentelemetry.io/collector v0.78.2
 	go.opentelemetry.io/collector/component v0.78.2
@@ -52,9 +52,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gosnmp/gosnmp v1.35.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/influxdata/influxdb-observability/common v0.3.14 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.3.8 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.3.14 // indirect
+	github.com/influxdata/influxdb-observability/common v0.3.15 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.3.15 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.3.15 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.41.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.77.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.78.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.78.0 // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
