@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.3.14
+	github.com/influxdata/influxdb-observability/common v0.3.15
 	github.com/stretchr/testify v1.8.3
 	go.opentelemetry.io/collector/component v0.78.2
 	go.opentelemetry.io/collector/consumer v0.78.2
@@ -13,7 +13,7 @@ require (
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
-	go.opentelemetry.io/otel/sdk/metric v0.38.1
+	go.opentelemetry.io/otel/sdk/metric v0.39.0
 	go.uber.org/multierr v1.11.0
 )
 
