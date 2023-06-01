@@ -124,11 +124,11 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 		}{
 			otel: traces,
 			lp: `
-spans,span_id=0000000000000003,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,kind="Internal",attributes="{\"k\":true}",dropped_attributes_count=7u,dropped_events_count=13u,dropped_links_count=17u,name="cpu_temp" 1622848000000000000
-logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 attributes="{\"foo\":\"bar\"}",dropped_attributes_count=5u,name="yay-event" 1622848000000000001
+spans,span_id=0000000000000003,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,span.kind="Internal",attributes="{\"k\":true}",dropped_attributes_count=7u,dropped_events_count=13u,dropped_links_count=17u,span.name="cpu_temp" 1622848000000000000
+logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 attributes="{\"foo\":\"bar\"}",dropped_attributes_count=5u,event.name="yay-event" 1622848000000000001
 span-links,linked_span_id=0000000000000003,linked_trace_id=00000000000000020000000000000002,span_id=0000000000000003,trace_id=00000000000000020000000000000001 dropped_attributes_count=19u,attributes="{\"yay-link\":123}" 1622848000000000000
-spans,span_id=0000000000000004,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i,kind="Client",parent_span_id="0000000000000003",name="http_request" 1622848000000000002
-spans,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i,kind="Consumer",name="process_batch" 1622848000000000010
+spans,span_id=0000000000000004,trace_id=00000000000000020000000000000001 duration_nano=3i,end_time_unix_nano=1622848000000000005i,span.kind="Client",parent_span_id="0000000000000003",span.name="http_request" 1622848000000000002
+spans,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duration_nano=2i,end_time_unix_nano=1622848000000000012i,span.kind="Consumer",span.name="process_batch" 1622848000000000010
 `,
 		})
 	}

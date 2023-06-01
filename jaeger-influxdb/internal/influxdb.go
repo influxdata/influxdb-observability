@@ -27,10 +27,17 @@ var _ shared.StoragePlugin = (*InfluxdbStorage)(nil)
 var _ shared.ArchiveStoragePlugin = (*InfluxdbStorage)(nil)
 
 const (
-	tableSpans                 = "spans"
-	tableLogs                  = "logs"
-	tableSpanLinks             = "span-links"
-	tableJaegerDependencyLinks = "jaeger-dependencylinks"
+	tableSpans     = "spans"
+	tableLogs      = "logs"
+	tableSpanLinks = "span-links"
+
+	tableSpanMetricsCalls            = "calls__sum"                                               // https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.78.0/connector/spanmetricsconnector
+	tableSpanMetricsDuration         = "duration_ms_histogram"                                    // https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.78.0/connector/spanmetricsconnector
+	tableServiceGraphRequestCount    = "traces_service_graph_request_total__sum"                  // https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.78.0/connector/servicegraphconnector
+	tableServiceGraphRequestDuration = "traces_service_graph_request_duration_seconds__histogram" // https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.78.0/connector/servicegraphconnector
+	columnServiceGraphClient         = "client"
+	columnServiceGraphServer         = "server"
+	columnServiceGraphCount          = "value_cumulative_monotonic_int"
 
 	uriSchemeSecure    = "grpc+tls"
 	uriSchemeNotSecure = "grpc+tcp"
@@ -105,9 +112,8 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 		tableSpanLinks: tableSpanLinks,
 	}
 	readerDependency := &influxdbDependencyReader{
-		logger:               logger.With(zap.String("influxdb", "reader-dependency")),
-		ir:                   reader,
-		tableDependencyLinks: tableJaegerDependencyLinks,
+		logger: logger.With(zap.String("influxdb", "reader-dependency")),
+		ir:     reader,
 	}
 	writer := &influxdbWriterNoop{
 		logger: logger.With(zap.String("influxdb", "writer")),

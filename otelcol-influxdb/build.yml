@@ -17,6 +17,10 @@ exporters:
 - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.78.2
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.78.0
 
+connectors:
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.78.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.78.0
+
 extensions:
 - gomod: go.opentelemetry.io/collector/extension/ballastextension v0.78.2
 - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.78.2
@@ -30,7 +34,6 @@ processors:
 - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.78.2
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.78.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanmetricsprocessor v0.78.0
 - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.78.0
 
 replaces:
@@ -39,3 +42,4 @@ replaces:
 - github.com/influxdata/influxdb-observability/otel2influx => ../../otel2influx
 - go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0
+- go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v0.39.0

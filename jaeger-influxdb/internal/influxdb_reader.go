@@ -100,7 +100,7 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 		return nil
 	}
 
-	err := ir.executeQuery(ctx, ir.db, queryGetServices(ir.tableSpans), f)
+	err := ir.executeQuery(ctx, ir.db, queryGetServices(), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (ir *influxdbReader) GetServices(ctx context.Context) ([]string, error) {
 func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParameters spanstore.OperationQueryParameters) ([]spanstore.Operation, error) {
 	var operations []spanstore.Operation
 	f := func(record map[string]interface{}) error {
-		if v, found := record[common.AttributeName]; found && v != nil {
+		if v, found := record[common.AttributeSpanName]; found && v != nil {
 			operation := spanstore.Operation{Name: v.(string)}
 			if spanKind, found := record[common.AttributeSpanKind]; found && spanKind != nil {
 				operation.SpanKind = spanKind.(string)
@@ -120,7 +120,7 @@ func (ir *influxdbReader) GetOperations(ctx context.Context, operationQueryParam
 		return nil
 	}
 
-	err := ir.executeQuery(ctx, ir.db, queryGetOperations(ir.tableSpans, operationQueryParameters.ServiceName), f)
+	err := ir.executeQuery(ctx, ir.db, queryGetOperations(operationQueryParameters.ServiceName), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
@@ -223,9 +223,8 @@ func (ir *influxdbReader) FindTraceIDs(ctx context.Context, traceQueryParameters
 }
 
 type influxdbDependencyReader struct {
-	logger               *zap.Logger
-	ir                   *influxdbReader
-	tableDependencyLinks string
+	logger *zap.Logger
+	ir     *influxdbReader
 }
 
 func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs time.Time, lookback time.Duration) ([]model.DependencyLink, error) {
@@ -233,21 +232,21 @@ func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs 
 
 	f := func(record map[string]interface{}) error {
 		var parentService string
-		if v, found := record[common.AttributeParentServiceName]; !found || v == nil {
+		if v, found := record[columnServiceGraphClient]; !found || v == nil {
 			idr.logger.Warn("parent service not found in dependency link")
 			return nil
 		} else {
 			parentService = v.(string)
 		}
 		var childService string
-		if v, found := record[common.AttributeChildServiceName]; !found || v == nil {
+		if v, found := record[columnServiceGraphServer]; !found || v == nil {
 			idr.logger.Warn("child service not found in dependency link")
 			return nil
 		} else {
 			childService = v.(string)
 		}
 		var calls int64
-		if v, found := record[common.AttributeCallCount]; !found || v == nil {
+		if v, found := record[columnServiceGraphCount]; !found || v == nil {
 			idr.logger.Warn("calls not found in dependency link")
 			return nil
 		} else {
@@ -263,7 +262,7 @@ func (idr *influxdbDependencyReader) GetDependencies(ctx context.Context, endTs 
 		return nil
 	}
 
-	err := idr.ir.executeQuery(ctx, idr.ir.db, queryGetDependencies(idr.tableDependencyLinks, endTs, lookback), f)
+	err := idr.ir.executeQuery(ctx, idr.ir.db, queryGetDependencies(endTs, lookback), f)
 	if err != nil && !isTableNotFound(err) { // ignore table not found (schema-on-write)
 		return nil, err
 	}
