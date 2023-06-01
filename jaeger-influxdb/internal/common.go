@@ -59,7 +59,7 @@ func recordToSpan(record map[string]interface{}) (*model.Span, error) {
 			} else {
 				span.Process.ServiceName = vv
 			}
-		case common.AttributeName:
+		case common.AttributeSpanName:
 			if vv, ok := v.(string); !ok {
 				return nil, fmt.Errorf("operation name is type %T", v)
 			} else {
@@ -183,7 +183,7 @@ func recordToLog(record map[string]interface{}) (model.TraceID, model.SpanID, *m
 			} else if spanID, err = model.SpanIDFromString(vv); err != nil {
 				return model.TraceID{}, 0, nil, err
 			}
-		case common.AttributeName:
+		case semconv.AttributeEventName:
 			if vv, ok := v.(string); !ok {
 				return model.TraceID{}, 0, nil, fmt.Errorf("log name is type %T", v)
 			} else {

@@ -19,33 +19,25 @@ import (
 )
 
 type OtelTracesToLineProtocol struct {
-	logger          common.Logger
-	dependencyGraph DependencyGraph
-	w               InfluxWriter
+	logger common.Logger
+	w      InfluxWriter
 }
 
 func NewOtelTracesToLineProtocol(logger common.Logger, w InfluxWriter) (*OtelTracesToLineProtocol, error) {
-	// TODO make dependency graph optional
-	// TODO add other dependency graph schema(ta)
-	dependencyGraph, err := NewJaegerDependencyGraph(logger, 1000, 100, w)
-	if err != nil {
-		return nil, err
-	}
-
 	return &OtelTracesToLineProtocol{
-		logger:          logger,
-		dependencyGraph: dependencyGraph,
-		w:               w,
+		logger: logger,
+		w:      w,
 	}, nil
 }
 
 func (c *OtelTracesToLineProtocol) Start(ctx context.Context, host component.Host) error {
-	c.logger.Debug("starting otel traces to lp")
-	return c.dependencyGraph.Start(ctx, host)
+	// TODO remove this method
+	return nil
 }
 
 func (c *OtelTracesToLineProtocol) Shutdown(ctx context.Context) error {
-	return c.dependencyGraph.Shutdown(ctx)
+	// TODO remove this method
+	return nil
 }
 
 func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Traces) error {
@@ -61,7 +53,6 @@ func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Tr
 			}
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
 				span := scopeSpans.Spans().At(k)
-				c.dependencyGraph.ReportSpan(ctx, span, resourceSpans.Resource())
 				if err := c.writeSpan(ctx, span, scopeFields, batch); err != nil {
 					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
 				}
@@ -118,7 +109,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 		fields[common.AttributeParentSpanID] = hex.EncodeToString(parentSpanID[:])
 	}
 	if name := span.Name(); name != "" {
-		fields[common.AttributeName] = name
+		fields[common.AttributeSpanName] = name
 	}
 	if kind := span.Kind(); kind != ptrace.SpanKindUnspecified {
 		fields[common.AttributeSpanKind] = kind.String()
@@ -192,7 +183,7 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 func (c *OtelTracesToLineProtocol) writeSpanEvent(ctx context.Context, traceID pcommon.TraceID, spanID pcommon.SpanID, spanEvent ptrace.SpanEvent, batch InfluxWriterBatch) error {
 	fields := make(map[string]interface{}, 2)
 	if name := spanEvent.Name(); name != "" {
-		fields[common.AttributeName] = name
+		fields[semconv.AttributeEventName] = name
 	}
 
 	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())

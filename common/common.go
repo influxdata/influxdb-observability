@@ -1,9 +1,10 @@
 package common
 
 import (
-	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 	"regexp"
 	"strings"
+
+	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 )
 
 // https://github.com/open-telemetry/opentelemetry-specification/tree/v1.16.0/specification/resource/semantic_conventions
@@ -53,13 +54,8 @@ const (
 	AttributeSpanID                 = "span_id"
 	AttributeTraceState             = "trace_state"
 	AttributeParentSpanID           = "parent_span_id"
-	AttributeParentServiceName      = "parent_service_name"
-	AttributeChildServiceName       = "child_service_name"
-	AttributeCallCount              = "call_count"
-	AttributeSpansQueueDepth        = "spans_queue_depth"
-	AttributeSpansDropped           = "spans_dropped"
-	AttributeName                   = "name"
-	AttributeSpanKind               = "kind"
+	AttributeSpanName               = "span.name" // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.78.0/connector/spanmetricsconnector/connector.go#L30
+	AttributeSpanKind               = "span.kind" // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.78.0/connector/spanmetricsconnector/connector.go#L31
 	AttributeEndTimeUnixNano        = "end_time_unix_nano"
 	AttributeDurationNano           = "duration_nano"
 	AttributeDroppedAttributesCount = "dropped_attributes_count"
