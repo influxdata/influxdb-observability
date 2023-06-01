@@ -3,24 +3,17 @@ module github.com/influxdata/influxdb-observability/otel2influx
 go 1.19
 
 require (
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/influxdata/influxdb-observability/common v0.3.15
 	github.com/stretchr/testify v1.8.3
 	go.opentelemetry.io/collector/component v0.78.2
 	go.opentelemetry.io/collector/consumer v0.78.2
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0012
 	go.opentelemetry.io/collector/semconv v0.78.2
-	go.opentelemetry.io/otel v1.16.0
-	go.opentelemetry.io/otel/metric v1.16.0
-	go.opentelemetry.io/otel/sdk v1.16.0
-	go.opentelemetry.io/otel/sdk/metric v0.39.0
 	go.uber.org/multierr v1.11.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -34,7 +27,9 @@ require (
 	go.opentelemetry.io/collector v0.78.2 // indirect
 	go.opentelemetry.io/collector/confmap v0.78.2 // indirect
 	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0012 // indirect
-	go.opentelemetry.io/otel/trace v1.16.0 // indirect
+	go.opentelemetry.io/otel v1.15.1 // indirect
+	go.opentelemetry.io/otel/metric v0.38.1 // indirect
+	go.opentelemetry.io/otel/trace v1.15.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/net v0.10.0 // indirect

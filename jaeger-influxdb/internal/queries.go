@@ -41,26 +41,26 @@ func queryGetTraceLinks(tableSpanLinks string, traceIDs ...model.TraceID) string
 	return queryGetAllWhereTraceID(tableSpanLinks, traceIDs...)
 }
 
-func queryGetServices(tableSpans string) string {
+func queryGetServices() string {
 	return fmt.Sprintf(`SELECT "%s" FROM '%s' GROUP BY "%s"`,
-		semconv.AttributeServiceName, tableSpans, semconv.AttributeServiceName)
+		semconv.AttributeServiceName, tableSpanMetricsCalls, semconv.AttributeServiceName)
 }
 
-func queryGetOperations(tableSpans, serviceName string) string {
+func queryGetOperations(serviceName string) string {
 	return fmt.Sprintf(`SELECT "%s", "%s" FROM '%s' WHERE "%s" = '%s' GROUP BY "%s", "%s"`,
-		common.AttributeName, common.AttributeSpanKind, tableSpans, semconv.AttributeServiceName, serviceName, common.AttributeName, common.AttributeSpanKind)
+		common.AttributeSpanName, common.AttributeSpanKind, tableSpanMetricsCalls, semconv.AttributeServiceName, serviceName, common.AttributeSpanName, common.AttributeSpanKind)
 }
 
-func queryGetDependencies(tableDependencyLinks string, endTs time.Time, lookback time.Duration) string {
+func queryGetDependencies(endTs time.Time, lookback time.Duration) string {
 	return fmt.Sprintf(`
 SELECT "%s", "%s", SUM("%s") AS "%s"
 FROM '%s'
 WHERE "%s" >= to_timestamp(%d) AND "%s" <= to_timestamp(%d)
 GROUP BY "%s", "%s"`,
-		common.AttributeParentServiceName, common.AttributeChildServiceName, common.AttributeCallCount, common.AttributeCallCount,
-		tableDependencyLinks,
+		columnServiceGraphClient, columnServiceGraphServer, columnServiceGraphCount, columnServiceGraphCount,
+		tableServiceGraphRequestCount,
 		common.AttributeTime, endTs.Add(-lookback).UnixNano(), common.AttributeTime, endTs.UnixNano(),
-		common.AttributeParentServiceName, common.AttributeChildServiceName)
+		columnServiceGraphClient, columnServiceGraphServer)
 }
 
 func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) string {
@@ -72,7 +72,7 @@ func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) s
 		tags[semconv.AttributeServiceName] = tqp.ServiceName
 	}
 	if tqp.OperationName != "" {
-		tags[common.AttributeName] = tqp.OperationName
+		tags[common.AttributeSpanName] = tqp.OperationName
 	}
 
 	predicates := make([]string, 0, len(tags)+4)
