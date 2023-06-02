@@ -106,7 +106,7 @@ func run(ctx context.Context, config *internal.Config) error {
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			res, err := handler(internal.LoggerWithContext(ctx, logger), req)
-			if err != nil {
+			if err != nil && err != context.Canceled {
 				logger.Error("gRPC interceptor", zap.Error(err))
 			}
 			return res, err
@@ -118,7 +118,7 @@ func run(ctx context.Context, config *internal.Config) error {
 				ctx:          ctx,
 			}
 			err := handler(srv, stream)
-			if err != nil {
+			if err != nil && err != context.Canceled {
 				logger.Error("gRPC interceptor", zap.Error(err))
 			}
 			return err
