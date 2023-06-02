@@ -20,6 +20,7 @@ type Config struct {
 	InfluxdbBucket        string
 	InfluxdbBucketArchive string
 	InfluxdbToken         string
+	InfluxdbQueryMetadata map[string]string
 }
 
 func (c *Config) Init(command *cobra.Command) error {
@@ -74,6 +75,11 @@ func (c *Config) Init(command *cobra.Command) error {
 			name:    "influxdb-token",
 			usage:   "InfluxDB API access token",
 		},
+		{
+			pointer: &c.InfluxdbQueryMetadata,
+			name:    "influxdb-query-metadata",
+			usage:   `gRPC metadata sent with SQL queries ("foo=bar") (optional; specify zero to many times)`,
+		},
 	} {
 		switch v := f.pointer.(type) {
 		case *string:
@@ -106,6 +112,16 @@ func (c *Config) Init(command *cobra.Command) error {
 				return err
 			}
 			*v = viper.GetBool(f.name)
+		case *map[string]string:
+			var defaultValue map[string]string
+			if f.defaultValue != nil {
+				defaultValue = f.defaultValue.(map[string]string)
+			}
+			command.Flags().StringToStringVar(v, f.name, defaultValue, f.usage)
+			if err := viper.BindPFlag(f.name, command.Flags().Lookup(f.name)); err != nil {
+				return err
+			}
+			*v = viper.GetStringMapString(f.name)
 		default:
 			return fmt.Errorf("flag type %T not implemented", f.pointer)
 		}
