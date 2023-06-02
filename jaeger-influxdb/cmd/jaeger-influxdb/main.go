@@ -67,7 +67,7 @@ func initLogger(config *internal.Config) (*zap.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return loggerConfig.Build()
+	return loggerConfig.Build(zap.AddStacktrace(zap.ErrorLevel))
 }
 
 func contextWithStandardSignals(ctx context.Context) context.Context {

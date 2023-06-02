@@ -84,13 +84,20 @@ func NewInfluxdbStorage(ctx context.Context, config *Config) (*InfluxdbStorage, 
 	if config.InfluxdbTLSDisable {
 		uriScheme = uriSchemeNotSecure
 	}
-	dsn := strings.Join([]string{
+	dsn := []string{
 		fmt.Sprintf("%s=%s://%s/", adbc.OptionKeyURI, uriScheme, influxdbAddr),
 		fmt.Sprintf("%s=Bearer %s", flightsql.OptionAuthorizationHeader, config.InfluxdbToken),
 		fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+"bucket-name", config.InfluxdbBucket),
-	}, " ; ")
+	}
+	for k, v := range config.InfluxdbQueryMetadata {
+		k, v = strings.TrimSpace(k), strings.TrimSpace(v)
+		if len(k) == 0 || strings.Contains(k, ";") || strings.Contains(v, ";") {
+			return nil, fmt.Errorf("invalid gRPC metadata: %s=%s", k, v)
+		}
+		dsn = append(dsn, fmt.Sprintf("%s=%s", flightsql.OptionRPCCallHeaderPrefix+k, v))
+	}
 
-	db, err := sql.Open("flightsql", dsn)
+	db, err := sql.Open("flightsql", strings.Join(dsn, " ; "))
 	if err != nil {
 		row := db.QueryRowContext(ctx, "SELECT 1")
 		var v int
