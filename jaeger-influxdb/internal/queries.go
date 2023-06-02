@@ -6,11 +6,16 @@ import (
 	"time"
 
 	"github.com/jaegertracing/jaeger/model"
+	"github.com/jaegertracing/jaeger/storage/metricsstore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
+
+// timeNow exists to allow for testing; do not change in production code
+var timeNow func() time.Time = time.Now
 
 func traceIDToString(traceID model.TraceID) string {
 	// model.TraceID.String() does not convert the high portion if it is zero
@@ -101,4 +106,101 @@ func queryFindTraceIDs(tableSpans string, tqp *spanstore.TraceQueryParameters) s
 	query += fmt.Sprintf(` GROUP BY "%s" ORDER BY t DESC LIMIT %d`, common.AttributeTraceID, tqp.NumTraces)
 
 	return query
+}
+
+type spanMetricQueryType int
+
+const (
+	spanMetricQueryTypeLatencies spanMetricQueryType = iota
+	spanMetricQueryTypeCallRates
+	spanMetricQueryTypeErrorRates
+)
+
+func querySpanMetrics(tableSpans string, queryType spanMetricQueryType, params metricsstore.BaseQueryParameters, quantile float64) string {
+	step := time.Minute
+	if params.Step != nil && *params.Step > 0 {
+		step = *params.Step
+	}
+
+	const (
+		columnAliasService    = "service"
+		columnAliasOperation  = "operation"
+		columnAliasTimeBucket = "t"
+		columnAliasValue      = "value"
+	)
+
+	resultColumns := []string{
+		fmt.Sprintf(`"%s" AS %s`,
+			semconv.AttributeServiceName, columnAliasService),
+		fmt.Sprintf(`date_bin(INTERVAL '%d nanoseconds', %s) AS %s`,
+			step.Nanoseconds(), common.AttributeTime, columnAliasTimeBucket),
+	}
+	if params.GroupByOperation {
+		resultColumns = append(resultColumns,
+			fmt.Sprintf(`"%s" AS %s`,
+				common.AttributeSpanName, columnAliasOperation))
+	} else {
+		resultColumns = append(resultColumns,
+			fmt.Sprintf(`'' AS %s`,
+				columnAliasOperation))
+	}
+	switch queryType {
+	case spanMetricQueryTypeLatencies:
+		resultColumns = append(resultColumns,
+			// TODO remove coalesce when this is fixed: https://github.com/influxdata/influxdb_iox/issues/7723
+			fmt.Sprintf(`coalesce(approx_percentile_cont("%s", %.9f), 0) / %d.0 AS %s`,
+				common.AttributeDurationNano, quantile, time.Second, columnAliasValue))
+	case spanMetricQueryTypeCallRates:
+		resultColumns = append(resultColumns,
+			fmt.Sprintf(`count(*) / %.9f AS %s`,
+				float64(step)/float64(time.Second), columnAliasValue))
+	case spanMetricQueryTypeErrorRates:
+		resultColumns = append(resultColumns,
+			fmt.Sprintf(`sum(CASE WHEN "%s" = '%s' THEN 1.0 ELSE 0.0 END) / count(*) as %s`,
+				semconv.AttributeOtelStatusCode, ptrace.StatusCodeError.String(), columnAliasValue))
+	default:
+		panic("unknown metric query type")
+	}
+
+	groupAndOrderColumns := fmt.Sprintf(`"%s", "%s", "%s"`,
+		columnAliasService, columnAliasOperation, columnAliasTimeBucket)
+
+	var predicates []string
+	if len(params.ServiceNames) > 0 {
+		predicates = append(predicates, fmt.Sprintf(`"%s" IN ('%s')`,
+			semconv.AttributeServiceName, strings.Join(params.ServiceNames, "','")))
+	}
+	endTime := timeNow()
+	if params.EndTime != nil {
+		endTime = *params.EndTime
+	}
+	startTime := endTime.Add(-10 * step)
+	if params.Lookback != nil {
+		startTime = endTime.Add(-*params.Lookback)
+	}
+	predicates = append(predicates,
+		fmt.Sprintf(`"%s" >= to_timestamp(%d) AND "%s" <= to_timestamp(%d)`,
+			common.AttributeTime, startTime.UnixNano(), common.AttributeTime, endTime.UnixNano()))
+
+	if len(params.SpanKinds) > 0 {
+		ptraceSpanKinds := make([]string, 0, len(params.SpanKinds))
+		for _, spanKind := range params.SpanKinds {
+			if ptraceSpanKind, ok := spanKindOtelInternalToPtrace[spanKind]; ok {
+				ptraceSpanKinds = append(ptraceSpanKinds, ptraceSpanKind)
+			}
+		}
+		predicates = append(predicates, fmt.Sprintf(`"%s" IN ('%s')`,
+			common.AttributeSpanKind, strings.Join(ptraceSpanKinds, "','")))
+	}
+
+	return fmt.Sprintf(`SELECT %s FROM '%s' WHERE %s GROUP BY %s ORDER BY %s`,
+		strings.Join(resultColumns, ", "), tableSpans, strings.Join(predicates, " AND "), groupAndOrderColumns, groupAndOrderColumns)
+}
+
+var spanKindOtelInternalToPtrace = map[string]string{
+	"SPAN_KIND_INTERNAL": ptrace.SpanKindInternal.String(),
+	"SPAN_KIND_SERVER":   ptrace.SpanKindServer.String(),
+	"SPAN_KIND_CLIENT":   ptrace.SpanKindClient.String(),
+	"SPAN_KIND_PRODUCER": ptrace.SpanKindProducer.String(),
+	"SPAN_KIND_CONSUMER": ptrace.SpanKindConsumer.String(),
 }

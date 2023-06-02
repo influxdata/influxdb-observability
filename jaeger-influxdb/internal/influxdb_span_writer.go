@@ -3,8 +3,6 @@ package internal
 import (
 	"bytes"
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,29 +18,18 @@ import (
 	"github.com/influxdata/influxdb-observability/common"
 )
 
-var _ spanstore.Writer = (*influxdbWriterNoop)(nil)
 var _ spanstore.Writer = (*influxdbWriterArchive)(nil)
-
-type influxdbWriterNoop struct {
-	logger *zap.Logger
-}
-
-func (iwn *influxdbWriterNoop) WriteSpan(_ context.Context, _ *model.Span) error {
-	iwn.logger.Debug("no-op WriteSpan called")
-	return errors.New("WriteSpan is not implemented in this context")
-}
 
 type influxdbWriterArchive struct {
 	logger *zap.Logger
 
-	executeQuery func(ctx context.Context, db *sql.DB, query string, f func(record map[string]interface{}) error) error
+	executeQuery func(ctx context.Context, query string, f func(record map[string]interface{}) error) error
 
 	recentTraces   *lru.Cache
 	recentTracesMu sync.Mutex
 	httpClient     *http.Client
 	authToken      string
 
-	dbSrc                                                         *sql.DB
 	bucketNameSrc, tableSpansSrc, tableLogsSrc, tableSpanLinksSrc string
 
 	writeURLArchive                                                               string
@@ -64,7 +51,7 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 
 	// trace spans
 
-	err := iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceSpans(iwa.tableSpansSrc, span.TraceID),
+	err := iwa.executeQuery(ctx, queryGetTraceSpans(iwa.tableSpansSrc, span.TraceID),
 		func(row map[string]interface{}) error {
 			lpEncoder.StartLine(iwa.tableSpansArchive)
 			var tagCount int
@@ -114,7 +101,7 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 
 	// trace events
 
-	err = iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceEvents(iwa.tableLogsSrc, span.TraceID),
+	err = iwa.executeQuery(ctx, queryGetTraceEvents(iwa.tableLogsSrc, span.TraceID),
 		func(row map[string]interface{}) error {
 			lpEncoder.StartLine(iwa.tableLogsArchive)
 			var tagCount int
@@ -164,7 +151,7 @@ func (iwa *influxdbWriterArchive) WriteSpan(ctx context.Context, span *model.Spa
 
 	// trace span links
 
-	err = iwa.executeQuery(ctx, iwa.dbSrc, queryGetTraceLinks(iwa.tableSpanLinksSrc, span.TraceID),
+	err = iwa.executeQuery(ctx, queryGetTraceLinks(iwa.tableSpanLinksSrc, span.TraceID),
 		func(row map[string]interface{}) error {
 			lpEncoder.StartLine(iwa.tableSpanLinksArchive)
 			var tagCount int
