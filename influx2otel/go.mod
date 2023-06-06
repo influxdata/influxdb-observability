@@ -3,12 +3,12 @@ module github.com/influxdata/influxdb-observability/influx2otel
 go 1.19
 
 require (
-	github.com/influxdata/influxdb-observability/common v0.3.15
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.78.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.78.0
-	github.com/stretchr/testify v1.8.2
+	github.com/influxdata/influxdb-observability/common v0.4.2
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.79.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.79.0
+	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0012
-	go.opentelemetry.io/collector/semconv v0.78.2
+	go.opentelemetry.io/collector/semconv v0.79.0
 )
 
 require (
