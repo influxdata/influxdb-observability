@@ -6,63 +6,94 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
-	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
 	"go.uber.org/multierr"
+	"golang.org/x/exp/maps"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
 
-type OtelTracesToLineProtocol struct {
-	logger common.Logger
-	w      InfluxWriter
+type OtelTracesToLineProtocolConfig struct {
+	Logger common.Logger
+	Writer InfluxWriter
+	// SpanDimensions are span attributes to be used as line protocol tags.
+	// These are always included as tags:
+	// - trace ID
+	// - span ID
+	// The default values are strongly recommended for use with Jaeger:
+	// - service.name
+	// - span.name
+	// Other common attributes can be found here:
+	// - https://github.com/open-telemetry/opentelemetry-collector/tree/main/semconv
+	SpanDimensions []string
 }
 
-func NewOtelTracesToLineProtocol(logger common.Logger, w InfluxWriter) (*OtelTracesToLineProtocol, error) {
+func DefaultOtelTracesToLineProtocolConfig() *OtelTracesToLineProtocolConfig {
+	return &OtelTracesToLineProtocolConfig{
+		Logger: new(common.NoopLogger),
+		Writer: new(NoopInfluxWriter),
+		SpanDimensions: []string{
+			semconv.AttributeServiceName,
+			common.AttributeSpanName,
+		},
+	}
+}
+
+type OtelTracesToLineProtocol struct {
+	logger       common.Logger
+	influxWriter InfluxWriter
+
+	spanDimensions map[string]struct{}
+}
+
+func NewOtelTracesToLineProtocol(config *OtelTracesToLineProtocolConfig) (*OtelTracesToLineProtocol, error) {
+	spanDimensions := make(map[string]struct{}, len(config.SpanDimensions))
+	{
+		duplicateDimensions := make(map[string]struct{})
+		for _, k := range config.SpanDimensions {
+			if _, found := spanDimensions[k]; found {
+				duplicateDimensions[k] = struct{}{}
+			} else {
+				spanDimensions[k] = struct{}{}
+			}
+		}
+		if len(duplicateDimensions) > 0 {
+			return nil, fmt.Errorf("duplicate dimension(s) configured: %s",
+				strings.Join(maps.Keys(duplicateDimensions), ","))
+		}
+	}
+
 	return &OtelTracesToLineProtocol{
-		logger: logger,
-		w:      w,
+		logger:         config.Logger,
+		influxWriter:   config.Writer,
+		spanDimensions: spanDimensions,
 	}, nil
 }
 
-func (c *OtelTracesToLineProtocol) Start(ctx context.Context, host component.Host) error {
-	// TODO remove this method
-	return nil
-}
-
-func (c *OtelTracesToLineProtocol) Shutdown(ctx context.Context) error {
-	// TODO remove this method
-	return nil
-}
-
 func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Traces) error {
-	batch := c.w.NewBatch()
+	batch := c.influxWriter.NewBatch()
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
-		resourceFields := convertResourceFields(resourceSpans.Resource())
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
-			scopeFields := convertScopeFields(scopeSpans.Scope())
-			for k, v := range resourceFields {
-				scopeFields[k] = v
-			}
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
 				span := scopeSpans.Spans().At(k)
-				if err := c.writeSpan(ctx, span, scopeFields, batch); err != nil {
-					return fmt.Errorf("failed to convert OTLP span to line protocol: %w", err)
+				if err := c.enqueueSpan(ctx, span, scopeSpans.Scope().Attributes(), resourceSpans.Resource().Attributes(), batch); err != nil {
+					return consumererror.NewPermanent(fmt.Errorf("failed to convert OTLP span to line protocol: %w", err))
 				}
 			}
 		}
 	}
-	return batch.FlushBatch(ctx)
+	return batch.WriteBatch(ctx)
 }
 
-func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Span, scopeFields map[string]interface{}, batch InfluxWriterBatch) (err error) {
+func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.Span, scopeAttributes, resourceAttributes pcommon.Map, batch InfluxWriterBatch) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var rerr error
@@ -76,30 +107,48 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 			}
 			err = multierr.Combine(err, rerr)
 		}
-
-		if err != nil && !consumererror.IsPermanent(err) {
-			c.logger.Debug(err.Error())
-			err = nil
-		}
 	}()
 
 	traceID := span.TraceID()
 	if traceID.IsEmpty() {
-		return errors.New("span has no trace ID")
+		err = errors.New("span has no trace ID")
+		return
 	}
 	spanID := span.SpanID()
 	if spanID.IsEmpty() {
-		return errors.New("span has no span ID")
+		err = errors.New("span has no span ID")
+		return
 	}
 
 	measurement := common.MeasurementSpans
-	tags := map[string]string{
-		common.AttributeTraceID: hex.EncodeToString(traceID[:]),
-		common.AttributeSpanID:  hex.EncodeToString(spanID[:]),
+	tags := make(map[string]string, len(c.spanDimensions)+2)
+	fields := make(map[string]interface{}, scopeAttributes.Len()+resourceAttributes.Len()+10)
+
+	droppedAttributesCount := uint64(span.DroppedAttributesCount())
+	attributesField := make(map[string]any)
+
+	for _, attributes := range []pcommon.Map{resourceAttributes, scopeAttributes, span.Attributes()} {
+		attributes.Range(func(k string, v pcommon.Value) bool {
+			if _, found := c.spanDimensions[k]; found {
+				if _, found = tags[k]; found {
+					c.logger.Debug("dimension %s already exists as a tag", k)
+					attributesField[k] = v.AsRaw()
+				}
+				tags[k] = v.AsString()
+			} else {
+				attributesField[k] = v.AsRaw()
+			}
+			return true
+		})
 	}
-	fields := make(map[string]interface{}, len(scopeFields)+span.Attributes().Len()+9)
-	for k, v := range scopeFields {
-		fields[k] = v
+	if len(attributesField) > 0 {
+		marshalledAttributes, err := json.Marshal(attributesField)
+		if err != nil {
+			c.logger.Debug("failed to marshal attributes to JSON", err)
+			droppedAttributesCount += uint64(span.Attributes().Len())
+		} else {
+			fields[common.AttributeAttributes] = string(marshalledAttributes)
+		}
 	}
 
 	if traceState := span.TraceState().AsRaw(); traceState != "" {
@@ -117,26 +166,13 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 
 	ts := span.StartTimestamp().AsTime()
 	if ts.IsZero() {
-		return errors.New("span has no timestamp")
+		err = errors.New("span has no timestamp")
+		return
 	}
 
 	if endTime := span.EndTimestamp().AsTime(); !endTime.IsZero() {
 		fields[common.AttributeEndTimeUnixNano] = endTime.UnixNano()
 		fields[common.AttributeDurationNano] = endTime.Sub(ts).Nanoseconds()
-	}
-
-	droppedAttributesCount := uint64(span.DroppedAttributesCount())
-	if span.Attributes().Len() > 0 {
-		marshalledAttributes, err := json.Marshal(span.Attributes().AsRaw())
-		if err != nil {
-			c.logger.Debug("failed to marshal attributes to JSON", err)
-			droppedAttributesCount += uint64(span.Attributes().Len())
-		} else {
-			fields[common.AttributeAttributes] = string(marshalledAttributes)
-		}
-	}
-	if droppedAttributesCount > 0 {
-		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
 	droppedEventsCount := uint64(span.DroppedEventsCount())
@@ -173,8 +209,21 @@ func (c *OtelTracesToLineProtocol) writeSpan(ctx context.Context, span ptrace.Sp
 		fields[semconv.OtelStatusDescription] = message
 	}
 
-	if err := batch.WritePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
-		return fmt.Errorf("failed to write point for span: %w", err)
+	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
+	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
+
+	for k := range tags {
+		if _, found := fields[k]; found {
+			c.logger.Debug("tag already exists as a field; field will be dropped", "tag key", k)
+			droppedAttributesCount++
+		}
+	}
+	if droppedAttributesCount > 0 {
+		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
+	}
+
+	if err = batch.EnqueuePoint(measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+		return fmt.Errorf("failed to enqueue point for span: %w", err)
 	}
 
 	return nil
@@ -218,7 +267,7 @@ func (c *OtelTracesToLineProtocol) writeSpanEvent(ctx context.Context, traceID p
 		common.AttributeSpanID:  hex.EncodeToString(spanID[:]),
 	}
 
-	err := batch.WritePoint(ctx, common.MeasurementLogs, tags, fields, spanEvent.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+	err := batch.EnqueuePoint(common.MeasurementLogs, tags, fields, spanEvent.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 	if err != nil {
 		return fmt.Errorf("failed to write point for span event: %w", err)
 	}
@@ -275,7 +324,7 @@ func (c *OtelTracesToLineProtocol) writeSpanLink(ctx context.Context, traceID pc
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err := batch.WritePoint(ctx, common.MeasurementSpanLinks, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err := batch.EnqueuePoint(common.MeasurementSpanLinks, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for span link: %w", err)
 	}
 	return nil
