@@ -54,7 +54,7 @@ require (
 	github.com/gosnmp/gosnmp v1.35.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/influxdb-observability/common v0.4.3 // indirect
-	github.com/influxdata/influxdb-observability/influx2otel v0.3.15 // indirect
+	github.com/influxdata/influxdb-observability/influx2otel v0.4.3 // indirect
 	github.com/influxdata/influxdb-observability/otel2influx v0.4.3 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
 	github.com/jaegertracing/jaeger v1.41.0 // indirect
@@ -126,6 +126,6 @@ replace (
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
 )
 
-replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => ../../opentelemetry-collector-contrib/exporter/influxdbexporter
+replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/jacobmarble/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230607233012-52d825be0fe3
 
-replace github.com/influxdata/telegraf => ../../telegraf
+replace github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230607232722-681953ef7ac2
