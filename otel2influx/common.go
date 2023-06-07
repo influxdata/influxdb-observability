@@ -147,33 +147,17 @@ func convertResourceTags(resource pcommon.Resource) map[string]string {
 		tags[k] = v.AsString()
 		return true
 	})
-	// TODO dropped attributes counts
 	return tags
 }
 
-func convertResourceFields(resource pcommon.Resource) map[string]interface{} {
-	fields := make(map[string]interface{}, resource.Attributes().Len())
-	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
-		fields[k] = v.AsRaw()
-		return true
-	})
-	// TODO dropped attributes counts
-	return fields
-}
-
-func convertScopeFields(is pcommon.InstrumentationScope) map[string]interface{} {
-	fields := make(map[string]interface{}, is.Attributes().Len()+2)
-	is.Attributes().Range(func(k string, v pcommon.Value) bool {
-		fields[k] = v.AsRaw()
-		return true
-	})
+func convertScopeFields(is pcommon.InstrumentationScope) map[string]any {
+	fields := is.Attributes().AsRaw()
 	if name := is.Name(); name != "" {
 		fields[semconv.AttributeTelemetrySDKName] = name
 	}
 	if version := is.Version(); version != "" {
 		fields[semconv.AttributeTelemetrySDKVersion] = version
 	}
-	// TODO dropped attributes counts
 	return fields
 }
 

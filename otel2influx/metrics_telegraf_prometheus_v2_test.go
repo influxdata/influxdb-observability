@@ -2,8 +2,9 @@ package otel2influx_test
 
 import (
 	"context"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"testing"
+
+	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,10 @@ import (
 
 func TestWriteMetric_v2_gauge(t *testing.T) {
 	w := new(MockInfluxWriter)
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+	cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+	cfg.Writer = w
+	cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()
@@ -78,10 +82,12 @@ func TestWriteMetric_v2_gauge(t *testing.T) {
 }
 
 func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
-	temporalities := [2]pmetric.AggregationTemporality{pmetric.AggregationTemporalityCumulative, pmetric.AggregationTemporalityDelta}
 	for _, temporality := range temporalities {
 		w := new(MockInfluxWriter)
-		c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+		cfg.Writer = w
+		cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+		c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 		require.NoError(t, err)
 
 		metrics := pmetric.NewMetrics()
@@ -148,10 +154,12 @@ func TestWriteMetric_v2_gaugeFromSum(t *testing.T) {
 }
 
 func TestWriteMetric_v2_sum(t *testing.T) {
-	temporalities := [2]pmetric.AggregationTemporality{pmetric.AggregationTemporalityCumulative, pmetric.AggregationTemporalityDelta}
 	for _, temporality := range temporalities {
 		w := new(MockInfluxWriter)
-		c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+		cfg.Writer = w
+		cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+		c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 		require.NoError(t, err)
 
 		metrics := pmetric.NewMetrics()
@@ -222,10 +230,12 @@ func TestWriteMetric_v2_sum(t *testing.T) {
 }
 
 func TestWriteMetric_v2_histogram(t *testing.T) {
-	temporalities := [2]pmetric.AggregationTemporality{pmetric.AggregationTemporalityCumulative, pmetric.AggregationTemporalityDelta}
 	for _, temporality := range temporalities {
 		w := new(MockInfluxWriter)
-		c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+		cfg.Writer = w
+		cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+		c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 		require.NoError(t, err)
 
 		metrics := pmetric.NewMetrics()
@@ -366,10 +376,12 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 }
 
 func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
-	temporalities := [2]pmetric.AggregationTemporality{pmetric.AggregationTemporalityCumulative, pmetric.AggregationTemporalityDelta}
 	for _, temporality := range temporalities {
 		w := new(MockInfluxWriter)
-		c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+		cfg.Writer = w
+		cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+		c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 		require.NoError(t, err)
 
 		metrics := pmetric.NewMetrics()
@@ -507,7 +519,10 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 
 func TestWriteMetric_v2_summary(t *testing.T) {
 	w := new(MockInfluxWriter)
-	c, err := otel2influx.NewOtelMetricsToLineProtocol(new(common.NoopLogger), w, common.MetricsSchemaTelegrafPrometheusV2)
+	cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+	cfg.Writer = w
+	cfg.Schema = common.MetricsSchemaTelegrafPrometheusV2
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
 	require.NoError(t, err)
 
 	metrics := pmetric.NewMetrics()

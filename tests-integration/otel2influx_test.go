@@ -33,7 +33,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, mt.lp, got)
-					closeOtelcol()
+					closeOtelcol(t)
 				})
 
 				t.Run("telegraf", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, tt.lp, got)
-					closeOtelcol()
+					closeOtelcol(t)
 				})
 
 				t.Run("telegraf", func(t *testing.T) {
@@ -113,7 +113,7 @@ func TestOtel2Influx(t *testing.T) {
 					got := mockReceiverFactory.lineprotocol(t)
 
 					assertLineprotocolEqual(t, lt.lp, got)
-					closeOtelcol()
+					closeOtelcol(t)
 				})
 
 				t.Run("telegraf", func(t *testing.T) {

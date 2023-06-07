@@ -1,13 +1,11 @@
 package otel2influx
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/multierr"
@@ -21,7 +19,7 @@ type metricWriterOtelV1 struct {
 	logger common.Logger
 }
 
-func (m *metricWriterOtelV1) writeMetric(ctx context.Context, resource pcommon.Resource, is pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
+func (m *metricWriterOtelV1) enqueueMetric(resource pcommon.Resource, is pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var rerr error
@@ -35,11 +33,6 @@ func (m *metricWriterOtelV1) writeMetric(ctx context.Context, resource pcommon.R
 			}
 			err = multierr.Combine(err, rerr)
 		}
-
-		if err != nil && !consumererror.IsPermanent(err) {
-			m.logger.Debug(err.Error())
-			err = nil
-		}
 	}()
 
 	// TODO metric description
@@ -51,9 +44,9 @@ func (m *metricWriterOtelV1) writeMetric(ctx context.Context, resource pcommon.R
 	//case pmetric.MetricTypeGauge:
 	//	return m.writeGauge(ctx, resource, is, pm.Name(), pm.Gauge(), batch)
 	case pmetric.MetricTypeSum:
-		m.writeSum(ctx, measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueSum(measurementName, resourceTags, scopeFields, pm, batch)
 	case pmetric.MetricTypeHistogram:
-		m.writeHistogram(ctx, measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueHistogram(measurementName, resourceTags, scopeFields, pm, batch)
 	default:
 		err = fmt.Errorf("unrecognized metric type %q", pm.Type())
 	}
@@ -72,7 +65,7 @@ func formatFieldKeyMetricSumOtelV1(temporality string, monotonic bool, dataPoint
 	return fmt.Sprintf("value_%s_%s_%s", strings.ToLower(temporality), monotonicity, strings.ToLower(dataPointValueType))
 }
 
-func (m *metricWriterOtelV1) writeSum(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueSum(measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := pm.Sum().AggregationTemporality().String()
 	monotonic := pm.Sum().IsMonotonic()
 
@@ -112,14 +105,14 @@ func (m *metricWriterOtelV1) writeSum(ctx context.Context, measurementName strin
 			return true
 		})
 
-		err := batch.WritePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		err := batch.EnqueuePoint(measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func (m *metricWriterOtelV1) writeHistogram(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueHistogram(measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := strings.ToLower(pm.Histogram().AggregationTemporality().String())
 
 	for i := 0; i < pm.Histogram().DataPoints().Len(); i++ {
@@ -167,7 +160,7 @@ func (m *metricWriterOtelV1) writeHistogram(ctx context.Context, measurementName
 			return true
 		})
 
-		err := batch.WritePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		err := batch.EnqueuePoint(measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 		if err != nil {
 			panic(err)
 		}
