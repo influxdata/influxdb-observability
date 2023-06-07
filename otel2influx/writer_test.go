@@ -2,8 +2,9 @@ package otel2influx_test
 
 import (
 	"context"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/influxdata/influxdb-observability/common"
 	"github.com/influxdata/influxdb-observability/otel2influx"
@@ -28,15 +29,11 @@ func (w *MockInfluxWriter) NewBatch() otel2influx.InfluxWriterBatch {
 	return &MockInfluxWriterBatch{w: w}
 }
 
-func (w *MockInfluxWriter) WritePoint(_ context.Context, measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
-	return nil
-}
-
 type MockInfluxWriterBatch struct {
 	w *MockInfluxWriter
 }
 
-func (b *MockInfluxWriterBatch) WritePoint(ctx context.Context, measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
+func (b *MockInfluxWriterBatch) EnqueuePoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
 	b.w.points = append(b.w.points, mockPoint{
 		measurement: measurement,
 		tags:        tags,
@@ -47,7 +44,7 @@ func (b *MockInfluxWriterBatch) WritePoint(ctx context.Context, measurement stri
 	return nil
 }
 
-func (b *MockInfluxWriterBatch) FlushBatch(ctx context.Context) error {
+func (b *MockInfluxWriterBatch) WriteBatch(ctx context.Context) error {
 	return nil
 }
 

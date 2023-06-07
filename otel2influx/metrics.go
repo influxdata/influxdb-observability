@@ -4,14 +4,29 @@ import (
 	"context"
 	"fmt"
 
+	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
 
+type OtelMetricsToLineProtocolConfig struct {
+	Logger common.Logger
+	Writer InfluxWriter
+	Schema common.MetricsSchema
+}
+
+func DefaultOtelMetricsToLineProtocolConfig() *OtelMetricsToLineProtocolConfig {
+	return &OtelMetricsToLineProtocolConfig{
+		Logger: new(common.NoopLogger),
+		Writer: new(NoopInfluxWriter),
+		Schema: common.MetricsSchemaTelegrafPrometheusV1,
+	}
+}
+
 type metricWriter interface {
-	writeMetric(ctx context.Context, resource pcommon.Resource, instrumentationScope pcommon.InstrumentationScope, metric pmetric.Metric, batch InfluxWriterBatch) error
+	enqueueMetric(resource pcommon.Resource, instrumentationScope pcommon.InstrumentationScope, metric pmetric.Metric, batch InfluxWriterBatch) error
 }
 
 type OtelMetricsToLineProtocol struct {
@@ -19,26 +34,26 @@ type OtelMetricsToLineProtocol struct {
 	mw metricWriter
 }
 
-func NewOtelMetricsToLineProtocol(logger common.Logger, iw InfluxWriter, schema common.MetricsSchema) (*OtelMetricsToLineProtocol, error) {
+func NewOtelMetricsToLineProtocol(config *OtelMetricsToLineProtocolConfig) (*OtelMetricsToLineProtocol, error) {
 	var mw metricWriter
-	switch schema {
+	switch config.Schema {
 	case common.MetricsSchemaTelegrafPrometheusV1:
 		mw = &metricWriterTelegrafPrometheusV1{
-			logger: logger,
+			logger: config.Logger,
 		}
 	case common.MetricsSchemaTelegrafPrometheusV2:
 		mw = &metricWriterTelegrafPrometheusV2{
-			logger: logger,
+			logger: config.Logger,
 		}
 	case common.MetricsSchemaOtelV1:
 		mw = &metricWriterOtelV1{
-			logger: logger,
+			logger: config.Logger,
 		}
 	default:
-		return nil, fmt.Errorf("unrecognized metrics schema %d", schema)
+		return nil, fmt.Errorf("unrecognized metrics schema %d", config.Logger)
 	}
 	return &OtelMetricsToLineProtocol{
-		iw: iw,
+		iw: config.Writer,
 		mw: mw,
 	}, nil
 }
@@ -51,11 +66,11 @@ func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pmetric
 			ilMetrics := resourceMetrics.ScopeMetrics().At(j)
 			for k := 0; k < ilMetrics.Metrics().Len(); k++ {
 				metric := ilMetrics.Metrics().At(k)
-				if err := c.mw.writeMetric(ctx, resourceMetrics.Resource(), ilMetrics.Scope(), metric, batch); err != nil {
-					return fmt.Errorf("failed to convert OTLP metric to line protocol: %w", err)
+				if err := c.mw.enqueueMetric(resourceMetrics.Resource(), ilMetrics.Scope(), metric, batch); err != nil {
+					return consumererror.NewPermanent(fmt.Errorf("failed to convert OTLP metric to line protocol: %w", err))
 				}
 			}
 		}
 	}
-	return batch.FlushBatch(ctx)
+	return batch.WriteBatch(ctx)
 }

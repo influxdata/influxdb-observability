@@ -12,29 +12,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/receiver"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/consumer"
 	"go.uber.org/zap"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 )
 
-func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory, func()) {
+func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory, func(*testing.T)) {
 	t.Helper()
 
 	const otelcolConfigTemplate = `
@@ -44,7 +42,8 @@ receivers:
 exporters:
   influxdb:
     endpoint: ENDPOINT_DESTINATION
-    metrics_schema: SCHEMA
+    span_dimensions: SPAN_DIMENSIONS
+    metrics_schema: METRICS_SCHEMA
     org: myorg
     bucket: mybucket
 
@@ -73,7 +72,8 @@ service:
 	otelcolConfigProvider := func() otelcol.ConfigProvider {
 		mockDestinationEndpoint := mockDestination.URL
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
-		configString = strings.ReplaceAll(configString, "SCHEMA", "telegraf-prometheus-v1")
+		configString = strings.ReplaceAll(configString, "SPAN_DIMENSIONS", "\n    - service.name\n    - span.name")
+		configString = strings.ReplaceAll(configString, "METRICS_SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
 		configMapProvider := envprovider.New()
@@ -122,8 +122,9 @@ service:
 	require.NoError(t, err)
 
 	done := make(chan struct{})
+	var runErr error
 	go func() {
-		_ = collector.Run(context.Background())
+		runErr = collector.Run(context.Background())
 		close(done)
 	}()
 	t.Cleanup(collector.Shutdown)
@@ -152,7 +153,7 @@ service:
 		}
 	}
 
-	return mockDestination, mockReceiverFactory, func() { collector.Shutdown(); <-done }
+	return mockDestination, mockReceiverFactory, func(t *testing.T) { collector.Shutdown(); <-done; assert.NoError(t, runErr) }
 }
 
 var (
