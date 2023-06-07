@@ -746,6 +746,10 @@ github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a h1:bbPeKD0xmW/
 github.com/jackc/pgtype v1.14.0 h1:y+xUdabmyMkJLyApYuPj38mW+aAIqCe5uuBB51rH3Vw=
 github.com/jackc/pgx/v4 v4.17.1 h1:tASdE79tX9LOQu3MMvioWT6YaZkf58ZhmLHhV4sv5WM=
 github.com/jackc/puddle v1.3.0 h1:eHK/5clGOatcjX3oWGBO/MpxpbHzSwud5EWTSCI+MX0=
+github.com/jacobmarble/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230607233012-52d825be0fe3 h1:yZBfekkkJq02nvatJExcegAbq1BNHK4wtRuqmsRPLgQ=
+github.com/jacobmarble/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230607233012-52d825be0fe3/go.mod h1:dF7rx4BNKSy8QTrgJkThKGj5Sv/+X0nsz2LOM34Ycis=
+github.com/jacobmarble/telegraf v0.0.0-20230607232722-681953ef7ac2 h1:l/W63ftPr8jA8PH5Z5SFOK1YJ8SHNd0VsgXe6sMJ6WE=
+github.com/jacobmarble/telegraf v0.0.0-20230607232722-681953ef7ac2/go.mod h1:1vZshs3z/8VocddA6V4A7IKPAWpvIzJmU+uVBl2+0VM=
 github.com/jaegertracing/jaeger v1.41.0 h1:vVNky8dP46M2RjGaZ7qRENqylW+tBFay3h57N16Ip7M=
 github.com/jaegertracing/jaeger v1.41.0/go.mod h1:SIkAT75iVmA9U+mESGYuMH6UQv6V9Qy4qxo0lwfCQAc=
 github.com/james4k/rcon v0.0.0-20120923215419-8fbb8268b60a h1:JxcWget6X/VfBMKxPIc28Jel37LGREut2fpV+ObkwJ0=
