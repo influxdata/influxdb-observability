@@ -2,44 +2,43 @@ dist:
   name: otelcol-influxdb
   module: github.com/influxdata/influxdb-observability/otelcol-influxdb
   description: OpenTelemetry Collector Distribution built for InfluxDB
-  version: 0.78.0-0.0.0-beta.0
-  otelcol_version: 0.78.2
+  version: 0.79.0-0.0.0-beta.0
+  otelcol_version: 0.79.0
   output_path: ./build
 
 receivers:
-- gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.78.2
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.78.0
+- gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.79.0
 
 exporters:
-- gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.78.2
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.78.0
+- gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.79.0
 
 connectors:
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.78.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.79.0
 
 extensions:
-- gomod: go.opentelemetry.io/collector/extension/ballastextension v0.78.2
-- gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.78.2
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.78.0
+- gomod: go.opentelemetry.io/collector/extension/ballastextension v0.79.0
+- gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.79.0
 
 processors:
-- gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.78.2
-- gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.78.2
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.78.0
-- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.78.0
+- gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.79.0
+- gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.79.0
+- gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.79.0
 
 replaces:
 - github.com/influxdata/influxdb-observability/common => ../../common
 - github.com/influxdata/influxdb-observability/influx2otel => ../../influx2otel
 - github.com/influxdata/influxdb-observability/otel2influx => ../../otel2influx
-- go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
-- go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0
-- go.opentelemetry.io/otel/sdk/metric => go.opentelemetry.io/otel/sdk/metric v0.39.0
+- github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230608045034-d0fe5f310ca8
+- github.com/influxdata/telegraf => github.com/jacobmarble/telegraf v0.0.0-20230607232722-681953ef7ac2
