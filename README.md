@@ -4,9 +4,10 @@ This repository is a reference for converting observability signals (traces, met
 
 ## Demo
 
-Steps to run the current demo follow.
+Steps to run the write full write/query demo follow.
 
-In an InfluxDB Cloud 2 account backed by IOx, create a bucket named `otel` and a token with permission to read and write to that bucket.
+In an InfluxDB Cloud 2 account backed by IOx, create a bucket named `otel`.
+Then, create a token with permission to read and write to that bucket.
 
 In demo/docker-compose.yml, set values for these keys.
 The key `INFLUXDB_BUCKET_ARCHIVE` is optional;
@@ -25,11 +26,6 @@ INFLUXDB_BUCKET_ARCHIVE=otel-archive
 
 Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
 
-
-Build the needed docker images:
-```console
-$ docker-compose --file demo/docker-compose.yml --project-directory . build
-```
 
 Run the docker compose:
 ```console
@@ -90,6 +86,21 @@ To run these tests:
 ```console
 $ cd tests-integration
 $ go test
+```
+
+## Development
+
+The file `demo/docker-compose-development.yml` is similar to the demo above,
+but it uses local builds of the `otelcol-influxdb` and `jaeger-influxdb` images.
+
+Build the needed docker images:
+```console
+$ docker compose --file demo/docker-compose-development.yml --project-directory . build
+```
+
+Start the development demo environment:
+```console
+$ docker compose --file demo/docker-compose-development.yml --project-directory . up --abort-on-container-exit --remove-orphans
 ```
 
 ## Contributing
