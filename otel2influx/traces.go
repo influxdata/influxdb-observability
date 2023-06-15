@@ -177,7 +177,7 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 
 	droppedEventsCount := uint64(span.DroppedEventsCount())
 	for i := 0; i < span.Events().Len(); i++ {
-		if err = c.writeSpanEvent(ctx, traceID, spanID, span.Events().At(i), batch); err != nil {
+		if err = c.enqueueSpanEvent(ctx, traceID, spanID, span.Events().At(i), batch); err != nil {
 			droppedEventsCount++
 			c.logger.Debug("invalid span event", err)
 		}
@@ -214,8 +214,9 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 
 	for k := range tags {
 		if _, found := fields[k]; found {
-			c.logger.Debug("tag already exists as a field; field will be dropped", "tag key", k)
+			c.logger.Debug("tag and field keys conflict; field will be dropped", "tag key", k)
 			droppedAttributesCount++
+			delete(fields, k)
 		}
 	}
 	if droppedAttributesCount > 0 {
@@ -229,7 +230,7 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 	return nil
 }
 
-func (c *OtelTracesToLineProtocol) writeSpanEvent(ctx context.Context, traceID pcommon.TraceID, spanID pcommon.SpanID, spanEvent ptrace.SpanEvent, batch InfluxWriterBatch) error {
+func (c *OtelTracesToLineProtocol) enqueueSpanEvent(ctx context.Context, traceID pcommon.TraceID, spanID pcommon.SpanID, spanEvent ptrace.SpanEvent, batch InfluxWriterBatch) error {
 	fields := make(map[string]interface{}, 2)
 	if name := spanEvent.Name(); name != "" {
 		fields[semconv.AttributeEventName] = name
