@@ -26,7 +26,6 @@ INFLUXDB_BUCKET_ARCHIVE=otel-archive
 
 Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
 
-
 Run the docker compose:
 ```console
 $ docker-compose --file demo/docker-compose.yml --project-directory . up --abort-on-container-exit --remove-orphans
