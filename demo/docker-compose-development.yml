@@ -28,9 +28,15 @@ services:
     environment:
       LOG_LEVEL: info
       LISTEN_ADDR: :17271
-    env_file:
-    - .env
-
+      INFLUXDB_TIMEOUT: 30s
+      # required: hostname or hostname:port
+      INFLUXDB_ADDR:
+      # required: bucket name
+      INFLUXDB_BUCKET: otel
+      # optional: bucket name for archived traces
+      INFLUXDB_BUCKET_ARCHIVE:
+      # required
+      INFLUXDB_TOKEN:
 
   hotrod:
     build:
@@ -55,24 +61,3 @@ services:
     stop_grace_period: 10s
     volumes:
     - ./demo/otelcol-config.yml:/config.yml:ro
-    env_file:
-    - .env
-
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - 3000:3000
-    environment:
-      - INFLUX_HOST=${INFLUXDB_ADDR}
-      - INFLUX_TOKEN=${INFLUXDB_TOKEN}
-      - INFLUX_ORG=${INFLUXDB_ORG}
-      - INFLUX_BUCKET=${INFLUXDB_BUCKET}
-      - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
-    volumes: 
-      - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - grafana:/var/lib/grafana/
-    restart: always
-volumes:
-  grafana:

@@ -24,7 +24,12 @@ INFLUXDB_BUCKET=otel
 INFLUXDB_BUCKET_ARCHIVE=otel-archive
 ```
 
-Make sure this file exists in the root of the project. Then also make sure you run the below commands in the root of the project aswell.
+In demo/otelcol-config.yml, set the similar values for these keys:
+```yaml
+endpoint: https://< region specific URL - https://region.csp.cloud2.influxdata.com/ >
+bucket: otel
+token: <the API token you just created>
+```
 
 Run the docker compose:
 ```console
