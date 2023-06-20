@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/stretchr/testify v1.8.4
-	go.opentelemetry.io/collector/semconv v0.79.0
+	go.opentelemetry.io/collector/semconv v0.80.0
 )
 
 require (
