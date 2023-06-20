@@ -62,6 +62,6 @@ jobs:
 
     - name: build
       run: >
-        go install go.opentelemetry.io/collector/cmd/builder@v0.79.0 &&
+        go install go.opentelemetry.io/collector/cmd/builder@v0.80.0 &&
         cd otelcol-influxdb &&
         builder --config build.yml
