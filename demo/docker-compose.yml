@@ -16,7 +16,7 @@ services:
       ADMIN_HTTP_HOST_PORT: :16687
       QUERY_UI_CONFIG: /jaeger-ui-config.json
     volumes:
-    - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
+    - ./jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
   jaeger-influxdb:
     image: jacobmarble/jaeger-influxdb:0.5.2
@@ -26,19 +26,20 @@ services:
       LISTEN_ADDR: :17271
       INFLUXDB_TIMEOUT: 30s
       # required: hostname or hostname:port
-      INFLUXDB_ADDR:
+      INFLUXDB_ADDR: host.containers.internal:8082
       # required: bucket name
-      INFLUXDB_BUCKET: otel
+      INFLUXDB_BUCKET: otel_otel
       # optional: bucket name for archived traces
       INFLUXDB_BUCKET_ARCHIVE:
       # required
-      INFLUXDB_TOKEN:
+      INFLUXDB_TOKEN: xxx
+      INFLUXDB_TLS_DISABLE: "true"
 
   hotrod:
     image: jaegertracing/example-hotrod:1.41
     stop_grace_period: 1s
     ports:
-    - "8080:8080" # web UI
+    - "8090:8080" # web UI
     depends_on:
     - otelcol-influxdb
     environment:
@@ -50,4 +51,14 @@ services:
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
-    - ./demo/otelcol-config.yml:/config.yml:ro
+    - ./otelcol-config.yml:/config.yml:ro
+
+  # if you need to debug network stuff:
+  # debug:
+  #   image: nixery.dev/shell/findutils/gnugrep/gnutar/hexdump/less/mount/procps/curl/grpcurl/binutils/gdb/lldb/strace/rustc/linuxpackages.perf/perf-tools/gzip/zstd/tcpdump/netcat-openbsd
+  #   # network_mode: "slirp4netns:allow_host_loopback=true"
+  #   command:
+  #     - /bin/bash
+  #     - -c
+  #     - --
+  #     - while true; do sleep 30; done;
