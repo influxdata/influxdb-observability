@@ -33,7 +33,7 @@ type MockInfluxWriterBatch struct {
 	w *MockInfluxWriter
 }
 
-func (b *MockInfluxWriterBatch) EnqueuePoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
+func (b *MockInfluxWriterBatch) EnqueuePoint(ctx context.Context, measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
 	b.w.points = append(b.w.points, mockPoint{
 		measurement: measurement,
 		tags:        tags,

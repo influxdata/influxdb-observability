@@ -223,7 +223,7 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err = batch.EnqueuePoint(measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err = batch.EnqueuePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to enqueue point for span: %w", err)
 	}
 
@@ -268,7 +268,7 @@ func (c *OtelTracesToLineProtocol) enqueueSpanEvent(ctx context.Context, traceID
 		common.AttributeSpanID:  hex.EncodeToString(spanID[:]),
 	}
 
-	err := batch.EnqueuePoint(common.MeasurementLogs, tags, fields, spanEvent.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+	err := batch.EnqueuePoint(ctx, common.MeasurementLogs, tags, fields, spanEvent.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 	if err != nil {
 		return fmt.Errorf("failed to write point for span event: %w", err)
 	}
@@ -325,7 +325,7 @@ func (c *OtelTracesToLineProtocol) writeSpanLink(ctx context.Context, traceID pc
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err := batch.EnqueuePoint(common.MeasurementSpanLinks, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err := batch.EnqueuePoint(ctx, common.MeasurementSpanLinks, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for span link: %w", err)
 	}
 	return nil
