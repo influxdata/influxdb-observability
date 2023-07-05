@@ -1,6 +1,7 @@
 package otel2influx
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -19,7 +20,7 @@ type metricWriterOtelV1 struct {
 	logger common.Logger
 }
 
-func (m *metricWriterOtelV1) enqueueMetric(resource pcommon.Resource, is pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
+func (m *metricWriterOtelV1) enqueueMetric(ctx context.Context, resource pcommon.Resource, is pcommon.InstrumentationScope, pm pmetric.Metric, batch InfluxWriterBatch) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var rerr error
@@ -41,12 +42,12 @@ func (m *metricWriterOtelV1) enqueueMetric(resource pcommon.Resource, is pcommon
 	scopeFields := convertScopeFields(is)
 
 	switch pm.Type() {
-	//case pmetric.MetricTypeGauge:
+	// case pmetric.MetricTypeGauge:
 	//	return m.writeGauge(ctx, resource, is, pm.Name(), pm.Gauge(), batch)
 	case pmetric.MetricTypeSum:
-		m.enqueueSum(measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueSum(ctx, measurementName, resourceTags, scopeFields, pm, batch)
 	case pmetric.MetricTypeHistogram:
-		m.enqueueHistogram(measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueHistogram(ctx, measurementName, resourceTags, scopeFields, pm, batch)
 	default:
 		err = fmt.Errorf("unrecognized metric type %q", pm.Type())
 	}
@@ -65,7 +66,7 @@ func formatFieldKeyMetricSumOtelV1(temporality string, monotonic bool, dataPoint
 	return fmt.Sprintf("value_%s_%s_%s", strings.ToLower(temporality), monotonicity, strings.ToLower(dataPointValueType))
 }
 
-func (m *metricWriterOtelV1) enqueueSum(measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := pm.Sum().AggregationTemporality().String()
 	monotonic := pm.Sum().IsMonotonic()
 
@@ -105,14 +106,14 @@ func (m *metricWriterOtelV1) enqueueSum(measurementName string, resourceTags map
 			return true
 		})
 
-		err := batch.EnqueuePoint(measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		err := batch.EnqueuePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func (m *metricWriterOtelV1) enqueueHistogram(measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueHistogram(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := strings.ToLower(pm.Histogram().AggregationTemporality().String())
 
 	for i := 0; i < pm.Histogram().DataPoints().Len(); i++ {
@@ -160,7 +161,7 @@ func (m *metricWriterOtelV1) enqueueHistogram(measurementName string, resourceTa
 			return true
 		})
 
-		err := batch.EnqueuePoint(measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
+		err := batch.EnqueuePoint(ctx, measurementName, tags, fields, dataPoint.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
 		if err != nil {
 			panic(err)
 		}
