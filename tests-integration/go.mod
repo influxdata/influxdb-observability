@@ -5,8 +5,8 @@ go 1.20
 require (
 	github.com/influxdata/influxdb/v2 v2.6.1
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v1.27.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.81.0
+	github.com/influxdata/telegraf v1.27.2
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230710182244-4e3c466b890e
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.81.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.81.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/influxdbreceiver v0.81.0
@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/collector/processor v0.81.0
 	go.opentelemetry.io/collector/receiver v0.81.0
 	go.uber.org/zap v1.24.0
-	google.golang.org/grpc v1.56.1
+	google.golang.org/grpc v1.56.2
 )
 
 require (
@@ -35,7 +35,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/compose-spec/compose-go v1.13.4 // indirect
+	github.com/compose-spec/compose-go v1.16.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
@@ -53,13 +53,13 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/cel-go v0.14.1-0.20230424164844-d39523c445fc // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gosnmp/gosnmp v1.35.0 // indirect
+	github.com/gosnmp/gosnmp v1.35.1-0.20230602062452-f30602b8dad6 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/influxdata/influxdb-observability/common v0.5.2 // indirect
+	github.com/influxdata/influxdb-observability/common v0.5.4 // indirect
 	github.com/influxdata/influxdb-observability/influx2otel v0.5.2 // indirect
-	github.com/influxdata/influxdb-observability/otel2influx v0.5.0 // indirect
+	github.com/influxdata/influxdb-observability/otel2influx v0.5.4 // indirect
 	github.com/influxdata/toml v0.0.0-20190415235208-270119a8ce65 // indirect
-	github.com/jaegertracing/jaeger v1.41.0 // indirect
+	github.com/jaegertracing/jaeger v1.47.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
@@ -88,7 +88,7 @@ require (
 	github.com/rs/cors v1.9.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.5 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sleepinggenius2/gosmi v0.4.4 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -120,11 +120,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
-	golang.org/x/net v0.11.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	gonum.org/v1/gonum v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
@@ -138,5 +138,3 @@ replace (
 	github.com/influxdata/influxdb-observability/influx2otel => ../influx2otel
 	github.com/influxdata/influxdb-observability/otel2influx => ../otel2influx
 )
-
-replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter => github.com/jacobmarble/opentelemetry-collector-contrib/exporter/influxdbexporter v0.0.0-20230607233012-52d825be0fe3
