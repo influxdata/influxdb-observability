@@ -12,7 +12,7 @@ type InfluxWriter interface {
 }
 
 type InfluxWriterBatch interface {
-	EnqueuePoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error
+	EnqueuePoint(ctx context.Context, measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error
 	WriteBatch(ctx context.Context) error
 }
 
@@ -22,7 +22,7 @@ func (w *NoopInfluxWriter) NewBatch() InfluxWriterBatch {
 	return w
 }
 
-func (w *NoopInfluxWriter) EnqueuePoint(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
+func (w *NoopInfluxWriter) EnqueuePoint(ctx context.Context, measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time, vType common.InfluxMetricValueType) error {
 	return nil
 }
 

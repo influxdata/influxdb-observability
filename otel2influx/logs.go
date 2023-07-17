@@ -45,7 +45,7 @@ func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld plog.Logs) er
 			ilLogs := resourceLogs.ScopeLogs().At(j)
 			for k := 0; k < ilLogs.LogRecords().Len(); k++ {
 				logRecord := ilLogs.LogRecords().At(k)
-				if err := c.enqueueLogRecord(resourceLogs.Resource(), ilLogs.Scope(), logRecord, batch); err != nil {
+				if err := c.enqueueLogRecord(ctx, resourceLogs.Resource(), ilLogs.Scope(), logRecord, batch); err != nil {
 					return consumererror.NewPermanent(fmt.Errorf("failed to convert OTLP log record to line protocol: %w", err))
 				}
 			}
@@ -54,7 +54,7 @@ func (c *OtelLogsToLineProtocol) WriteLogs(ctx context.Context, ld plog.Logs) er
 	return batch.WriteBatch(ctx)
 }
 
-func (c *OtelLogsToLineProtocol) enqueueLogRecord(resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, logRecord plog.LogRecord, batch InfluxWriterBatch) error {
+func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource pcommon.Resource, instrumentationLibrary pcommon.InstrumentationScope, logRecord plog.LogRecord, batch InfluxWriterBatch) error {
 	ts := logRecord.Timestamp().AsTime()
 	if ts.IsZero() {
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
@@ -108,7 +108,7 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(resource pcommon.Resource, ins
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err := batch.EnqueuePoint(measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err := batch.EnqueuePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for int gauge: %w", err)
 	}
 

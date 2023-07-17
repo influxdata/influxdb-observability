@@ -18,7 +18,7 @@ if ! hash staticcheck; then
 fi
 if ! hash builder; then
   echo "installing the opentelemetry collector builder"
-  if ! go install go.opentelemetry.io/collector/cmd/builder@v0.79.0; then
+  if ! go install go.opentelemetry.io/collector/cmd/builder@v0.81.0; then
     echo "failed to install the opentelemetry collector builder"
     exit 1
   fi
