@@ -3,6 +3,7 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -178,7 +179,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 
 func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 	metrics := pmetric.NewMetrics()
-	// Ensure that the extra bucket counts have been added.
+	// Ensure that infinity histogram buckets exist.
 	for _, resourceMetrics := range b.rmByAttributes {
 		for i := 0; i < resourceMetrics.ScopeMetrics().Len(); i++ {
 			ilMetrics := resourceMetrics.ScopeMetrics().At(i)
@@ -187,7 +188,9 @@ func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 				if metric.Type() == pmetric.MetricTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
-						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
+						if dataPoint.ExplicitBounds().Len() > 0 && math.IsInf(dataPoint.ExplicitBounds().At(dataPoint.ExplicitBounds().Len()-1), +1) {
+							dataPoint.ExplicitBounds().FromRaw(dataPoint.ExplicitBounds().AsRaw()[:dataPoint.ExplicitBounds().Len()-1])
+						} else if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
 							infBucketCount := dataPoint.Count()
 							for l := 0; l < dataPoint.BucketCounts().Len(); l++ {
 								infBucketCount -= dataPoint.BucketCounts().At(l)

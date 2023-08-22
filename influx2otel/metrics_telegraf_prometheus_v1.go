@@ -257,9 +257,9 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 
 func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	var count uint64
-	foundCount := false
+	var foundCount bool
 	var sum float64
-	foundSum := false
+	var foundSum bool
 	var bucketCounts []uint64
 	var explicitBounds []float64
 
@@ -299,7 +299,6 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 		return fmt.Errorf("histogram sum field not found")
 	}
 
-	bucketCounts = append(bucketCounts, count)
 	sortHistogramBuckets(bucketCounts, explicitBounds)
 
 	bucketsAreCumulative := true

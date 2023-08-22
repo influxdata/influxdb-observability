@@ -31,7 +31,7 @@ const (
 	MetricHistogramSumFieldKey   = "sum"
 	MetricHistogramMinFieldKey   = "min"
 	MetricHistogramMaxFieldKey   = "max"
-	MetricHistogramInfFieldKey   = "inf"
+	MetricHistogramInfFieldKey   = "+Inf"
 	MetricHistogramBoundKeyV2    = "le"
 	MetricHistogramCountSuffix   = "_count"
 	MetricHistogramSumSuffix     = "_sum"
