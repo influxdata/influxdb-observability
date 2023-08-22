@@ -262,6 +262,55 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 			"0.2":   float64(100392),
 			"0.5":   float64(129389),
 			"1":     float64(133988),
+			"+Inf":  float64(144320),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	ilMetrics := rm.ScopeMetrics().AppendEmpty()
+	ilMetrics.Scope().SetName("My Library")
+	ilMetrics.Scope().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetEmptyHistogram()
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
+	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
+func TestAddPoint_v1_histogram_missingInfinityBucket(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("http_request_duration_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"count": float64(144320),
+			"sum":   float64(53423),
+			"0.05":  float64(24054),
+			"0.1":   float64(33444),
+			"0.2":   float64(100392),
+			"0.5":   float64(129389),
+			"1":     float64(133988),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
@@ -439,7 +488,7 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
-	dp.BucketCounts().FromRaw([]uint64{3102, 3272, 4773, 9001, 76656, 2693})
+	dp.BucketCounts().FromRaw([]uint64{3102, 170, 1501, 4228, 67655, 2693})
 	dp.ExplicitBounds().FromRaw([]float64{0.01, 0.05, 0.5, 0.9, 0.99})
 
 	assertMetricsEqual(t, expect, b.GetMetrics())

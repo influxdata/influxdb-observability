@@ -7,21 +7,25 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+type metricTest struct {
+	otel pmetric.Metrics
+	lp   string
+}
+
+type traceTest struct {
+	otel ptrace.Traces
+	lp   string
+}
+
+type logTest struct {
+	otel plog.Logs
+	lp   string
+}
+
 var (
-	metricTests []struct {
-		otel pmetric.Metrics
-		lp   string
-	}
-
-	traceTests []struct {
-		otel ptrace.Traces
-		lp   string
-	}
-
-	logTests []struct {
-		otel plog.Logs
-		lp   string
-	}
+	metricTests []metricTest
+	traceTests  []traceTest
+	logTests    []logTest
 )
 
 func init() {
@@ -63,14 +67,11 @@ func init() {
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleValue(3)
 
-		metricTests = append(metricTests, struct {
-			otel pmetric.Metrics
-			lp   string
-		}{
+		metricTests = append(metricTests, metricTest{
 			otel: metrics,
 			lp: `
 cpu_temp,foo=bar gauge=87.332 1622848686000000000
-http_request_duration_seconds,region=eu count=144320,sum=53423,0.05=24054,0.1=33444,0.2=100392,0.5=129389,1=133988 1622848686000000000
+http_request_duration_seconds,region=eu count=144320,sum=53423,0.05=24054,0.1=33444,0.2=100392,0.5=129389,1=133988,+Inf=144320 1622848686000000000
 http_requests_total,code=200,method=post counter=1027 1622848686000000000
 http_requests_total,code=400,method=post counter=3 1622848686000000000
 `,
@@ -118,10 +119,7 @@ http_requests_total,code=400,method=post counter=3 1622848686000000000
 		span.SetStartTimestamp(pcommon.Timestamp(1622848000000000010))
 		span.SetEndTimestamp(pcommon.Timestamp(1622848000000000012))
 
-		traceTests = append(traceTests, struct {
-			otel ptrace.Traces
-			lp   string
-		}{
+		traceTests = append(traceTests, traceTest{
 			otel: traces,
 			lp: `
 spans,span_id=0000000000000003,trace_id=00000000000000020000000000000001 duration_nano=100000000000i,end_time_unix_nano=1622848100000000000i,span.kind="Internal",attributes="{\"k\":true}",dropped_attributes_count=7u,dropped_events_count=13u,dropped_links_count=17u,span.name="cpu_temp" 1622848000000000000
@@ -147,10 +145,7 @@ spans,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duratio
 		log.SetTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1})
 		log.SetSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3})
 
-		logTests = append(logTests, struct {
-			otel plog.Logs
-			lp   string
-		}{
+		logTests = append(logTests, logTest{
 			otel: logs,
 			lp: `
 logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",k=true,dropped_attributes_count=5u,severity_number=9i,severity_text="info" 1622848686000000000

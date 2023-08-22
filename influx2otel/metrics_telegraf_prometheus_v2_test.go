@@ -341,6 +341,146 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 		common.InfluxMetricValueTypeHistogram)
 	require.NoError(t, err)
 
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "+Inf",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(144320),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	ilMetrics := rm.ScopeMetrics().AppendEmpty()
+	ilMetrics.Scope().SetName("My Library")
+	ilMetrics.Scope().SetVersion("latest")
+	m := ilMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetEmptyHistogram()
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
+	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
+func TestAddPoint_v2_histogram_missingInfinityBucket(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_count": float64(144320),
+			"http_request_duration_seconds_sum":   float64(53423),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "0.05",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(24054),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "0.1",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(33444),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "0.2",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(100392),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "0.5",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(129389),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	err = b.AddPoint(common.MeasurementPrometheus,
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+			"le":                   "1",
+		},
+		map[string]interface{}{
+			"http_request_duration_seconds_bucket": float64(133988),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")

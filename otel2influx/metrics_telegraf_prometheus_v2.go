@@ -9,6 +9,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"golang.org/x/exp/maps"
 
 	"github.com/influxdata/influxdb-observability/common"
 )
@@ -187,26 +188,25 @@ func (c *metricWriterTelegrafPrometheusV2) enqueueHistogram(ctx context.Context,
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len())
 		}
 
-		for i := 0; i < explicitBounds.Len(); i++ {
-			t := make(map[string]string, len(tags)+1)
-			for k, v := range tags {
-				t[k] = v
-			}
-			f := make(map[string]interface{}, len(fields)+1)
-			for k, v := range fields {
-				f[k] = v
-			}
+		for i := 0; i < bucketCounts.Len(); i++ {
+			tags := maps.Clone(tags)
+			fields := maps.Clone(fields)
 
 			var bucketCount uint64
 			for j := 0; j <= i; j++ {
 				bucketCount += bucketCounts.At(j)
 			}
 
-			boundTagValue := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
-			t[common.MetricHistogramBoundKeyV2] = boundTagValue
-			f[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCount)
+			var boundTagValue string
+			if explicitBounds.Len() > i {
+				boundTagValue = strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
+			} else {
+				boundTagValue = common.MetricHistogramInfFieldKey
+			}
+			tags[common.MetricHistogramBoundKeyV2] = boundTagValue
+			fields[measurement+common.MetricHistogramBucketSuffix] = float64(bucketCount)
 
-			if err = batch.EnqueuePoint(ctx, common.MeasurementPrometheus, t, f, ts, common.InfluxMetricValueTypeHistogram); err != nil {
+			if err = batch.EnqueuePoint(ctx, common.MeasurementPrometheus, tags, fields, ts, common.InfluxMetricValueTypeHistogram); err != nil {
 				return fmt.Errorf("failed to write point for histogram: %w", err)
 			}
 		}

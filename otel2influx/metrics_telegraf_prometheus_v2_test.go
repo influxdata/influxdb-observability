@@ -369,6 +369,23 @@ func TestWriteMetric_v2_histogram(t *testing.T) {
 				ts:    timestamp.AsTime().UTC(),
 				vType: common.InfluxMetricValueTypeHistogram,
 			},
+			{
+				measurement: "prometheus",
+				tags: map[string]string{
+					"node":                 "42",
+					"otel.library.name":    "My Library",
+					"otel.library.version": "latest",
+					"method":               "post",
+					"code":                 "200",
+					"le":                   "+Inf",
+				},
+				fields: map[string]interface{}{
+					common.AttributeStartTimeUnixNano:      int64(startTimestamp),
+					"http_request_duration_seconds_bucket": float64(144320),
+				},
+				ts:    timestamp.AsTime().UTC(),
+				vType: common.InfluxMetricValueTypeHistogram,
+			},
 		}
 
 		assert.Equal(t, expected, w.points)
@@ -402,7 +419,7 @@ func TestWriteMetric_v2_histogram_missingInfinityBucket(t *testing.T) {
 		dp.SetTimestamp(timestamp)
 		dp.SetCount(144320)
 		dp.SetSum(53423)
-		dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
+		dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599})
 		dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 
 		err = c.WriteMetrics(context.Background(), metrics)

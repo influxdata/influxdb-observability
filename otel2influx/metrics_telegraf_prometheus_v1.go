@@ -173,13 +173,18 @@ func (c *metricWriterTelegrafPrometheusV1) enqueueHistogram(ctx context.Context,
 			// so accept input if that particular bucket is missing.
 			return fmt.Errorf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len())
 		}
-		for i := 0; i < explicitBounds.Len(); i++ {
+		for i := 0; i < bucketCounts.Len(); i++ {
 			var bucketCount uint64
 			for j := 0; j <= i; j++ {
 				bucketCount += bucketCounts.At(j)
 			}
 
-			boundFieldKey := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
+			var boundFieldKey string
+			if explicitBounds.Len() > i {
+				boundFieldKey = strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)
+			} else {
+				boundFieldKey = common.MetricHistogramInfFieldKey
+			}
 			fields[boundFieldKey] = float64(bucketCount)
 		}
 
