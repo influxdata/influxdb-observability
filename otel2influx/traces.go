@@ -64,7 +64,7 @@ func NewOtelTracesToLineProtocol(config *OtelTracesToLineProtocolConfig) (*OtelT
 			}
 		}
 		if len(duplicateDimensions) > 0 {
-			return nil, fmt.Errorf("duplicate dimension(s) configured: %s",
+			return nil, fmt.Errorf("duplicate span dimension(s) configured: %s",
 				strings.Join(maps.Keys(duplicateDimensions), ","))
 		}
 	}

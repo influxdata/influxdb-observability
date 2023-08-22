@@ -148,7 +148,7 @@ spans,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duratio
 		logTests = append(logTests, logTest{
 			otel: logs,
 			lp: `
-logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",k=true,dropped_attributes_count=5u,severity_number=9i,severity_text="info" 1622848686000000000
+logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",attributes="{\"k\":true}",dropped_attributes_count=5u,severity_number=9i,severity_text="info" 1622848686000000000
 `,
 		})
 	}
