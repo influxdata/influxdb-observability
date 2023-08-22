@@ -22,12 +22,13 @@ func TestOtel2Influx(t *testing.T) {
 		for i, mt := range metricTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol, err := setupOtelcolInfluxDBExporter(t)
+					require.NoError(t, err)
 					t.Cleanup(mockDestination.Close)
 
 					clone := pmetric.NewMetrics()
 					mt.otel.CopyTo(clone)
-					err := mockReceiverFactory.nextMetricsConsumer.ConsumeMetrics(context.Background(), clone)
+					err = mockReceiverFactory.nextMetricsConsumer.ConsumeMetrics(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
@@ -65,12 +66,13 @@ func TestOtel2Influx(t *testing.T) {
 		for i, tt := range traceTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol, err := setupOtelcolInfluxDBExporter(t)
+					require.NoError(t, err)
 					t.Cleanup(mockDestination.Close)
 
 					clone := ptrace.NewTraces()
 					tt.otel.CopyTo(clone)
-					err := mockReceiverFactory.nextTracesConsumer.ConsumeTraces(context.Background(), clone)
+					err = mockReceiverFactory.nextTracesConsumer.ConsumeTraces(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
@@ -102,12 +104,13 @@ func TestOtel2Influx(t *testing.T) {
 		for i, lt := range logTests {
 			t.Run(fmt.Sprint(i), func(t *testing.T) {
 				t.Run("otelcol", func(t *testing.T) {
-					mockDestination, mockReceiverFactory, closeOtelcol := setupOtelcolInfluxDBExporter(t)
+					mockDestination, mockReceiverFactory, closeOtelcol, err := setupOtelcolInfluxDBExporter(t)
+					require.NoError(t, err)
 					t.Cleanup(mockDestination.Close)
 
 					clone := plog.NewLogs()
 					lt.otel.CopyTo(clone)
-					err := mockReceiverFactory.nextLogsConsumer.ConsumeLogs(context.Background(), clone)
+					err = mockReceiverFactory.nextLogsConsumer.ConsumeLogs(context.Background(), clone)
 					require.NoError(t, err)
 
 					got := mockReceiverFactory.lineprotocol(t)
