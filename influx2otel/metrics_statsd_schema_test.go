@@ -38,8 +38,8 @@ func TestStatsdTimingSchema(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_count")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
@@ -48,7 +48,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_lower")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -57,7 +57,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_mean")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -66,7 +66,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_median")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -75,7 +75,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_stddev")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -84,7 +84,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(10)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_sum")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -93,7 +93,7 @@ func TestStatsdTimingSchema(t *testing.T) {
 	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
 	dp.SetDoubleValue(100)
 
-	m = ilMetrics.Metrics().AppendEmpty()
+	m = isMetrics.Metrics().AppendEmpty()
 	m.SetName("test_service_stage_metrics_biz_success_v4_upper")
 	m.SetEmptyGauge()
 	dp = m.Gauge().DataPoints().AppendEmpty()
@@ -126,8 +126,8 @@ func TestStatsCounter(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("gorets_value")
 	m.SetEmptySum()
 	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -163,8 +163,8 @@ func TestStatsDeltaCounter(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("gorets_value")
 	m.SetEmptySum()
 	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
@@ -199,8 +199,8 @@ func TestStatsGauge(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("gaugor_value")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
@@ -235,8 +235,8 @@ func TestStatsdSetsSchema(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("uniques_value")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
@@ -262,8 +262,8 @@ func TestDeltaTemporalityStatsdCounter(t *testing.T) {
 			"temporality": "delta",
 		},
 		map[string]interface{}{
-			"value":      int64(10),
-			"start_time": "2023-04-13T22:34:00.000535129+03:00",
+			"value":                         int64(10),
+			common.AttributeStartTimeStatsd: "2023-04-13T22:34:00.000535129+03:00",
 		},
 		time.Unix(0, 1395066363000000123),
 		common.InfluxMetricValueTypeSum)
@@ -271,8 +271,8 @@ func TestDeltaTemporalityStatsdCounter(t *testing.T) {
 
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("gorets_value")
 	m.SetEmptySum()
 	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)

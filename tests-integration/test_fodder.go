@@ -32,15 +32,16 @@ func init() {
 	{
 		metrics := pmetric.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
-		ilMetrics := rm.ScopeMetrics().AppendEmpty()
-		m := ilMetrics.Metrics().AppendEmpty()
+		isMetrics := rm.ScopeMetrics().AppendEmpty()
+		m := isMetrics.Metrics().AppendEmpty()
 		m.SetName("cpu_temp")
 		m.SetEmptyGauge()
 		dp := m.Gauge().DataPoints().AppendEmpty()
 		dp.Attributes().PutStr("foo", "bar")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleValue(87.332)
-		m = ilMetrics.Metrics().AppendEmpty()
+		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
+		m = isMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
 		m.SetEmptyHistogram()
 		m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -51,7 +52,8 @@ func init() {
 		dp2.SetSum(53423)
 		dp2.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
 		dp2.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
-		m = ilMetrics.Metrics().AppendEmpty()
+		dp2.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
+		m = isMetrics.Metrics().AppendEmpty()
 		m.SetName("http_requests_total")
 		m.SetEmptySum()
 		m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -61,19 +63,21 @@ func init() {
 		dp.Attributes().PutStr("code", "200")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleValue(1027)
+		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().PutStr("method", "post")
 		dp.Attributes().PutStr("code", "400")
 		dp.SetTimestamp(pcommon.Timestamp(1622848686000000000))
 		dp.SetDoubleValue(3)
+		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 		metricTests = append(metricTests, metricTest{
 			otel: metrics,
 			lp: `
-cpu_temp,foo=bar gauge=87.332 1622848686000000000
-http_request_duration_seconds,region=eu count=144320,sum=53423,0.05=24054,0.1=33444,0.2=100392,0.5=129389,1=133988,+Inf=144320 1622848686000000000
-http_requests_total,code=200,method=post counter=1027 1622848686000000000
-http_requests_total,code=400,method=post counter=3 1622848686000000000
+cpu_temp,foo=bar gauge=87.332,flags=1u 1622848686000000000
+http_request_duration_seconds,region=eu count=144320,sum=53423,flags=0u,0.05=24054,0.1=33444,0.2=100392,0.5=129389,1=133988,+Inf=144320 1622848686000000000
+http_requests_total,code=200,method=post counter=1027,flags=1u 1622848686000000000
+http_requests_total,code=400,method=post counter=3,flags=0u 1622848686000000000
 `,
 		})
 	}
@@ -144,11 +148,12 @@ spans,span_id=0000000000000005,trace_id=00000000000000020000000000000002 duratio
 		log.SetDroppedAttributesCount(5)
 		log.SetTraceID([16]byte{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1})
 		log.SetSpanID([8]byte{0, 0, 0, 0, 0, 0, 0, 3})
+		log.SetFlags(plog.DefaultLogRecordFlags.WithIsSampled(true))
 
 		logTests = append(logTests, logTest{
 			otel: logs,
 			lp: `
-logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",attributes="{\"k\":true}",dropped_attributes_count=5u,severity_number=9i,severity_text="info" 1622848686000000000
+logs,span_id=0000000000000003,trace_id=00000000000000020000000000000001 body="something-happened",attributes="{\"k\":true}",dropped_attributes_count=5u,flags=1u,severity_number=9i,severity_text="info" 1622848686000000000
 `,
 		})
 	}

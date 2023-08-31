@@ -25,10 +25,10 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("cache_age_seconds")
 	m.SetDescription("Age in seconds of the current cache")
 	m.SetEmptyGauge()
@@ -37,6 +37,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	dp.SetStartTimestamp(startTimestamp)
 	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(23.9)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
 	dp.SetStartTimestamp(startTimestamp)
@@ -58,6 +59,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"gauge":                           float64(23.9),
+				"flags":                           uint64(1),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
@@ -73,6 +75,7 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"gauge":                           float64(11.9),
+				"flags":                           uint64(0),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
@@ -85,7 +88,22 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 var temporalities = [2]pmetric.AggregationTemporality{pmetric.AggregationTemporalityCumulative, pmetric.AggregationTemporalityDelta}
 
 func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
-	for _, temporality := range temporalities {
+	for _, tm := range []struct {
+		temporality pmetric.AggregationTemporality
+		monotonic   bool
+	}{{
+		temporality: pmetric.AggregationTemporalityCumulative,
+		monotonic:   false,
+	}, {
+		temporality: pmetric.AggregationTemporalityDelta,
+		monotonic:   true,
+	}, {
+		temporality: pmetric.AggregationTemporalityDelta,
+		monotonic:   false,
+	}} {
+		temporality := tm.temporality
+		monotonic := tm.monotonic
+
 		w := new(MockInfluxWriter)
 		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
 		cfg.Writer = w
@@ -96,20 +114,21 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 		metrics := pmetric.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
 		rm.Resource().Attributes().PutStr("container.name", "42")
-		ilMetrics := rm.ScopeMetrics().AppendEmpty()
-		ilMetrics.Scope().SetName("My Library")
-		ilMetrics.Scope().SetVersion("latest")
-		m := ilMetrics.Metrics().AppendEmpty()
+		isMetrics := rm.ScopeMetrics().AppendEmpty()
+		isMetrics.Scope().SetName("My Library")
+		isMetrics.Scope().SetVersion("latest")
+		m := isMetrics.Metrics().AppendEmpty()
 		m.SetName("cache_age_seconds")
 		m.SetDescription("Age in seconds of the current cache")
 		m.SetEmptySum()
-		m.Sum().SetIsMonotonic(false)
+		m.Sum().SetIsMonotonic(monotonic)
 		m.Sum().SetAggregationTemporality(temporality)
 		dp := m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().PutInt("engine_id", 0)
 		dp.SetStartTimestamp(startTimestamp)
 		dp.SetTimestamp(timestamp)
 		dp.SetDoubleValue(23.9)
+		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().PutInt("engine_id", 1)
 		dp.SetStartTimestamp(startTimestamp)
@@ -131,6 +150,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 				fields: map[string]interface{}{
 					common.AttributeStartTimeUnixNano: int64(startTimestamp),
 					"gauge":                           float64(23.9),
+					"flags":                           uint64(1),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeGauge,
@@ -146,6 +166,7 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 				fields: map[string]interface{}{
 					common.AttributeStartTimeUnixNano: int64(startTimestamp),
 					"gauge":                           float64(11.9),
+					"flags":                           uint64(0),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeGauge,
@@ -157,79 +178,80 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 }
 
 func TestWriteMetric_v1_sum(t *testing.T) {
-	for _, temporality := range temporalities {
-		w := new(MockInfluxWriter)
-		cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
-		cfg.Writer = w
-		cfg.Schema = common.MetricsSchemaTelegrafPrometheusV1
-		c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
-		require.NoError(t, err)
+	w := new(MockInfluxWriter)
+	cfg := otel2influx.DefaultOtelMetricsToLineProtocolConfig()
+	cfg.Writer = w
+	cfg.Schema = common.MetricsSchemaTelegrafPrometheusV1
+	c, err := otel2influx.NewOtelMetricsToLineProtocol(cfg)
+	require.NoError(t, err)
 
-		metrics := pmetric.NewMetrics()
-		rm := metrics.ResourceMetrics().AppendEmpty()
-		rm.Resource().Attributes().PutStr("container.name", "42")
-		ilMetrics := rm.ScopeMetrics().AppendEmpty()
-		ilMetrics.Scope().SetName("My Library")
-		ilMetrics.Scope().SetVersion("latest")
-		m := ilMetrics.Metrics().AppendEmpty()
-		m.SetName("http_requests_total")
-		m.SetDescription("The total number of HTTP requests")
-		m.SetEmptySum()
-		m.Sum().SetIsMonotonic(true)
-		m.Sum().SetAggregationTemporality(temporality)
-		dp := m.Sum().DataPoints().AppendEmpty()
-		dp.Attributes().PutInt("code", 200)
-		dp.Attributes().PutStr("method", "post")
-		dp.SetStartTimestamp(startTimestamp)
-		dp.SetTimestamp(timestamp)
-		dp.SetDoubleValue(1027)
-		dp = m.Sum().DataPoints().AppendEmpty()
-		dp.Attributes().PutInt("code", 400)
-		dp.Attributes().PutStr("method", "post")
-		dp.SetStartTimestamp(startTimestamp)
-		dp.SetTimestamp(timestamp)
-		dp.SetDoubleValue(3)
+	metrics := pmetric.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total")
+	m.SetDescription("The total number of HTTP requests")
+	m.SetEmptySum()
+	m.Sum().SetIsMonotonic(true)
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutInt("code", 200)
+	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
+	dp.SetDoubleValue(1027)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
+	dp = m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutInt("code", 400)
+	dp.Attributes().PutStr("method", "post")
+	dp.SetStartTimestamp(startTimestamp)
+	dp.SetTimestamp(timestamp)
+	dp.SetDoubleValue(3)
 
-		err = c.WriteMetrics(context.Background(), metrics)
-		require.NoError(t, err)
+	err = c.WriteMetrics(context.Background(), metrics)
+	require.NoError(t, err)
 
-		expected := []mockPoint{
-			{
-				measurement: "http_requests_total",
-				tags: map[string]string{
-					"container.name":       "42",
-					"otel.library.name":    "My Library",
-					"otel.library.version": "latest",
-					"method":               "post",
-					"code":                 "200",
-				},
-				fields: map[string]interface{}{
-					common.AttributeStartTimeUnixNano: int64(startTimestamp),
-					"counter":                         float64(1027),
-				},
-				ts:    time.Unix(0, 1395066363000000123).UTC(),
-				vType: common.InfluxMetricValueTypeSum,
+	expected := []mockPoint{
+		{
+			measurement: "http_requests_total",
+			tags: map[string]string{
+				"container.name":       "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "200",
 			},
-			{
-				measurement: "http_requests_total",
-				tags: map[string]string{
-					"container.name":       "42",
-					"otel.library.name":    "My Library",
-					"otel.library.version": "latest",
-					"method":               "post",
-					"code":                 "400",
-				},
-				fields: map[string]interface{}{
-					common.AttributeStartTimeUnixNano: int64(startTimestamp),
-					"counter":                         float64(3),
-				},
-				ts:    time.Unix(0, 1395066363000000123).UTC(),
-				vType: common.InfluxMetricValueTypeSum,
+			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"counter":                         float64(1027),
+				"flags":                           uint64(1),
 			},
-		}
-
-		assert.Equal(t, expected, w.points)
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeSum,
+		},
+		{
+			measurement: "http_requests_total",
+			tags: map[string]string{
+				"container.name":       "42",
+				"otel.library.name":    "My Library",
+				"otel.library.version": "latest",
+				"method":               "post",
+				"code":                 "400",
+			},
+			fields: map[string]interface{}{
+				common.AttributeStartTimeUnixNano: int64(startTimestamp),
+				"counter":                         float64(3),
+				"flags":                           uint64(0),
+			},
+			ts:    time.Unix(0, 1395066363000000123).UTC(),
+			vType: common.InfluxMetricValueTypeSum,
+		},
 	}
+
+	assert.Equal(t, expected, w.points)
 }
 
 func TestWriteMetric_v1_histogram(t *testing.T) {
@@ -244,10 +266,10 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 		metrics := pmetric.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
 		rm.Resource().Attributes().PutStr("container.name", "42")
-		ilMetrics := rm.ScopeMetrics().AppendEmpty()
-		ilMetrics.Scope().SetName("My Library")
-		ilMetrics.Scope().SetVersion("latest")
-		m := ilMetrics.Metrics().AppendEmpty()
+		isMetrics := rm.ScopeMetrics().AppendEmpty()
+		isMetrics.Scope().SetName("My Library")
+		isMetrics.Scope().SetVersion("latest")
+		m := isMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
 		m.SetEmptyHistogram()
 		m.SetDescription("A histogram of the request duration")
@@ -263,6 +285,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 		dp.SetMax(100)
 		dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 		dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 
 		err = c.WriteMetrics(context.Background(), metrics)
 		require.NoError(t, err)
@@ -289,6 +312,7 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 					"+Inf":                            float64(144320),
 					"min":                             float64(0),
 					"max":                             float64(100),
+					"flags":                           uint64(1),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeHistogram,
@@ -311,10 +335,10 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 		metrics := pmetric.NewMetrics()
 		rm := metrics.ResourceMetrics().AppendEmpty()
 		rm.Resource().Attributes().PutStr("container.name", "42")
-		ilMetrics := rm.ScopeMetrics().AppendEmpty()
-		ilMetrics.Scope().SetName("My Library")
-		ilMetrics.Scope().SetVersion("latest")
-		m := ilMetrics.Metrics().AppendEmpty()
+		isMetrics := rm.ScopeMetrics().AppendEmpty()
+		isMetrics.Scope().SetName("My Library")
+		isMetrics.Scope().SetVersion("latest")
+		m := isMetrics.Metrics().AppendEmpty()
 		m.SetName("http_request_duration_seconds")
 		m.SetEmptyHistogram()
 		m.SetDescription("A histogram of the request duration")
@@ -351,6 +375,7 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 					"0.2":                             float64(100392),
 					"0.5":                             float64(129389),
 					"1":                               float64(133988),
+					"flags":                           uint64(0),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeHistogram,
@@ -372,10 +397,10 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("rpc_duration_seconds")
 	m.SetEmptySummary()
 	m.SetDescription("A summary of the RPC duration in seconds")
@@ -386,6 +411,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	dp.SetTimestamp(timestamp)
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	qv := dp.QuantileValues().AppendEmpty()
 	qv.SetQuantile(0.01)
 	qv.SetValue(3102)
@@ -424,6 +450,7 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"0.5":                             float64(4773),
 				"0.9":                             float64(9001),
 				"0.99":                            float64(76656),
+				"flags":                           uint64(1),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSummary,

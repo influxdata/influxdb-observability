@@ -2,11 +2,10 @@ package otel2influx
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -97,19 +96,20 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource 
 		// This is a valid condition in OpenTelemetry, but not in InfluxDB.
 		// From otel proto field Logrecord.time_unix_name:
 		// "Value of 0 indicates unknown or missing timestamp."
-		return errors.New("log record has no time stamp")
+		ts = time.Now()
 	}
 
-	measurement := common.MeasurementLogs
 	tags := make(map[string]string, len(c.logRecordDimensions)+2)
 	fields := make(map[string]interface{})
-	// TODO handle logRecord.Flags()
 
-	if traceID := logRecord.TraceID(); !traceID.IsEmpty() {
-		tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
-		if spanID := logRecord.SpanID(); !spanID.IsEmpty() {
-			tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
-		}
+	fields[common.AttributeFlags] = uint64(logRecord.Flags())
+	if ots := logRecord.ObservedTimestamp().AsTime(); !ots.IsZero() && !ots.Equal(time.Unix(0, 0)) {
+		fields[common.AttributeObservedTimeUnixNano] = ots.UnixNano()
+	}
+
+	if traceID, spanID := logRecord.TraceID(), logRecord.SpanID(); !traceID.IsEmpty() && !spanID.IsEmpty() {
+		tags[common.AttributeTraceID] = traceID.String()
+		tags[common.AttributeSpanID] = spanID.String()
 	}
 
 	if severityNumber := logRecord.SeverityNumber(); severityNumber != plog.SeverityNumberUnspecified {
@@ -118,23 +118,16 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource 
 	if severityText := logRecord.SeverityText(); severityText != "" {
 		fields[common.AttributeSeverityText] = severityText
 	}
-	if v, err := AttributeValueToInfluxFieldValue(logRecord.Body()); err != nil {
-		c.logger.Debug("invalid log record body", err)
-		fields[common.AttributeBody] = nil
-	} else {
-		fields[common.AttributeBody] = v
-	}
+	fields[common.AttributeBody] = logRecord.Body().AsString()
 
 	droppedAttributesCount := uint64(logRecord.DroppedAttributesCount())
 	attributesField := make(map[string]any)
-
 	for _, attributes := range []pcommon.Map{resource.Attributes(), instrumentationScope.Attributes(), logRecord.Attributes()} {
 		attributes.Range(func(k string, v pcommon.Value) bool {
+			if k == "" {
+				return true
+			}
 			if _, found := c.logRecordDimensions[k]; found {
-				if _, found = tags[k]; found {
-					c.logger.Debug("dimension %s already exists as a tag", k)
-					attributesField[k] = v.AsRaw()
-				}
 				tags[k] = v.AsString()
 			} else {
 				attributesField[k] = v.AsRaw()
@@ -153,7 +146,7 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource 
 	}
 	for k := range tags {
 		if _, found := fields[k]; found {
-			c.logger.Debug("tag and field keys conflict; field will be dropped", "tag key", k)
+			c.logger.Debug("tag and field keys conflict; field will be dropped", "key", k)
 			droppedAttributesCount++
 			delete(fields, k)
 		}
@@ -162,7 +155,7 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource 
 		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
 	}
 
-	if err := batch.EnqueuePoint(ctx, measurement, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
+	if err := batch.EnqueuePoint(ctx, common.MeasurementLogs, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {
 		return fmt.Errorf("failed to write point for int gauge: %w", err)
 	}
 

@@ -87,13 +87,16 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-		// set start_time, if exists and is RFC3339
-		// used by statsd input plugin
-		if startTimeObj, ok := fields["start_time"]; ok {
+		if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 			if startTimeStr, ok := startTimeObj.(string); ok {
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
+			}
+		}
+		if flagsObj, ok := fields[common.AttributeFlags]; ok {
+			if flagsUint64, ok := flagsObj.(uint64); ok {
+				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -111,9 +114,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		var floatValue *float64
 		var intValue *int64
 
-		// start_time is a metadata field about the metric,
-		// provided by statsd plugin.
-		if k == "start_time" {
+		if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
 			continue
 		}
 		switch typedValue := fieldValue.(type) {
@@ -137,13 +138,16 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		dataPoint := metric.Gauge().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-		// set start_time, if exists and is RFC3339
-		// used by statsd input plugin
-		if startTimeObj, ok := fields["start_time"]; ok {
+		if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 			if startTimeStr, ok := startTimeObj.(string); ok {
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
+			}
+		}
+		if flagsObj, ok := fields[common.AttributeFlags]; ok {
+			if flagsUint64, ok := flagsObj.(uint64); ok {
+				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -182,13 +186,16 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-		// set start_time, if exists and is RFC3339
-		// used by statsd input plugin
-		if startTimeObj, ok := fields["start_time"]; ok {
+		if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 			if startTimeStr, ok := startTimeObj.(string); ok {
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
+			}
+		}
+		if flagsObj, ok := fields[common.AttributeFlags]; ok {
+			if flagsUint64, ok := flagsObj.(uint64); ok {
+				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -204,9 +211,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 	}
 
 	for k, fieldValue := range fields {
-		// start_time is a metadata field about the metric,
-		// provided by statsd plugin.
-		if k == "start_time" {
+		if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
 			continue
 		}
 
@@ -233,13 +238,16 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 		dataPoint := metric.Sum().DataPoints().AppendEmpty()
 		attributes.CopyTo(dataPoint.Attributes())
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-		// set start_time, if exists and is RFC3339
-		// used by statsd input plugin
-		if startTimeObj, ok := fields["start_time"]; ok {
+		if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 			if startTimeStr, ok := startTimeObj.(string); ok {
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
+			}
+		}
+		if flagsObj, ok := fields[common.AttributeFlags]; ok {
+			if flagsUint64, ok := flagsObj.(uint64); ok {
+				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -287,7 +295,7 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 				bucketCounts = append(bucketCounts, uint64(vBucketCount))
 			}
 
-		} else if k == "start_time" {
+		} else if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
 		} else {
 			b.logger.Debug("skipping unrecognized histogram field", "field", k, "value", vi)
 		}
@@ -322,13 +330,16 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	dataPoint := metric.Histogram().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-	// set start_time, if exists and is RFC3339
-	// used by statsd input plugin
-	if startTimeObj, ok := fields["start_time"]; ok {
+	if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 		if startTimeStr, ok := startTimeObj.(string); ok {
 			if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 				dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 			}
+		}
+	}
+	if flagsObj, ok := fields[common.AttributeFlags]; ok {
+		if flagsUint64, ok := flagsObj.(uint64); ok {
+			dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 		}
 	}
 
@@ -371,8 +382,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 				valueAtQuantile.SetValue(value)
 			}
 
-		} else if k == "start_time" {
-
+		} else if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
 		} else {
 			b.logger.Debug("skipping unrecognized summary field", "field", k, "value", vi)
 		}
@@ -391,13 +401,16 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	dataPoint := metric.Summary().DataPoints().AppendEmpty()
 	attributes.CopyTo(dataPoint.Attributes())
 	dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
-	// set start_time, if exists and is RFC3339
-	// used by statsd input plugin
-	if startTimeObj, ok := fields["start_time"]; ok {
+	if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 		if startTimeStr, ok := startTimeObj.(string); ok {
 			if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 				dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 			}
+		}
+	}
+	if flagsObj, ok := fields[common.AttributeFlags]; ok {
+		if flagsUint64, ok := flagsObj.(uint64); ok {
+			dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 		}
 	}
 
