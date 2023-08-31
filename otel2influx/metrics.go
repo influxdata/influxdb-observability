@@ -63,14 +63,21 @@ func (c *OtelMetricsToLineProtocol) WriteMetrics(ctx context.Context, md pmetric
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
 		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
-			ilMetrics := resourceMetrics.ScopeMetrics().At(j)
-			for k := 0; k < ilMetrics.Metrics().Len(); k++ {
-				metric := ilMetrics.Metrics().At(k)
-				if err := c.mw.enqueueMetric(ctx, resourceMetrics.Resource(), ilMetrics.Scope(), metric, batch); err != nil {
+			isMetrics := resourceMetrics.ScopeMetrics().At(j)
+			for k := 0; k < isMetrics.Metrics().Len(); k++ {
+				metric := isMetrics.Metrics().At(k)
+				if err := c.mw.enqueueMetric(ctx, resourceMetrics.Resource(), isMetrics.Scope(), metric, batch); err != nil {
 					return consumererror.NewPermanent(fmt.Errorf("failed to convert OTLP metric to line protocol: %w", err))
 				}
 			}
 		}
 	}
 	return batch.WriteBatch(ctx)
+}
+
+type basicDataPoint interface {
+	Timestamp() pcommon.Timestamp
+	StartTimestamp() pcommon.Timestamp
+	Attributes() pcommon.Map
+	Flags() pmetric.DataPointFlags
 }
