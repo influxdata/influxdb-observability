@@ -1,0 +1,641 @@
+{
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "barchart",
+      "name": "Bar chart",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.5.1"
+    },
+    {
+      "type": "panel",
+      "id": "histogram",
+      "name": "Histogram",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "influxdata-flightsql-datasource",
+      "name": "FlightSQL",
+      "version": "1.0.1"
+    },
+    {
+      "type": "datasource",
+      "id": "jaeger",
+      "name": "Jaeger",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "nodeGraph",
+      "name": "Node Graph",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "traces",
+      "name": "Traces",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdata-flightsql-datasource",
+        "uid": "FlightSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "links": [
+            {
+              "title": "",
+              "url": "/d/${__dashboard.uid}?var-Service=${__value.raw}&from=${__url_time_from}&to=${__url_time_to}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 5,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "service.name"
+          }
+        ]
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdata-flightsql-datasource",
+            "uid": "FlightSQL"
+          },
+          "format": "table",
+          "queryText": "SELECT DISTINCT(\"service.name\") FROM \"spans\" WHERE $__timeRange(time)",
+          "rawEditor": true,
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Services",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "influxdata-flightsql-datasource",
+        "uid": "FlightSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 30
+              },
+              {
+                "color": "dark-orange",
+                "value": 50
+              },
+              {
+                "color": "dark-red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 5,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.3,
+        "colorByField": "duration (lastNotNull)",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "text": {
+          "valueSize": 5
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "time",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "9.4.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdata-flightsql-datasource",
+            "uid": "FlightSQL"
+          },
+          "format": "table",
+          "queryText": "SELECT \"duration_nano\"/ 1000000 as \"duration\", \"span_id\" ,time FROM \"spans\" WHERE $__timeRange(time) AND \"service.name\" = '$Service' order by time",
+          "rawEditor": true,
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Duration",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "duration": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "duration_nano": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "span_id": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "time": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdata-flightsql-datasource",
+        "uid": "FlightSQL"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^error_percentage$/",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdata-flightsql-datasource",
+            "uid": "FlightSQL"
+          },
+          "format": "table",
+          "queryText": "SELECT\n  (COUNT(CASE WHEN \"otel.status_code\" = 'Error' THEN 1 END) * 100.0) / COUNT(*) as error_percentage FROM spans\n  WHERE $__timeRange(time) AND \"service.name\" = '$Service' ",
+          "rawEditor": true,
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Error Rate",
+      "transformations": [],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "jaeger",
+        "uid": "Jaeger"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 19,
+        "x": 5,
+        "y": 8
+      },
+      "id": 13,
+      "options": {
+        "bucketOffset": 0,
+        "combine": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "Jaeger"
+          },
+          "queryType": "search",
+          "refId": "A",
+          "service": "$Service"
+        }
+      ],
+      "title": "Service Latency Histogram",
+      "transformations": [],
+      "type": "histogram"
+    },
+    {
+      "datasource": {
+        "type": "jaeger",
+        "uid": "Jaeger"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Trace ID"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show Details",
+                    "url": "/d/${__dashboard.uid}?var-TraceID=${__value.raw}&var-Service=${Service}&from=${__url_time_from}&to=${__url_time_to}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "Jaeger"
+          },
+          "queryType": "search",
+          "refId": "A",
+          "service": "$Service"
+        }
+      ],
+      "title": "Traces",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "jaeger",
+        "uid": "Jaeger"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 10,
+        "y": 13
+      },
+      "id": 11,
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "Jaeger"
+          },
+          "query": "$TraceID",
+          "refId": "A"
+        }
+      ],
+      "title": "Relationships ",
+      "type": "nodeGraph"
+    },
+    {
+      "datasource": {
+        "type": "jaeger",
+        "uid": "Jaeger"
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "Jaeger"
+          },
+          "query": "$TraceID",
+          "refId": "A"
+        }
+      ],
+      "title": "Trace",
+      "type": "traces"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "redis",
+          "value": "redis"
+        },
+        "hide": 0,
+        "label": "Service",
+        "name": "Service",
+        "options": [
+          {
+            "selected": true,
+            "text": "redis",
+            "value": "redis"
+          }
+        ],
+        "query": "redis",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "120011cb7f5fefbd",
+          "value": "120011cb7f5fefbd"
+        },
+        "hide": 0,
+        "label": "TraceID",
+        "name": "TraceID",
+        "options": [
+          {
+            "selected": true,
+            "text": "120011cb7f5fefbd",
+            "value": "120011cb7f5fefbd"
+          }
+        ],
+        "query": "120011cb7f5fefbd",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Open Telemetry",
+  "uid": "jJwDAiE4z",
+  "version": 3,
+  "weekStart": ""
+}
