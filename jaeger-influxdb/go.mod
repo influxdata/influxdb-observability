@@ -5,16 +5,16 @@ go 1.20
 require (
 	github.com/apache/arrow-adbc/go/adbc v0.6.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/influxdata/influxdb-observability/common v0.5.6
+	github.com/influxdata/influxdb-observability/common v0.5.7
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/jaegertracing/jaeger v1.48.0
+	github.com/jaegertracing/jaeger v1.49.0
 	github.com/mattn/go-isatty v0.0.18
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0014
-	go.opentelemetry.io/collector/semconv v0.84.0
+	go.opentelemetry.io/collector/semconv v0.85.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.25.0
 	google.golang.org/grpc v1.57.0
@@ -31,7 +31,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
-	github.com/hashicorp/go-plugin v1.4.10 // indirect
+	github.com/hashicorp/go-plugin v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20190923154419-df201c70410d // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -53,18 +53,16 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
-	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	go.opentelemetry.io/otel v1.16.0 // indirect
-	go.opentelemetry.io/otel/trace v1.16.0 // indirect
+	go.opentelemetry.io/otel v1.17.0 // indirect
+	go.opentelemetry.io/otel/trace v1.17.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
