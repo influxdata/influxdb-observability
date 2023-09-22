@@ -11,9 +11,9 @@ receivers:
 
 exporters:
   influxdb:
-    endpoint:
-    bucket: otel
-    token:
+    endpoint: https://${INFLUXDB_ADDR}/
+    bucket: ${INFLUXDB_BUCKET}
+    token: ${INFLUXDB_TOKEN}
     metrics_schema: otel-v1
 
 connectors:
