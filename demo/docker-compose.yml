@@ -1,5 +1,5 @@
-version: '3'
 services:
+
   jaeger-query:
     image: jaegertracing/jaeger-query:1.49
     stop_grace_period: 10s
@@ -8,7 +8,7 @@ services:
     depends_on:
     - jaeger-influxdb
     environment:
-      LOG_LEVEL: info
+      LOG_LEVEL: warn
       SPAN_STORAGE_TYPE: grpc-plugin
       GRPC_STORAGE_SERVER: jaeger-influxdb:17271
       GRPC_STORAGE_CONNECTION_TIMEOUT: 30s
@@ -19,14 +19,15 @@ services:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
   jaeger-influxdb:
-    image: jacobmarble/jaeger-influxdb:0.5.2
+    image: jacobmarble/jaeger-influxdb:0.5.8
     stop_grace_period: 10s
     environment:
-      LOG_LEVEL: debug
+      LOG_LEVEL: info
       LISTEN_ADDR: :17271
       INFLUXDB_TIMEOUT: 30s
     env_file:
-    - .env
+    - demo/.env
+
   hotrod:
     image: jaegertracing/example-hotrod:1.41
     stop_grace_period: 1s
@@ -42,27 +43,23 @@ services:
 
   otelcol-influxdb:
     image: otel/opentelemetry-collector-contrib:0.85.0
-    command: [ "--config", "/config.yml" ]
+    command: ["--config", "/config.yml"]
     stop_grace_period: 10s
     volumes:
     - ./demo/otelcol-config.yml:/config.yml:ro
     env_file:
-    - .env
+    - demo/.env
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - 3000:3000
+    - 3000:3000
     environment:
-      - INFLUX_HOST=${INFLUXDB_ADDR}
-      - INFLUX_TOKEN=${INFLUXDB_TOKEN}
-      - INFLUX_ORG=${INFLUXDB_ORG}
-      - INFLUX_BUCKET=${INFLUXDB_BUCKET}
-      - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
-    volumes: 
-      - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - grafana:/var/lib/grafana/
-    restart: always
-volumes:
-  grafana:
+    - INFLUX_HOST=${INFLUXDB_ADDR}
+    - INFLUX_TOKEN=${INFLUXDB_TOKEN}
+    - INFLUX_ORG=${INFLUXDB_ORG}
+    - INFLUX_BUCKET=${INFLUXDB_BUCKET}
+    - GF_INSTALL_PLUGINS=influxdata-flightsql-datasource
+    volumes:
+    - ./demo/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    - ./demo/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
