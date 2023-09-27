@@ -19,7 +19,7 @@ services:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
   jaeger-influxdb:
-    image: jacobmarble/jaeger-influxdb:0.5.2
+    image: jacobmarble/jaeger-influxdb:0.5.9
     stop_grace_period: 10s
     environment:
       LOG_LEVEL: info
@@ -46,7 +46,7 @@ services:
       JAEGER_AGENT_PORT: 6831
 
   otelcol-influxdb:
-    image: otel/opentelemetry-collector-contrib:0.85.0
+    image: otel/opentelemetry-collector-contrib:0.86.0
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
