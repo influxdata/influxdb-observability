@@ -1,7 +1,7 @@
 version: '3'
 services:
   jaeger-query:
-    image: jaegertracing/jaeger-query:1.45
+    image: jaegertracing/jaeger-query:1.49
     stop_grace_period: 10s
     ports:
     - "16686:16686" # web UI
@@ -19,7 +19,7 @@ services:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 
   jaeger-influxdb:
-    image: jacobmarble/jaeger-influxdb:0.5.2
+    image: jacobmarble/jaeger-influxdb:0.5.9
     stop_grace_period: 10s
     environment:
       LOG_LEVEL: debug
@@ -41,7 +41,7 @@ services:
     command: ["all", "-m", "prometheus"]
 
   otelcol-influxdb:
-    image: otel/opentelemetry-collector-contrib:0.81.0
+    image: otel/opentelemetry-collector-contrib:0.87.0
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:

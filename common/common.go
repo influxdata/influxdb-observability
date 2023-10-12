@@ -31,7 +31,7 @@ const (
 	MetricHistogramSumFieldKey   = "sum"
 	MetricHistogramMinFieldKey   = "min"
 	MetricHistogramMaxFieldKey   = "max"
-	MetricHistogramInfFieldKey   = "inf"
+	MetricHistogramInfFieldKey   = "+Inf"
 	MetricHistogramBoundKeyV2    = "le"
 	MetricHistogramCountSuffix   = "_count"
 	MetricHistogramSumSuffix     = "_sum"
@@ -43,13 +43,17 @@ const (
 	MetricSummaryQuantileKeyV2   = "quantile"
 	MetricSummaryCountSuffix     = "_count"
 	MetricSummarySumSuffix       = "_sum"
+	MetricExemplarSuffix         = "_exemplar"
 
 	// These attribute key names are influenced by the proto message keys.
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/trace/v1/trace.proto
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/metrics/v1/metrics.proto
 	// https://github.com/open-telemetry/opentelemetry-proto/blob/abbf7b7b49a5342d0d6c0e86e91d713bbedb6580/opentelemetry/proto/logs/v1/logs.proto
-	AttributeTime                   = "time"
-	AttributeStartTimeUnixNano      = "start_time_unix_nano"
+	AttributeTime                 = "time"
+	AttributeStartTimeUnixNano    = "start_time_unix_nano"
+	AttributeObservedTimeUnixNano = "observed_time_unix_nano"
+	// string formatted RFC3339, used by the otel statsd input plugin
+	AttributeStartTimeStatsd        = "start_time"
 	AttributeTraceID                = "trace_id"
 	AttributeSpanID                 = "span_id"
 	AttributeTraceState             = "trace_state"
@@ -67,4 +71,5 @@ const (
 	AttributeSeverityNumber         = "severity_number"
 	AttributeSeverityText           = "severity_text"
 	AttributeBody                   = "body"
+	AttributeFlags                  = "flags"
 )

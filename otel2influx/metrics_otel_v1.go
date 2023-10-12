@@ -38,16 +38,17 @@ func (m *metricWriterOtelV1) enqueueMetric(ctx context.Context, resource pcommon
 
 	// TODO metric description
 	measurementName := fmt.Sprintf("%s_%s_%s", pm.Name(), pm.Unit(), strings.ToLower(pm.Type().String()))
-	resourceTags := convertResourceTags(resource)
-	scopeFields := convertScopeFields(is)
+	tags := make(map[string]string)
+	tags = ResourceToTags(resource, tags)
+	tags = InstrumentationScopeToTags(is, tags)
 
 	switch pm.Type() {
 	// case pmetric.MetricTypeGauge:
 	//	return m.writeGauge(ctx, resource, is, pm.Name(), pm.Gauge(), batch)
 	case pmetric.MetricTypeSum:
-		m.enqueueSum(ctx, measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueSum(ctx, measurementName, tags, pm, batch)
 	case pmetric.MetricTypeHistogram:
-		m.enqueueHistogram(ctx, measurementName, resourceTags, scopeFields, pm, batch)
+		m.enqueueHistogram(ctx, measurementName, tags, pm, batch)
 	default:
 		err = fmt.Errorf("unrecognized metric type %q", pm.Type())
 	}
@@ -66,7 +67,7 @@ func formatFieldKeyMetricSumOtelV1(temporality string, monotonic bool, dataPoint
 	return fmt.Sprintf("value_%s_%s_%s", strings.ToLower(temporality), monotonicity, strings.ToLower(dataPointValueType))
 }
 
-func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName string, resourceTags map[string]string, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := pm.Sum().AggregationTemporality().String()
 	monotonic := pm.Sum().IsMonotonic()
 
@@ -87,12 +88,9 @@ func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName str
 		// TODO datapoint flags
 		dataPoint := pm.Sum().DataPoints().At(i)
 
-		fields := make(map[string]interface{}, len(scopeFields)+3)
+		fields := make(map[string]interface{}, 3)
 		if dataPoint.StartTimestamp() != 0 {
 			fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
-		}
-		for k, v := range scopeFields {
-			fields[k] = v
 		}
 		valueFieldKey, value := buildValue(dataPoint)
 		fields[valueFieldKey] = value
@@ -113,7 +111,7 @@ func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName str
 	}
 }
 
-func (m *metricWriterOtelV1) enqueueHistogram(ctx context.Context, measurementName string, resourceTags map[string]string, scopeFields map[string]interface{}, pm pmetric.Metric, batch InfluxWriterBatch) {
+func (m *metricWriterOtelV1) enqueueHistogram(ctx context.Context, measurementName string, resourceTags map[string]string, pm pmetric.Metric, batch InfluxWriterBatch) {
 	temporality := strings.ToLower(pm.Histogram().AggregationTemporality().String())
 
 	for i := 0; i < pm.Histogram().DataPoints().Len(); i++ {
@@ -130,12 +128,9 @@ func (m *metricWriterOtelV1) enqueueHistogram(ctx context.Context, measurementNa
 			panic(fmt.Sprintf("invalid metric histogram bucket counts qty %d vs explicit bounds qty %d", bucketCounts.Len(), explicitBounds.Len()))
 		}
 
-		fields := make(map[string]interface{}, len(scopeFields)+explicitBounds.Len()+6)
+		fields := make(map[string]interface{}, explicitBounds.Len()+6)
 		if dataPoint.StartTimestamp() != 0 {
 			fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
-		}
-		for k, v := range scopeFields {
-			fields[k] = v
 		}
 		for i := 0; i < explicitBounds.Len(); i++ {
 			boundStr := strconv.FormatFloat(explicitBounds.At(i), 'f', -1, 64)

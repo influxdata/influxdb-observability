@@ -1,7 +1,7 @@
 services:
 
   jaeger-query:
-    image: jaegertracing/jaeger-query:1.45
+    image: jaegertracing/jaeger-query:1.49
     stop_grace_period: 10s
     ports:
     - "16686:16686" # web UI
@@ -16,6 +16,7 @@ services:
       QUERY_HTTP_SERVER_HOST_PORT: :16686
       ADMIN_HTTP_HOST_PORT: :16687
       QUERY_UI_CONFIG: /jaeger-ui-config.json
+      QUERY_ENABLE_TRACING: false
     volumes:
     - ./demo/jaeger-ui-config.json:/jaeger-ui-config.json:ro
 

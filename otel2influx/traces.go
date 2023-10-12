@@ -2,7 +2,6 @@ package otel2influx
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -64,7 +63,7 @@ func NewOtelTracesToLineProtocol(config *OtelTracesToLineProtocolConfig) (*OtelT
 			}
 		}
 		if len(duplicateDimensions) > 0 {
-			return nil, fmt.Errorf("duplicate dimension(s) configured: %s",
+			return nil, fmt.Errorf("duplicate span dimension(s) configured: %s",
 				strings.Join(maps.Keys(duplicateDimensions), ","))
 		}
 	}
@@ -155,7 +154,7 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 		fields[common.AttributeTraceState] = traceState
 	}
 	if parentSpanID := span.ParentSpanID(); !parentSpanID.IsEmpty() {
-		fields[common.AttributeParentSpanID] = hex.EncodeToString(parentSpanID[:])
+		fields[common.AttributeParentSpanID] = parentSpanID.String()
 	}
 	if name := span.Name(); name != "" {
 		fields[common.AttributeSpanName] = name
@@ -209,12 +208,12 @@ func (c *OtelTracesToLineProtocol) enqueueSpan(ctx context.Context, span ptrace.
 		fields[semconv.OtelStatusDescription] = message
 	}
 
-	tags[common.AttributeTraceID] = hex.EncodeToString(traceID[:])
-	tags[common.AttributeSpanID] = hex.EncodeToString(spanID[:])
+	tags[common.AttributeTraceID] = traceID.String()
+	tags[common.AttributeSpanID] = spanID.String()
 
 	for k := range tags {
 		if _, found := fields[k]; found {
-			c.logger.Debug("tag and field keys conflict; field will be dropped", "tag key", k)
+			c.logger.Debug("tag and field keys conflict; field will be dropped", "key", k)
 			droppedAttributesCount++
 			delete(fields, k)
 		}
@@ -236,36 +235,23 @@ func (c *OtelTracesToLineProtocol) enqueueSpanEvent(ctx context.Context, traceID
 		fields[semconv.AttributeEventName] = name
 	}
 
-	droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
-	attributes := make(map[string]interface{}, spanEvent.Attributes().Len())
-	spanEvent.Attributes().Range(func(k string, v pcommon.Value) bool {
-		if k == "" {
-			droppedAttributesCount++
-			c.logger.Debug("span event attribute key is empty")
-		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
-			droppedAttributesCount++
-			c.logger.Debug("invalid span event attribute value", err)
-		} else {
-			attributes[k] = v
-		}
-		return true
-	})
-	if len(attributes) > 0 {
-		marshalledAttributes, err := json.Marshal(attributes)
+	if spanEvent.Attributes().Len() > 0 {
+		droppedAttributesCount := uint64(spanEvent.DroppedAttributesCount())
+		marshalledAttributes, err := json.Marshal(spanEvent.Attributes().AsRaw())
 		if err != nil {
 			c.logger.Debug("failed to marshal attributes to JSON", err)
-			droppedAttributesCount += uint64(len(attributes))
+			droppedAttributesCount += uint64(spanEvent.Attributes().Len())
 		} else {
 			fields[common.AttributeAttributes] = string(marshalledAttributes)
 		}
-	}
-	if droppedAttributesCount > 0 {
-		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
+		if droppedAttributesCount > 0 {
+			fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
+		}
 	}
 
 	tags := map[string]string{
-		common.AttributeTraceID: hex.EncodeToString(traceID[:]),
-		common.AttributeSpanID:  hex.EncodeToString(spanID[:]),
+		common.AttributeTraceID: traceID.String(),
+		common.AttributeSpanID:  spanID.String(),
 	}
 
 	err := batch.EnqueuePoint(ctx, common.MeasurementLogs, tags, fields, spanEvent.Timestamp().AsTime(), common.InfluxMetricValueTypeUntyped)
@@ -288,41 +274,28 @@ func (c *OtelTracesToLineProtocol) writeSpanLink(ctx context.Context, traceID pc
 	}
 
 	tags := map[string]string{
-		common.AttributeTraceID:       hex.EncodeToString(traceID[:]),
-		common.AttributeSpanID:        hex.EncodeToString(spanID[:]),
-		common.AttributeLinkedTraceID: hex.EncodeToString(linkedTraceID[:]),
-		common.AttributeLinkedSpanID:  hex.EncodeToString(linkedSpanID[:]),
+		common.AttributeTraceID:       traceID.String(),
+		common.AttributeSpanID:        spanID.String(),
+		common.AttributeLinkedTraceID: linkedTraceID.String(),
+		common.AttributeLinkedSpanID:  linkedSpanID.String(),
 	}
 
 	if traceState := spanLink.TraceState().AsRaw(); traceState != "" {
 		fields[common.AttributeTraceState] = traceState
 	}
 
-	droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
-	attributes := make(map[string]interface{}, spanLink.Attributes().Len())
-	spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
-		if k == "" {
-			droppedAttributesCount++
-			c.logger.Debug("span link attribute key is empty")
-		} else if v, err := AttributeValueToInfluxFieldValue(v); err != nil {
-			droppedAttributesCount++
-			c.logger.Debug("invalid span link attribute value", err)
-		} else {
-			attributes[k] = v
-		}
-		return true
-	})
-	if len(attributes) > 0 {
-		marshalledAttributes, err := json.Marshal(attributes)
+	if spanLink.Attributes().Len() > 0 {
+		droppedAttributesCount := uint64(spanLink.DroppedAttributesCount())
+		marshalledAttributes, err := json.Marshal(spanLink.Attributes().AsRaw())
 		if err != nil {
 			c.logger.Debug("failed to marshal attributes to JSON", err)
-			droppedAttributesCount += uint64(len(attributes))
+			droppedAttributesCount += uint64(spanLink.Attributes().Len())
 		} else {
 			fields[common.AttributeAttributes] = string(marshalledAttributes)
 		}
-	}
-	if droppedAttributesCount > 0 {
-		fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
+		if droppedAttributesCount > 0 {
+			fields[common.AttributeDroppedAttributesCount] = droppedAttributesCount
+		}
 	}
 
 	if err := batch.EnqueuePoint(ctx, common.MeasurementSpanLinks, tags, fields, ts, common.InfluxMetricValueTypeUntyped); err != nil {

@@ -3,6 +3,7 @@ package influx2otel
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -91,7 +92,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 			rAttributes.PutStr(k, v)
 		case k == "temporality" && v == "delta":
 			isDelta = true
-		case k == "start_time":
+		case k == common.AttributeStartTimeStatsd:
 		default:
 			mAttributes.PutStr(k, v)
 		}
@@ -111,10 +112,10 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 
 	ilmKey := ilName + ":" + ilVersion
 	if _, found := b.ilmByRMAttributesAndIL[rKey][ilmKey]; !found {
-		ilMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
-		ilMetrics.Scope().SetName(ilName)
-		ilMetrics.Scope().SetVersion(ilVersion)
-		b.ilmByRMAttributesAndIL[rKey][ilmKey] = ilMetrics
+		isMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
+		isMetrics.Scope().SetName(ilName)
+		isMetrics.Scope().SetVersion(ilVersion)
+		b.ilmByRMAttributesAndIL[rKey][ilmKey] = isMetrics
 		b.metricByRMIL[rKey][ilmKey] = make(map[string]pmetric.Metric)
 	}
 
@@ -178,16 +179,18 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 
 func (b *MetricsBatch) GetMetrics() pmetric.Metrics {
 	metrics := pmetric.NewMetrics()
-	// Ensure that the extra bucket counts have been added.
+	// Ensure that infinity histogram buckets exist.
 	for _, resourceMetrics := range b.rmByAttributes {
 		for i := 0; i < resourceMetrics.ScopeMetrics().Len(); i++ {
-			ilMetrics := resourceMetrics.ScopeMetrics().At(i)
-			for j := 0; j < ilMetrics.Metrics().Len(); j++ {
-				metric := ilMetrics.Metrics().At(j)
+			isMetrics := resourceMetrics.ScopeMetrics().At(i)
+			for j := 0; j < isMetrics.Metrics().Len(); j++ {
+				metric := isMetrics.Metrics().At(j)
 				if metric.Type() == pmetric.MetricTypeHistogram {
 					for k := 0; k < metric.Histogram().DataPoints().Len(); k++ {
 						dataPoint := metric.Histogram().DataPoints().At(k)
-						if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
+						if dataPoint.ExplicitBounds().Len() > 0 && math.IsInf(dataPoint.ExplicitBounds().At(dataPoint.ExplicitBounds().Len()-1), +1) {
+							dataPoint.ExplicitBounds().FromRaw(dataPoint.ExplicitBounds().AsRaw()[:dataPoint.ExplicitBounds().Len()-1])
+						} else if dataPoint.BucketCounts().Len() == dataPoint.ExplicitBounds().Len() {
 							infBucketCount := dataPoint.Count()
 							for l := 0; l < dataPoint.BucketCounts().Len(); l++ {
 								infBucketCount -= dataPoint.BucketCounts().At(l)
@@ -214,7 +217,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 	}
 
 	for k, v := range fields {
-		if k == "start_time" {
+		if k == common.AttributeStartTimeStatsd {
 			continue
 		}
 		var floatValue *float64
@@ -242,7 +245,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 		dataPoint.SetTimestamp(pcommon.NewTimestampFromTime(ts))
 		// set start_time, if exists and is RFC3339
 		// used by statsd input plugin
-		if startTimeObj, ok := fields["start_time"]; ok {
+		if startTimeObj, ok := fields[common.AttributeStartTimeStatsd]; ok {
 			if startTimeStr, ok := startTimeObj.(string); ok {
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))

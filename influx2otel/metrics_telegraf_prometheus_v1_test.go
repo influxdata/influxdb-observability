@@ -27,6 +27,7 @@ func TestAddPoint_v1_gauge(t *testing.T) {
 		},
 		map[string]interface{}{
 			"gauge": float64(23.9),
+			"flags": uint64(1),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeGauge)
@@ -49,20 +50,22 @@ func TestAddPoint_v1_gauge(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("cache_age_seconds")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "0")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(23.9)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "1")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(11.9)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -81,6 +84,7 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 		},
 		map[string]interface{}{
 			"gauge": float64(23.9),
+			"flags": uint64(1),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
@@ -103,20 +107,22 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("cache_age_seconds")
 	m.SetEmptyGauge()
 	dp := m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "0")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(23.9)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("engine_id", "1")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(11.9)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -136,6 +142,7 @@ func TestAddPoint_v1_sum(t *testing.T) {
 		},
 		map[string]interface{}{
 			"counter": float64(1027),
+			"flags":   uint64(1),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeSum)
@@ -159,10 +166,10 @@ func TestAddPoint_v1_sum(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("http_requests_total")
 	m.SetEmptySum()
 	m.Sum().SetIsMonotonic(true)
@@ -172,11 +179,13 @@ func TestAddPoint_v1_sum(t *testing.T) {
 	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(1027)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "400")
 	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(3)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -196,6 +205,7 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 		},
 		map[string]interface{}{
 			"counter": float64(1027),
+			"flags":   uint64(0),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
@@ -219,10 +229,10 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("http_requests_total")
 	m.SetEmptySum()
 	m.Sum().SetIsMonotonic(true)
@@ -232,11 +242,13 @@ func TestAddPoint_v1_untypedSum(t *testing.T) {
 	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(1027)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutStr("code", "400")
 	dp.Attributes().PutStr("method", "post")
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetDoubleValue(3)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -262,6 +274,8 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 			"0.2":   float64(100392),
 			"0.5":   float64(129389),
 			"1":     float64(133988),
+			"+Inf":  float64(144320),
+			"flags": uint64(1),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeHistogram)
@@ -270,10 +284,10 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("http_request_duration_seconds")
 	m.SetEmptyHistogram()
 	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -285,6 +299,57 @@ func TestAddPoint_v1_histogram(t *testing.T) {
 	dp.SetSum(53423)
 	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
+func TestAddPoint_v1_histogram_missingInfinityBucket(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("http_request_duration_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"count": float64(144320),
+			"sum":   float64(53423),
+			"0.05":  float64(24054),
+			"0.1":   float64(33444),
+			"0.2":   float64(100392),
+			"0.5":   float64(129389),
+			"1":     float64(133988),
+			"flags": uint64(0),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetEmptyHistogram()
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
+	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -310,6 +375,7 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 			"0.2":   float64(100392),
 			"0.5":   float64(129389),
 			"1":     float64(133988),
+			"flags": uint64(1),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
@@ -318,10 +384,10 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("http_request_duration_seconds")
 	m.SetEmptyHistogram()
 	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -333,6 +399,7 @@ func TestAddPoint_v1_untypedHistogram(t *testing.T) {
 	dp.SetSum(53423)
 	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
@@ -358,6 +425,7 @@ func TestAddPoint_v1_summary(t *testing.T) {
 			"0.5":   float64(4773),
 			"0.9":   float64(9001),
 			"0.99":  float64(76656),
+			"flags": uint64(1),
 		},
 		time.Unix(0, 1395066363000000123),
 		common.InfluxMetricValueTypeSummary)
@@ -366,10 +434,10 @@ func TestAddPoint_v1_summary(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("rpc_duration_seconds")
 	m.SetEmptySummary()
 	dp := m.Summary().DataPoints().AppendEmpty()
@@ -378,6 +446,7 @@ func TestAddPoint_v1_summary(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	qv := dp.QuantileValues().AppendEmpty()
 	qv.SetQuantile(0.01)
 	qv.SetValue(3102)
@@ -418,6 +487,7 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 			"0.5":   float64(4773),
 			"0.9":   float64(9001),
 			"0.99":  float64(76656),
+			"flags": uint64(0),
 		},
 		time.Unix(0, 1395066363000000123).UTC(),
 		common.InfluxMetricValueTypeUntyped)
@@ -426,10 +496,10 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 	expect := pmetric.NewMetrics()
 	rm := expect.ResourceMetrics().AppendEmpty()
 	rm.Resource().Attributes().PutStr("container.name", "42")
-	ilMetrics := rm.ScopeMetrics().AppendEmpty()
-	ilMetrics.Scope().SetName("My Library")
-	ilMetrics.Scope().SetVersion("latest")
-	m := ilMetrics.Metrics().AppendEmpty()
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
 	m.SetName("rpc_duration_seconds")
 	m.SetEmptyHistogram()
 	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -439,8 +509,9 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
-	dp.BucketCounts().FromRaw([]uint64{3102, 3272, 4773, 9001, 76656, 2693})
+	dp.BucketCounts().FromRaw([]uint64{3102, 170, 1501, 4228, 67655, 2693})
 	dp.ExplicitBounds().FromRaw([]float64{0.01, 0.05, 0.5, 0.9, 0.99})
+	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(false))
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }

@@ -32,7 +32,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory, func(*testing.T)) {
+func setupOtelcolInfluxDBExporter(t *testing.T) (*httptest.Server, *mockReceiverFactory, func(*testing.T), error) {
 	t.Helper()
 
 	const otelcolConfigTemplate = `
@@ -43,6 +43,7 @@ exporters:
   influxdb:
     endpoint: ENDPOINT_DESTINATION
     span_dimensions: SPAN_DIMENSIONS
+    log_record_dimensions: LOG_RECORD_DIMENSIONS
     metrics_schema: METRICS_SCHEMA
     org: myorg
     bucket: mybucket
@@ -73,6 +74,7 @@ service:
 		mockDestinationEndpoint := mockDestination.URL
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
 		configString = strings.ReplaceAll(configString, "SPAN_DIMENSIONS", "\n    - service.name\n    - span.name")
+		configString = strings.ReplaceAll(configString, "LOG_RECORD_DIMENSIONS", "\n    - service.name")
 		configString = strings.ReplaceAll(configString, "METRICS_SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
@@ -125,6 +127,7 @@ service:
 	var runErr error
 	go func() {
 		runErr = collector.Run(context.Background())
+		require.NoError(t, err)
 		close(done)
 	}()
 	t.Cleanup(collector.Shutdown)
@@ -148,12 +151,12 @@ service:
 		time.Sleep(10 * time.Millisecond)
 		select {
 		case <-done:
-			return nil, nil, nil
+			return nil, nil, nil, runErr
 		default:
 		}
 	}
 
-	return mockDestination, mockReceiverFactory, func(t *testing.T) { collector.Shutdown(); <-done; assert.NoError(t, runErr) }
+	return mockDestination, mockReceiverFactory, func(t *testing.T) { collector.Shutdown(); <-done; assert.NoError(t, runErr) }, nil
 }
 
 var (
