@@ -1,5 +1,5 @@
 #syntax=docker/dockerfile:1.2
-FROM golang:1.20-alpine3.16 AS builder
+FROM golang:1.22-alpine3.19 AS builder
 RUN apk --update --no-cache add ca-certificates
 ENV CGO_ENABLED 0
 
@@ -7,7 +7,7 @@ RUN \
   --mount=type=cache,id=influxdb-observability-gocache,sharing=locked,target=/root/.cache/go-build \
   --mount=type=cache,id=influxdb-observability-gomodcache,sharing=locked,target=/go/pkg/mod \
   du -cshx /root/.cache/go-build /go/pkg/mod && \
-  go install go.opentelemetry.io/collector/cmd/builder@v0.87.0 && \
+  go install go.opentelemetry.io/collector/cmd/builder@v0.96.0 && \
   du -cshx /root/.cache/go-build /go/pkg/mod
 
 COPY . /project

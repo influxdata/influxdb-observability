@@ -83,7 +83,7 @@ service:
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
 				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-				Converters: []confmap.Converter{expandconverter.New()},
+				Converters: []confmap.Converter{expandconverter.New(confmap.ConverterSettings{})},
 			},
 		}
 		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
@@ -100,11 +100,13 @@ service:
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: otelcol.Factories{
-			Receivers:  receiverFactories,
-			Processors: processorFactories,
-			Exporters:  exporterFactories,
-			Extensions: extensionFactories,
+		Factories: func() (otelcol.Factories, error) {
+			return otelcol.Factories{
+				Receivers:  receiverFactories,
+				Processors: processorFactories,
+				Exporters:  exporterFactories,
+				Extensions: extensionFactories,
+			}, nil
 		},
 		BuildInfo: component.BuildInfo{
 			Command:     "test",
@@ -302,7 +304,7 @@ service:
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
 				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-				Converters: []confmap.Converter{expandconverter.New()},
+				Converters: []confmap.Converter{expandconverter.New(confmap.ConverterSettings{})},
 			},
 		}
 		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
@@ -318,10 +320,12 @@ service:
 	extensionFactories, err := extension.MakeFactoryMap(healthcheckextension.NewFactory())
 	require.NoError(t, err)
 	appSettings := otelcol.CollectorSettings{
-		Factories: otelcol.Factories{
-			Receivers:  receiverFactories,
-			Exporters:  exporterFactories,
-			Extensions: extensionFactories,
+		Factories: func() (otelcol.Factories, error) {
+			return otelcol.Factories{
+				Receivers:  receiverFactories,
+				Exporters:  exporterFactories,
+				Extensions: extensionFactories,
+			}, nil
 		},
 		BuildInfo: component.BuildInfo{
 			Command:     "test",
