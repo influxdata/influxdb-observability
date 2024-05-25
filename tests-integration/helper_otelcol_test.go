@@ -70,7 +70,7 @@ service:
 	mockDestination := httptest.NewServer(mockReceiverFactory)
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 
-	otelcolConfigProvider := func() otelcol.ConfigProvider {
+	otelcolConfigProviderSettings := func() otelcol.ConfigProviderSettings {
 		mockDestinationEndpoint := mockDestination.URL
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ENDPOINT_DESTINATION", mockDestinationEndpoint)
 		configString = strings.ReplaceAll(configString, "SPAN_DIMENSIONS", "\n    - service.name\n    - span.name")
@@ -78,17 +78,13 @@ service:
 		configString = strings.ReplaceAll(configString, "METRICS_SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envprovider.NewWithSettings(confmap.ProviderSettings{})
-		configProviderSettings := otelcol.ConfigProviderSettings{
+		return otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
-				URIs:       []string{"env:test-env"},
-				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-				Converters: []confmap.Converter{expandconverter.New(confmap.ConverterSettings{})},
+				URIs:               []string{"env:test-env"},
+				ProviderFactories:  []confmap.ProviderFactory{envprovider.NewFactory()},
+				ConverterFactories: []confmap.ConverterFactory{expandconverter.NewFactory()},
 			},
 		}
-		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
-		require.NoError(t, err)
-		return configProvider
 	}()
 
 	receiverFactories, err := receiver.MakeFactoryMap(mockReceiverFactory)
@@ -117,11 +113,11 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ConfigProvider:        otelcolConfigProvider,
-		SkipSettingGRPCLogger: true,
+		ConfigProviderSettings: otelcolConfigProviderSettings,
+		SkipSettingGRPCLogger:  true,
 	}
-	envprovider.NewWithSettings(confmap.ProviderSettings{})
-	fileprovider.NewWithSettings(confmap.ProviderSettings{})
+	envprovider.NewFactory()
+	fileprovider.NewFactory()
 	collector, err := otelcol.NewCollector(appSettings)
 	require.NoError(t, err)
 
@@ -295,21 +291,17 @@ service:
 	otelcolReceiverAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 	otelcolHealthCheckAddress := fmt.Sprintf("127.0.0.1:%d", findOpenTCPPort(t))
 
-	otelcolConfigProvider := func() otelcol.ConfigProvider {
+	otelcolConfigProviderSettings := func() otelcol.ConfigProviderSettings {
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envprovider.NewWithSettings(confmap.ProviderSettings{})
-		configProviderSettings := otelcol.ConfigProviderSettings{
+		return otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
-				URIs:       []string{"env:test-env"},
-				Providers:  map[string]confmap.Provider{configMapProvider.Scheme(): configMapProvider},
-				Converters: []confmap.Converter{expandconverter.New(confmap.ConverterSettings{})},
+				URIs:               []string{"env:test-env"},
+				ProviderFactories:  []confmap.ProviderFactory{envprovider.NewFactory()},
+				ConverterFactories: []confmap.ConverterFactory{expandconverter.NewFactory()},
 			},
 		}
-		configProvider, err := otelcol.NewConfigProvider(configProviderSettings)
-		require.NoError(t, err)
-		return configProvider
 	}()
 
 	receiverFactories, err := receiver.MakeFactoryMap(influxdbreceiver.NewFactory())
@@ -336,7 +328,7 @@ service:
 			zap.ErrorOutput(&testingLogger{t}),
 			zap.IncreaseLevel(zap.WarnLevel),
 		},
-		ConfigProvider: otelcolConfigProvider,
+		ConfigProviderSettings: otelcolConfigProviderSettings,
 	}
 	collector, err := otelcol.NewCollector(appSettings)
 	require.NoError(t, err)

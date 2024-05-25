@@ -1,10 +1,12 @@
 module github.com/influxdata/influxdb-observability/common
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.10
 
 require (
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/semconv v0.98.0
+	go.opentelemetry.io/collector/semconv v0.99.0
 )
 
 require (
