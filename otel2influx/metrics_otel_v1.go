@@ -85,7 +85,6 @@ func (m *metricWriterOtelV1) enqueueSum(ctx context.Context, measurementName str
 
 	for i := 0; i < pm.Sum().DataPoints().Len(); i++ {
 		// TODO datapoint exemplars
-		// TODO datapoint flags
 		dataPoint := pm.Sum().DataPoints().At(i)
 
 		fields := make(map[string]interface{}, 3)
@@ -116,7 +115,6 @@ func (m *metricWriterOtelV1) enqueueHistogram(ctx context.Context, measurementNa
 
 	for i := 0; i < pm.Histogram().DataPoints().Len(); i++ {
 		// TODO datapoint exemplars
-		// TODO datapoint flags
 		dataPoint := pm.Histogram().DataPoints().At(i)
 
 		bucketCounts, explicitBounds := dataPoint.BucketCounts(), dataPoint.ExplicitBounds()

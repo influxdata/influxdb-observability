@@ -102,7 +102,6 @@ func (c *OtelLogsToLineProtocol) enqueueLogRecord(ctx context.Context, resource 
 	tags := make(map[string]string, len(c.logRecordDimensions)+2)
 	fields := make(map[string]interface{})
 
-	fields[common.AttributeFlags] = uint64(logRecord.Flags())
 	if ots := logRecord.ObservedTimestamp().AsTime(); !ots.IsZero() && !ots.Equal(time.Unix(0, 0)) {
 		fields[common.AttributeObservedTimeUnixNano] = ots.UnixNano()
 	}

@@ -79,5 +79,4 @@ type basicDataPoint interface {
 	Timestamp() pcommon.Timestamp
 	StartTimestamp() pcommon.Timestamp
 	Attributes() pcommon.Map
-	Flags() pmetric.DataPointFlags
 }

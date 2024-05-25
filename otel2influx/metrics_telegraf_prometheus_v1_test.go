@@ -37,7 +37,6 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 	dp.SetStartTimestamp(startTimestamp)
 	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(23.9)
-	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Gauge().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("engine_id", 1)
 	dp.SetStartTimestamp(startTimestamp)
@@ -59,7 +58,6 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"gauge":                           float64(23.9),
-				"flags":                           uint64(1),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
@@ -75,7 +73,6 @@ func TestWriteMetric_v1_gauge(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"gauge":                           float64(11.9),
-				"flags":                           uint64(0),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeGauge,
@@ -128,7 +125,6 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 		dp.SetStartTimestamp(startTimestamp)
 		dp.SetTimestamp(timestamp)
 		dp.SetDoubleValue(23.9)
-		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 		dp = m.Sum().DataPoints().AppendEmpty()
 		dp.Attributes().PutInt("engine_id", 1)
 		dp.SetStartTimestamp(startTimestamp)
@@ -150,7 +146,6 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 				fields: map[string]interface{}{
 					common.AttributeStartTimeUnixNano: int64(startTimestamp),
 					"gauge":                           float64(23.9),
-					"flags":                           uint64(1),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeGauge,
@@ -166,7 +161,6 @@ func TestWriteMetric_v1_gaugeFromSum(t *testing.T) {
 				fields: map[string]interface{}{
 					common.AttributeStartTimeUnixNano: int64(startTimestamp),
 					"gauge":                           float64(11.9),
-					"flags":                           uint64(0),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeGauge,
@@ -203,7 +197,6 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 	dp.SetStartTimestamp(startTimestamp)
 	dp.SetTimestamp(timestamp)
 	dp.SetDoubleValue(1027)
-	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	dp = m.Sum().DataPoints().AppendEmpty()
 	dp.Attributes().PutInt("code", 400)
 	dp.Attributes().PutStr("method", "post")
@@ -227,7 +220,6 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"counter":                         float64(1027),
-				"flags":                           uint64(1),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSum,
@@ -244,7 +236,6 @@ func TestWriteMetric_v1_sum(t *testing.T) {
 			fields: map[string]interface{}{
 				common.AttributeStartTimeUnixNano: int64(startTimestamp),
 				"counter":                         float64(3),
-				"flags":                           uint64(0),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSum,
@@ -285,7 +276,6 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 		dp.SetMax(100)
 		dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
 		dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
-		dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 
 		err = c.WriteMetrics(context.Background(), metrics)
 		require.NoError(t, err)
@@ -312,7 +302,6 @@ func TestWriteMetric_v1_histogram(t *testing.T) {
 					"+Inf":                            float64(144320),
 					"min":                             float64(0),
 					"max":                             float64(100),
-					"flags":                           uint64(1),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeHistogram,
@@ -375,7 +364,6 @@ func TestWriteMetric_v1_histogram_missingInfinityBucket(t *testing.T) {
 					"0.2":                             float64(100392),
 					"0.5":                             float64(129389),
 					"1":                               float64(133988),
-					"flags":                           uint64(0),
 				},
 				ts:    time.Unix(0, 1395066363000000123).UTC(),
 				vType: common.InfluxMetricValueTypeHistogram,
@@ -411,7 +399,6 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 	dp.SetTimestamp(timestamp)
 	dp.SetCount(2693)
 	dp.SetSum(17560473)
-	dp.SetFlags(pmetric.DefaultDataPointFlags.WithNoRecordedValue(true))
 	qv := dp.QuantileValues().AppendEmpty()
 	qv.SetQuantile(0.01)
 	qv.SetValue(3102)
@@ -450,7 +437,6 @@ func TestWriteMetric_v1_summary(t *testing.T) {
 				"0.5":                             float64(4773),
 				"0.9":                             float64(9001),
 				"0.99":                            float64(76656),
-				"flags":                           uint64(1),
 			},
 			ts:    time.Unix(0, 1395066363000000123).UTC(),
 			vType: common.InfluxMetricValueTypeSummary,
