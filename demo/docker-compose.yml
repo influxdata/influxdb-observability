@@ -46,7 +46,7 @@ services:
       JAEGER_AGENT_PORT: 6831
 
   otelcol-influxdb:
-    image: otel/opentelemetry-collector-contrib:0.99.0
+    image: otel/opentelemetry-collector-contrib:0.100.0
     command: [ "--config", "/config.yml" ]
     stop_grace_period: 10s
     volumes:
