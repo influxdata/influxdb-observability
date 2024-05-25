@@ -1,13 +1,13 @@
 module tests
 
-go 1.21.0
+go 1.22.0
 
-toolchain go1.21.10
+toolchain go1.22.3
 
 require (
 	github.com/influxdata/influxdb/v2 v2.6.1
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/influxdata/telegraf v1.27.2
+	github.com/influxdata/telegraf v0.0.0-0.20240525225432-1e4dabce191c
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.101.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.101.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.101.0
