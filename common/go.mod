@@ -6,7 +6,7 @@ toolchain go1.21.10
 
 require (
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/semconv v0.99.0
+	go.opentelemetry.io/collector/semconv v0.100.0
 )
 
 require (
