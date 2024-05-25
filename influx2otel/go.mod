@@ -4,11 +4,11 @@ go 1.21
 
 require (
 	github.com/influxdata/influxdb-observability/common v0.5.8
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.96.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.96.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.97.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.97.0
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/pdata v1.3.0
-	go.opentelemetry.io/collector/semconv v0.96.0
+	go.opentelemetry.io/collector/pdata v1.4.0
+	go.opentelemetry.io/collector/semconv v0.97.0
 )
 
 require (

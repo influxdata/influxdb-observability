@@ -11,14 +11,14 @@ if ! hash go; then
 fi
 if ! hash staticcheck; then
   echo "installing staticcheck"
-  if ! go install honnef.co/go/tools/cmd/staticcheck@2023.1.3; then
+  if ! go install honnef.co/go/tools/cmd/staticcheck@2023.1.7; then
     echo "failed to install staticcheck"
     exit 1
   fi
 fi
 if ! hash builder; then
   echo "installing the opentelemetry collector builder"
-  if ! go install go.opentelemetry.io/collector/cmd/builder@v0.87.0; then
+  if ! go install go.opentelemetry.io/collector/cmd/builder@v0.97.0; then
     echo "failed to install the opentelemetry collector builder"
     exit 1
   fi
