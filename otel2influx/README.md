@@ -66,8 +66,8 @@ For example:
 - `Metric.unit` is ignored
 - `Metric` values are assigned field keys `gauge`, `counter`, `count`, `sum`, `inf`
   - Metric conversion follows Prometheus conventions for compatibility
-- `LogRecord.flags` is ignored
-  - This is an enum with no values defines yet
+- `flags` fields are ignored
+  - These are enum with no values defines yet
 
 ## Example Line Protocol
 

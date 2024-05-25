@@ -94,11 +94,6 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 				}
 			}
 		}
-		if flagsObj, ok := fields[common.AttributeFlags]; ok {
-			if flagsUint64, ok := flagsObj.(uint64); ok {
-				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
-			}
-		}
 
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -114,7 +109,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 		var floatValue *float64
 		var intValue *int64
 
-		if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
+		if k == common.AttributeStartTimeStatsd {
 			continue
 		}
 		switch typedValue := fieldValue.(type) {
@@ -143,11 +138,6 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
-			}
-		}
-		if flagsObj, ok := fields[common.AttributeFlags]; ok {
-			if flagsUint64, ok := flagsObj.(uint64); ok {
-				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -193,11 +183,6 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 				}
 			}
 		}
-		if flagsObj, ok := fields[common.AttributeFlags]; ok {
-			if flagsUint64, ok := flagsObj.(uint64); ok {
-				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
-			}
-		}
 
 		if floatValue != nil {
 			dataPoint.SetDoubleValue(*floatValue)
@@ -211,7 +196,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 	}
 
 	for k, fieldValue := range fields {
-		if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
+		if k == common.AttributeStartTimeStatsd {
 			continue
 		}
 
@@ -243,11 +228,6 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 				if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 					dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 				}
-			}
-		}
-		if flagsObj, ok := fields[common.AttributeFlags]; ok {
-			if flagsUint64, ok := flagsObj.(uint64); ok {
-				dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 			}
 		}
 
@@ -295,7 +275,7 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 				bucketCounts = append(bucketCounts, uint64(vBucketCount))
 			}
 
-		} else if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
+		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized histogram field", "field", k, "value", vi)
 		}
@@ -335,11 +315,6 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 			if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 				dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 			}
-		}
-	}
-	if flagsObj, ok := fields[common.AttributeFlags]; ok {
-		if flagsUint64, ok := flagsObj.(uint64); ok {
-			dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 		}
 	}
 
@@ -382,7 +357,7 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 				valueAtQuantile.SetValue(value)
 			}
 
-		} else if k == common.AttributeStartTimeStatsd || k == common.AttributeFlags {
+		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized summary field", "field", k, "value", vi)
 		}
@@ -406,11 +381,6 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 			if t, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 				dataPoint.SetStartTimestamp(pcommon.NewTimestampFromTime(t))
 			}
-		}
-	}
-	if flagsObj, ok := fields[common.AttributeFlags]; ok {
-		if flagsUint64, ok := flagsObj.(uint64); ok {
-			dataPoint.SetFlags(pmetric.DataPointFlags(flagsUint64))
 		}
 	}
 

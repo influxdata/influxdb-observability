@@ -39,7 +39,7 @@ timestamp                                           | `time_unix_nano` fixed64  
 `otel.log.dropped_attributes_count` field uint      | `dropped_attributes_count` uint32
 `severity_number` tag uint                          | `severity_number` enum SeverityNumber           |                                                           | `level` number                                       | `PRI severity` integer     | `PRI severity` integer
 `severity_text` field string                        | `severity_text` string
-`otel.log.flags` field uint                         | `flags` fixed32
+.                                                   | `flags` fixed32
 .                                                   | `attributes["fluent.tag"]` string               | `tag` string
 .                                                   | `Resource.attributes["net.host.name"]` string   |                                                           | `host` string                                        | `HEADER hostname` string   | `HOSTNAME` string
 .                                                   | `Resource.attributes["net.host.ip"]` string     |                                                           |                                                      | `HEADER IP address` string | `HOSTNAME` string

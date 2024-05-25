@@ -49,7 +49,6 @@ func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(dataPoint 
 	if dataPoint.StartTimestamp() != 0 {
 		fields[common.AttributeStartTimeUnixNano] = int64(dataPoint.StartTimestamp())
 	}
-	fields[common.AttributeFlags] = uint64(dataPoint.Flags())
 
 	tags = maps.Clone(tags)
 	dataPoint.Attributes().Range(func(k string, v pcommon.Value) bool {
