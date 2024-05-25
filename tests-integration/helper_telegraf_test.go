@@ -137,7 +137,7 @@ func setupTelegrafOpenTelemetryInput(t *testing.T) (*grpc.ClientConn, *mockOutpu
 		}
 	}
 
-	clientConn, err := grpc.Dial(otelInputAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	clientConn, err := grpc.NewClient(otelInputAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 
 	return clientConn, mockOutputPlugin, stopAgent
