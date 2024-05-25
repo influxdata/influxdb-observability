@@ -5,9 +5,9 @@ go 1.21
 require (
 	github.com/influxdata/influxdb-observability/common v0.5.8
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/consumer v0.96.0
-	go.opentelemetry.io/collector/pdata v1.3.0
-	go.opentelemetry.io/collector/semconv v0.96.0
+	go.opentelemetry.io/collector/consumer v0.97.0
+	go.opentelemetry.io/collector/pdata v1.4.0
+	go.opentelemetry.io/collector/semconv v0.97.0
 	go.uber.org/multierr v1.11.0
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 )

@@ -78,7 +78,7 @@ service:
 		configString = strings.ReplaceAll(configString, "METRICS_SCHEMA", "telegraf-prometheus-v1")
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envprovider.New()
+		configMapProvider := envprovider.NewWithSettings(confmap.ProviderSettings{})
 		configProviderSettings := otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
@@ -120,8 +120,8 @@ service:
 		ConfigProvider:        otelcolConfigProvider,
 		SkipSettingGRPCLogger: true,
 	}
-	envprovider.New()
-	fileprovider.New()
+	envprovider.NewWithSettings(confmap.ProviderSettings{})
+	fileprovider.NewWithSettings(confmap.ProviderSettings{})
 	collector, err := otelcol.NewCollector(appSettings)
 	require.NoError(t, err)
 
@@ -181,7 +181,7 @@ func newMockReceiverFactory() *mockReceiverFactory {
 }
 
 func (m *mockReceiverFactory) Type() component.Type {
-	return "mock"
+	return component.MustNewType("mock")
 }
 
 func (m *mockReceiverFactory) TracesReceiverStability() component.StabilityLevel {
@@ -299,7 +299,7 @@ service:
 		configString := strings.ReplaceAll(otelcolConfigTemplate, "ADDRESS_INFLUXDB", otelcolReceiverAddress)
 		configString = strings.ReplaceAll(configString, "ADDRESS_HEALTH_CHECK", otelcolHealthCheckAddress)
 		t.Setenv("test-env", configString)
-		configMapProvider := envprovider.New()
+		configMapProvider := envprovider.NewWithSettings(confmap.ProviderSettings{})
 		configProviderSettings := otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				URIs:       []string{"env:test-env"},
@@ -397,7 +397,7 @@ type mockExporterFactory struct {
 }
 
 func (m *mockExporterFactory) Type() component.Type {
-	return "mock"
+	return component.MustNewType("mock")
 }
 
 func (m *mockExporterFactory) TracesExporterStability() component.StabilityLevel {
