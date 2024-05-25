@@ -14,7 +14,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/pdata v1.3.0
-	go.opentelemetry.io/collector/semconv v0.97.0
+	go.opentelemetry.io/collector/semconv v0.98.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.62.1
