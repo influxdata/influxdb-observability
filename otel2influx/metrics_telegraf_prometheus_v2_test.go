@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/emqx-ecp-devops/influxdb-observability/otel2influx"
 	"github.com/influxdata/influxdb-observability/common"
-	"github.com/influxdata/influxdb-observability/otel2influx"
 )
 
 func TestWriteMetric_v2_gauge(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/emqx-ecp-devops/influxdb-observability/otel2influx"
 	"github.com/influxdata/influxdb-observability/common"
-	"github.com/influxdata/influxdb-observability/otel2influx"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"

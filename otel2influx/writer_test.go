@@ -6,8 +6,8 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
+	"github.com/emqx-ecp-devops/influxdb-observability/otel2influx"
 	"github.com/influxdata/influxdb-observability/common"
-	"github.com/influxdata/influxdb-observability/otel2influx"
 )
 
 type mockPoint struct {

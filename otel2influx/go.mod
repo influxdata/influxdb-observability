@@ -6,7 +6,6 @@ toolchain go1.21.10
 
 require (
 	github.com/influxdata/influxdb-observability/common v0.5.8
-	github.com/influxdata/influxdb-observability/otel2influx v0.5.12
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/consumer v0.101.0
 	go.opentelemetry.io/collector/pdata v1.8.0
