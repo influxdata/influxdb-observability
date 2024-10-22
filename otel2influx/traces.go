@@ -158,7 +158,7 @@ func NewOtelTracesToLineProtocol(config *OtelTracesToLineProtocolConfig) (*OtelT
 		}
 	}
 
-	return &OtelTracesToLineProtocol{
+	protocol := &OtelTracesToLineProtocol{
 		logger:               config.Logger,
 		influxWriter:         config.Writer,
 		globalTable:          globalTable,
@@ -167,7 +167,17 @@ func NewOtelTracesToLineProtocol(config *OtelTracesToLineProtocolConfig) (*OtelT
 		customTable:          customTable,
 		customSpanDimensions: customSpanDimensions,
 		customSpanFields:     customSpanFields,
-	}, nil
+	}
+	protocol.logger.Debug("table: %s", protocol.globalTable)
+	protocol.logger.Debug("span tags: %v", protocol.globalSpanDimensions)
+	protocol.logger.Debug("span fields: %v", protocol.globalSpanFields)
+	for key, table := range protocol.customTable {
+		protocol.logger.Debug("custom table [%s]: %s", key, table)
+		protocol.logger.Debug("custom tags [%s]: %v", key, protocol.customSpanDimensions[key])
+		protocol.logger.Debug("custom fields [%s]: %v", key, protocol.customSpanFields[key])
+	}
+
+	return protocol, nil
 }
 
 func (c *OtelTracesToLineProtocol) WriteTraces(ctx context.Context, td ptrace.Traces) error {
