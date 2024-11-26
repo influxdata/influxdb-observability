@@ -49,12 +49,17 @@ func (b *MetricsBatch) inferMetricValueTypeV1(vType common.InfluxMetricValueType
 	if _, found := fields[common.MetricCounterFieldKey]; found {
 		return common.InfluxMetricValueTypeSum
 	}
+	isHistogram := true
 	for k := range fields {
-		if k == common.MetricHistogramCountFieldKey || k == common.MetricHistogramSumFieldKey || isStringNumeric(k) {
-			// We cannot reliably distinguish between histogram and summary
-			// without knowing we have all points, so here we assume histogram.
-			return common.InfluxMetricValueTypeHistogram
+		if k != common.MetricHistogramCountFieldKey && k != common.MetricHistogramSumFieldKey && k != common.AttributeStartTimeStatsd && !isStringNumeric(k) {
+			isHistogram = false
+			break
 		}
+	}
+	if isHistogram {
+		// We cannot reliably distinguish between histogram and summary
+		// without knowing we have all points, so here we assume histogram.
+		return common.InfluxMetricValueTypeHistogram
 	}
 	return common.InfluxMetricValueTypeUntyped
 }
@@ -274,7 +279,6 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 				explicitBounds = append(explicitBounds, explicitBound)
 				bucketCounts = append(bucketCounts, uint64(vBucketCount))
 			}
-
 		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized histogram field", "field", k, "value", vi)
@@ -356,7 +360,6 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 				valueAtQuantile.SetQuantile(quantile)
 				valueAtQuantile.SetValue(value)
 			}
-
 		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized summary field", "field", k, "value", vi)
