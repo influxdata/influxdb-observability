@@ -121,6 +121,47 @@ func TestAddPoint_v1_untypedGauge(t *testing.T) {
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
 
+func TestAddPoint_v1_untyped(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("some_custom_metric",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+		},
+		map[string]any{
+			"count":          int64(1),
+			"something_else": float64(2.3),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeUntyped)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("some_custom_metric_count")
+	m.SetEmptyGauge()
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetIntValue(1)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("some_custom_metric_something_else")
+	m.SetEmptyGauge()
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(2.3)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
 func TestAddPoint_v1_sum(t *testing.T) {
 	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
 	require.NoError(t, err)
