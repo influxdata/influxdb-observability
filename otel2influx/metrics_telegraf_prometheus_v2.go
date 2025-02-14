@@ -53,16 +53,26 @@ func (c *metricWriterTelegrafPrometheusV2) initMetricTagsAndTimestamp(dataPoint 
 	tags = maps.Clone(tags)
 	dataPoint.Attributes().Range(func(k string, v pcommon.Value) bool {
 		if k != "" {
-			if strings.HasPrefix(k, "field__") {
-				k = strings.TrimPrefix(k, "field__")
-				fields[k] = v
+			if strings.HasPrefix(k, "field_") {
+				k = strings.TrimPrefix(k, "field_")
+				switch v.Type() {
+				case pcommon.ValueTypeStr:
+					fields[k] = v.Str()
+				case pcommon.ValueTypeInt:
+					fields[k] = v.Int()
+				case pcommon.ValueTypeDouble:
+					fields[k] = v.Double()
+				case pcommon.ValueTypeBool:
+					fields[k] = v.Bool()
+				default:
+				}
+
 			} else {
 				tags[k] = v.AsString()
 			}
 		}
 		return true
 	})
-
 	return tags, fields, ts, nil
 }
 
