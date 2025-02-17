@@ -1,4 +1,4 @@
-module github.com/influxdata/influxdb-observability/common
+module github.com/bobbyliyao/influxdb-observability/common
 
 go 1.21.0
 

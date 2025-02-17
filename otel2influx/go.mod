@@ -1,4 +1,4 @@
-module github.com/influxdata/influxdb-observability/otel2influx
+module github.com/bobbyliyao/influxdb-observability/otel2influx
 
 go 1.21.0
 
