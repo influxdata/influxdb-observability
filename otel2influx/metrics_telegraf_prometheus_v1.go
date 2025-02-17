@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -59,7 +60,7 @@ func (c *metricWriterTelegrafPrometheusV1) initMetricTagsAndTimestamp(dataPoint 
 				case pcommon.ValueTypeStr:
 					fields[k] = v.Str()
 				case pcommon.ValueTypeInt:
-					fields[k] = v.Int()
+					fields[k] = v.Double()
 				case pcommon.ValueTypeDouble:
 					fields[k] = v.Double()
 				case pcommon.ValueTypeBool:
