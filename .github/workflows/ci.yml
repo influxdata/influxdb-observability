@@ -46,7 +46,7 @@ jobs:
 
       - name: staticcheck
         run: >
-          go install honnef.co/go/tools/cmd/staticcheck@2023.1.7 &&
+          go install honnef.co/go/tools/cmd/staticcheck@v0.6.1 &&
           cd ${{ matrix.package }} &&
           staticcheck -f stylish ./...
 
