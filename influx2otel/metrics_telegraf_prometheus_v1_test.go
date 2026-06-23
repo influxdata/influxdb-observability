@@ -534,3 +534,167 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
+
+func TestAddPoint_v1_gauge_separator(t *testing.T) {
+	// Use a dot to separate name and fields
+	c, err := influx2otel.NewLineProtocolToOtelMetricsWithSeparator(new(common.NoopLogger), ".")
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("cache_age_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"engine_id":            "0",
+		},
+		map[string]interface{}{
+			"gauge": float64(23.9),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeGauge)
+	require.NoError(t, err)
+
+	err = b.AddPoint("cache_age_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"engine_id":            "1",
+		},
+		map[string]interface{}{
+			"custom_gauge": float64(11.9),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeGauge)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds")
+	m.SetEmptyGauge()
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("engine_id", "0")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(23.9)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("cache_age_seconds.custom_gauge") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("engine_id", "1")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(11.9)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+func TestAddPoint_v1_sum_separator(t *testing.T) {
+	// Use a dot to separate name and fields
+	c, err := influx2otel.NewLineProtocolToOtelMetricsWithSeparator(new(common.NoopLogger), ".")
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("http_requests_total",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"counter": float64(1027),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeSum)
+	require.NoError(t, err)
+
+	err = b.AddPoint("http_requests_total",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "400",
+		},
+		map[string]interface{}{
+			"custom_counter": float64(3),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeSum)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total")
+	m.SetEmptySum()
+	m.Sum().SetIsMonotonic(true)
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(1027)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("http_requests_total.custom_counter") // Uses a dot to separate name and fields
+	m.SetEmptySum()
+	m.Sum().SetIsMonotonic(true)
+	m.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp = m.Sum().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "400")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(3)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+func TestAddPoint_v1_untyped_separator(t *testing.T) {
+	// Use a dot to separate name and fields
+	c, err := influx2otel.NewLineProtocolToOtelMetricsWithSeparator(new(common.NoopLogger), ".")
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("some_custom_metric",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+		},
+		map[string]any{
+			"count":          int64(1),
+			"something_else": float64(2.3),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeUntyped)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("some_custom_metric.count") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetIntValue(1)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("some_custom_metric.something_else") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetDoubleValue(2.3)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}

@@ -68,3 +68,60 @@ func TestUnknownSchema(t *testing.T) {
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
+
+func TestUnknownSchema_CustomSeparator(t *testing.T) {
+	// Use a dot to separate name and fields
+	c, err := influx2otel.NewLineProtocolToOtelMetricsWithSeparator(new(common.NoopLogger), ".")
+	require.NoError(t, err)
+
+	b := c.NewBatch()
+	err = b.AddPoint("cpu",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"cpu":                  "cpu4",
+			"host":                 "777348dc6343",
+		},
+		map[string]interface{}{
+			"usage_user":   0.10090817356207936,
+			"usage_system": 0.3027245206862381,
+			"some_int_key": int64(7),
+		},
+		time.Unix(0, 1395066363000000123),
+		common.InfluxMetricValueTypeUntyped)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu.usage_user") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp := m.Gauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetDoubleValue(0.10090817356207936)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu.usage_system") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetDoubleValue(0.3027245206862381)
+	m = isMetrics.Metrics().AppendEmpty()
+	m.SetName("cpu.some_int_key") // Uses a dot to separate name and fields
+	m.SetEmptyGauge()
+	dp = m.Gauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("cpu", "cpu4")
+	dp.Attributes().PutStr("host", "777348dc6343")
+	dp.SetTimestamp(pcommon.Timestamp(1395066363000000123))
+	dp.SetIntValue(7)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
