@@ -534,3 +534,116 @@ func TestAddPoint_v1_untypedSummary(t *testing.T) {
 
 	assertMetricsEqual(t, expect, b.GetMetrics())
 }
+
+func TestAddPoint_v1_histogramIntegerFields(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	// Integer line protocol fields (for example count=144320i) arrive as int64,
+	// which must be accepted rather than rejected as an unsupported value type.
+	b := c.NewBatch()
+	err = b.AddPoint("http_request_duration_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"count": int64(144320),
+			"sum":   int64(53423),
+			"0.05":  int64(24054),
+			"0.1":   int64(33444),
+			"0.2":   int64(100392),
+			"0.5":   int64(129389),
+			"1":     int64(133988),
+			"+Inf":  int64(144320),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeHistogram)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("http_request_duration_seconds")
+	m.SetEmptyHistogram()
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	dp := m.Histogram().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(144320)
+	dp.SetSum(53423)
+	dp.BucketCounts().FromRaw([]uint64{24054, 9390, 66948, 28997, 4599, 10332})
+	dp.ExplicitBounds().FromRaw([]float64{0.05, 0.1, 0.2, 0.5, 1})
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
+
+func TestAddPoint_v1_summaryIntegerFields(t *testing.T) {
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	require.NoError(t, err)
+
+	// Integer line protocol fields (for example count=2693i) arrive as int64,
+	// which must be accepted rather than rejected as an unsupported value type.
+	b := c.NewBatch()
+	err = b.AddPoint("rpc_duration_seconds",
+		map[string]string{
+			"container.name":       "42",
+			"otel.library.name":    "My Library",
+			"otel.library.version": "latest",
+			"method":               "post",
+			"code":                 "200",
+		},
+		map[string]interface{}{
+			"count": int64(2693),
+			"sum":   int64(17560473),
+			"0.01":  int64(3102),
+			"0.05":  int64(3272),
+			"0.5":   int64(4773),
+			"0.9":   int64(9001),
+			"0.99":  int64(76656),
+		},
+		time.Unix(0, 1395066363000000123).UTC(),
+		common.InfluxMetricValueTypeSummary)
+	require.NoError(t, err)
+
+	expect := pmetric.NewMetrics()
+	rm := expect.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("container.name", "42")
+	isMetrics := rm.ScopeMetrics().AppendEmpty()
+	isMetrics.Scope().SetName("My Library")
+	isMetrics.Scope().SetVersion("latest")
+	m := isMetrics.Metrics().AppendEmpty()
+	m.SetName("rpc_duration_seconds")
+	m.SetEmptySummary()
+	dp := m.Summary().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("code", "200")
+	dp.Attributes().PutStr("method", "post")
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(0, 1395066363000000123)))
+	dp.SetCount(2693)
+	dp.SetSum(17560473)
+	qv := dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.01)
+	qv.SetValue(3102)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.05)
+	qv.SetValue(3272)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.5)
+	qv.SetValue(4773)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.9)
+	qv.SetValue(9001)
+	qv = dp.QuantileValues().AppendEmpty()
+	qv.SetQuantile(0.99)
+	qv.SetValue(76656)
+
+	assertMetricsEqual(t, expect, b.GetMetrics())
+}
