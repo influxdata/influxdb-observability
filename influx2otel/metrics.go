@@ -16,12 +16,21 @@ import (
 )
 
 type LineProtocolToOtelMetrics struct {
-	logger common.Logger
+	logger        common.Logger
+	nameSeparator string
 }
 
 func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetrics, error) {
 	return &LineProtocolToOtelMetrics{
-		logger: logger,
+		logger:        logger,
+		nameSeparator: "_",
+	}, nil
+}
+
+func NewLineProtocolToOtelMetricsWithSeparator(logger common.Logger, nameSeparator string) (*LineProtocolToOtelMetrics, error) {
+	return &LineProtocolToOtelMetrics{
+		logger:        logger,
+		nameSeparator: nameSeparator,
 	}, nil
 }
 
@@ -33,7 +42,8 @@ func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 		histogramDataPointsByMDPK: make(map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint),
 		summaryDataPointsByMDPK:   make(map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint),
 
-		logger: c.logger,
+		logger:        c.logger,
+		nameSeparator: c.nameSeparator,
 	}
 }
 
@@ -44,7 +54,8 @@ type MetricsBatch struct {
 	histogramDataPointsByMDPK map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint
 	summaryDataPointsByMDPK   map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint
 
-	logger common.Logger
+	logger        common.Logger
+	nameSeparator string
 }
 
 // measurement - metric name
@@ -235,7 +246,7 @@ func (b *MetricsBatch) addPointWithUnknownSchema(measurement string, tags map[st
 			continue
 		}
 
-		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metricName := fmt.Sprintf("%s%s%s", measurement, b.nameSeparator, k)
 		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
