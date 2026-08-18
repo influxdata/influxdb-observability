@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	semconv "go.opentelemetry.io/collector/semconv/v1.16.0"
@@ -27,9 +27,9 @@ func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetr
 
 func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 	return &MetricsBatch{
-		rmByAttributes:            make(map[[16]byte]pmetric.ResourceMetrics),
-		ilmByRMAttributesAndIL:    make(map[[16]byte]map[string]pmetric.ScopeMetrics),
-		metricByRMIL:              make(map[[16]byte]map[string]map[string]pmetric.Metric),
+		rmByAttributes:            make(map[string]pmetric.ResourceMetrics),
+		ilmByRMAttributesAndIL:    make(map[string]map[string]pmetric.ScopeMetrics),
+		metricByRMIL:              make(map[string]map[string]map[string]pmetric.Metric),
 		histogramDataPointsByMDPK: make(map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint),
 		summaryDataPointsByMDPK:   make(map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint),
 
@@ -38,9 +38,9 @@ func (c *LineProtocolToOtelMetrics) NewBatch() *MetricsBatch {
 }
 
 type MetricsBatch struct {
-	rmByAttributes            map[[16]byte]pmetric.ResourceMetrics
-	ilmByRMAttributesAndIL    map[[16]byte]map[string]pmetric.ScopeMetrics
-	metricByRMIL              map[[16]byte]map[string]map[string]pmetric.Metric
+	rmByAttributes            map[string]pmetric.ResourceMetrics
+	ilmByRMAttributesAndIL    map[string]map[string]pmetric.ScopeMetrics
+	metricByRMIL              map[string]map[string]map[string]pmetric.Metric
 	histogramDataPointsByMDPK map[pmetric.Metric]map[dataPointKey]pmetric.HistogramDataPoint
 	summaryDataPointsByMDPK   map[pmetric.Metric]map[dataPointKey]pmetric.SummaryDataPoint
 
@@ -74,6 +74,23 @@ func (b *MetricsBatch) AddPoint(measurement string, tags map[string]string, fiel
 
 var errValueTypeUnknown = errors.New("value type unknown")
 
+func attributeMapKey(attributes pcommon.Map) string {
+	keys := make([]string, 0, attributes.Len())
+	attributes.Range(func(key string, _ pcommon.Value) bool {
+		keys = append(keys, key)
+		return true
+	})
+	sort.Strings(keys)
+
+	var key strings.Builder
+	for _, name := range keys {
+		value, _ := attributes.Get(name)
+		valueText := value.AsString()
+		fmt.Fprintf(&key, "%d:%s:%d:%d:%s", len(name), name, value.Type(), len(valueText), valueText)
+	}
+	return key.String()
+}
+
 func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, vType common.InfluxMetricValueType) (pmetric.Metric, pcommon.Map, error) {
 	var ilName, ilVersion string
 	rAttributes := pcommon.NewMap()
@@ -98,7 +115,7 @@ func (b *MetricsBatch) lookupMetric(metricName string, tags map[string]string, v
 		}
 	}
 
-	rKey := pdatautil.MapHash(rAttributes)
+	rKey := attributeMapKey(rAttributes)
 	var resourceMetrics pmetric.ResourceMetrics
 	if rm, found := b.rmByAttributes[rKey]; found {
 		resourceMetrics = rm
