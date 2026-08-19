@@ -15,22 +15,27 @@ import (
 	"github.com/influxdata/influxdb-observability/common"
 )
 
+type LineProtocolToOtelMetricsConfig struct {
+	Logger        common.Logger
+	NameSeparator string
+}
+
+func DefaultLineProtocolToOtelMetricsConfig() *LineProtocolToOtelMetricsConfig {
+	return &LineProtocolToOtelMetricsConfig{
+		Logger:        new(common.NoopLogger),
+		NameSeparator: "_",
+	}
+}
+
 type LineProtocolToOtelMetrics struct {
 	logger        common.Logger
 	nameSeparator string
 }
 
-func NewLineProtocolToOtelMetrics(logger common.Logger) (*LineProtocolToOtelMetrics, error) {
+func NewLineProtocolToOtelMetrics(config *LineProtocolToOtelMetricsConfig) (*LineProtocolToOtelMetrics, error) {
 	return &LineProtocolToOtelMetrics{
-		logger:        logger,
-		nameSeparator: "_",
-	}, nil
-}
-
-func NewLineProtocolToOtelMetricsWithSeparator(logger common.Logger, nameSeparator string) (*LineProtocolToOtelMetrics, error) {
-	return &LineProtocolToOtelMetrics{
-		logger:        logger,
-		nameSeparator: nameSeparator,
+		logger:        config.Logger,
+		nameSeparator: config.NameSeparator,
 	}, nil
 }
 

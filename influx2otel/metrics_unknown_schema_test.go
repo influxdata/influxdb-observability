@@ -14,7 +14,8 @@ import (
 )
 
 func TestUnknownSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -70,8 +71,10 @@ func TestUnknownSchema(t *testing.T) {
 }
 
 func TestUnknownSchema_CustomSeparator(t *testing.T) {
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	config.NameSeparator = "."
 	// Use a dot to separate name and fields
-	c, err := influx2otel.NewLineProtocolToOtelMetricsWithSeparator(new(common.NoopLogger), ".")
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
