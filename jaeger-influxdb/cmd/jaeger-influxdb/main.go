@@ -16,6 +16,7 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/influxdata/influxdb-observability/jaeger-influxdb/internal"
@@ -124,7 +125,7 @@ func run(ctx context.Context, config *internal.Config) error {
 			return err
 		}))
 	reflection.Register(grpcServer)
-	if err = grpcHandler.Register(grpcServer); err != nil {
+	if err = grpcHandler.Register(grpcServer, health.NewServer()); err != nil {
 		return err
 	}
 
