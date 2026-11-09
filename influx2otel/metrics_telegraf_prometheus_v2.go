@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/influxdata/influxdb-observability/common"
@@ -64,7 +63,7 @@ func (b *MetricsBatch) inferMetricValueTypeV2(vType common.InfluxMetricValueType
 type dataPointKey string
 
 func newDataPointKey(ts time.Time, attributes pcommon.Map) dataPointKey {
-	return dataPointKey(fmt.Sprintf("%d:%s", ts.UnixNano(), pdatautil.MapHash(attributes)))
+	return dataPointKey(fmt.Sprintf("%d:%s", ts.UnixNano(), attributeMapKey(attributes)))
 }
 
 func (b *MetricsBatch) convertGaugeV2(tags map[string]string, fields map[string]interface{}, ts time.Time) error {
