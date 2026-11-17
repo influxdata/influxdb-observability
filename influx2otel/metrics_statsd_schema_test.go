@@ -14,7 +14,8 @@ import (
 )
 
 func TestStatsdTimingSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -106,7 +107,8 @@ func TestStatsdTimingSchema(t *testing.T) {
 }
 
 func TestStatsCounter(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -142,7 +144,8 @@ func TestStatsCounter(t *testing.T) {
 }
 
 func TestStatsDeltaCounter(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -179,7 +182,8 @@ func TestStatsDeltaCounter(t *testing.T) {
 }
 
 func TestStatsGauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -214,7 +218,8 @@ func TestStatsGauge(t *testing.T) {
 }
 
 func TestStatsdSetsSchema(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	// statsd metric:
@@ -249,7 +254,8 @@ func TestStatsdSetsSchema(t *testing.T) {
 }
 
 func TestDeltaTemporalityStatsdCounter(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	// statsd metric:

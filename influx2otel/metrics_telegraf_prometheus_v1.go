@@ -130,7 +130,7 @@ func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string
 			continue
 		}
 
-		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metricName := fmt.Sprintf("%s%s%s", measurement, b.nameSeparator, k)
 		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeGauge)
 		if err != nil {
 			return err
@@ -220,7 +220,7 @@ func (b *MetricsBatch) convertSumV1(measurement string, tags map[string]string, 
 			continue
 		}
 
-		metricName := fmt.Sprintf("%s_%s", measurement, k)
+		metricName := fmt.Sprintf("%s%s%s", measurement, b.nameSeparator, k)
 		metric, attributes, err := b.lookupMetric(metricName, tags, common.InfluxMetricValueTypeSum)
 		if err != nil {
 			return err

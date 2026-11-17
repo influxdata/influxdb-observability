@@ -14,7 +14,8 @@ import (
 )
 
 func TestAddPoint_v2_gauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -68,7 +69,8 @@ func TestAddPoint_v2_gauge(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedGauge(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -122,7 +124,8 @@ func TestAddPoint_v2_untypedGauge(t *testing.T) {
 }
 
 func TestAddPoint_v2_sum(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -182,7 +185,8 @@ func TestAddPoint_v2_sum(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedSum(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -240,7 +244,8 @@ func TestAddPoint_v2_untypedSum(t *testing.T) {
 }
 
 func TestAddPoint_v2_histogram(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -380,7 +385,8 @@ func TestAddPoint_v2_histogram(t *testing.T) {
 }
 
 func TestAddPoint_v2_histogram_missingInfinityBucket(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -504,7 +510,8 @@ func TestAddPoint_v2_histogram_missingInfinityBucket(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedHistogram(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -628,7 +635,8 @@ func TestAddPoint_v2_untypedHistogram(t *testing.T) {
 }
 
 func TestAddPoint_v2_summary(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
@@ -764,7 +772,8 @@ func TestAddPoint_v2_summary(t *testing.T) {
 }
 
 func TestAddPoint_v2_untypedSummary(t *testing.T) {
-	c, err := influx2otel.NewLineProtocolToOtelMetrics(new(common.NoopLogger))
+	config := influx2otel.DefaultLineProtocolToOtelMetricsConfig()
+	c, err := influx2otel.NewLineProtocolToOtelMetrics(config)
 	require.NoError(t, err)
 
 	b := c.NewBatch()
