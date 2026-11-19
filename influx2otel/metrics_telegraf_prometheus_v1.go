@@ -69,6 +69,37 @@ func isStringNumeric(s string) bool {
 	return err == nil
 }
 
+// toFloat64 coerces a numeric line protocol field value to float64. Integer
+// fields (for example count=1i) arrive as int64 or uint64, so accept those in
+// addition to float64.
+func toFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case int64:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	default:
+		return 0, false
+	}
+}
+
+// toUint64 coerces a numeric line protocol field value to uint64, accepting the
+// same integer field types as toFloat64.
+func toUint64(value interface{}) (uint64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return uint64(v), true
+	case int64:
+		return uint64(v), true
+	case uint64:
+		return v, true
+	default:
+		return 0, false
+	}
+}
+
 func (b *MetricsBatch) convertGaugeV1(measurement string, tags map[string]string, fields map[string]interface{}, ts time.Time) error {
 	if fieldValue, found := fields[common.MetricGaugeFieldKey]; found {
 		var floatValue *float64
@@ -259,26 +290,27 @@ func (b *MetricsBatch) convertHistogramV1(measurement string, tags map[string]st
 	for k, vi := range fields {
 		if k == common.MetricHistogramCountFieldKey {
 			foundCount = true
-			if vCount, ok := vi.(float64); !ok {
+			vCount, ok := toUint64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported histogram count value type %T", vi)
-			} else {
-				count = uint64(vCount)
 			}
+			count = vCount
 
 		} else if k == common.MetricHistogramSumFieldKey {
 			foundSum = true
-			var ok bool
-			if sum, ok = vi.(float64); !ok {
+			vSum, ok := toFloat64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported histogram sum value type %T", vi)
 			}
+			sum = vSum
 
 		} else if explicitBound, err := strconv.ParseFloat(k, 64); err == nil {
-			if vBucketCount, ok := vi.(float64); !ok {
+			vBucketCount, ok := toUint64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported histogram bucket bound value type %T", vi)
-			} else {
-				explicitBounds = append(explicitBounds, explicitBound)
-				bucketCounts = append(bucketCounts, uint64(vBucketCount))
 			}
+			explicitBounds = append(explicitBounds, explicitBound)
+			bucketCounts = append(bucketCounts, vBucketCount)
 		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized histogram field", "field", k, "value", vi)
@@ -339,27 +371,28 @@ func (b *MetricsBatch) convertSummaryV1(measurement string, tags map[string]stri
 	for k, vi := range fields {
 		if k == common.MetricSummaryCountFieldKey {
 			foundCount = true
-			if vCount, ok := vi.(float64); !ok {
+			vCount, ok := toUint64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported summary count value type %T", vi)
-			} else {
-				count = uint64(vCount)
 			}
+			count = vCount
 
 		} else if k == common.MetricSummarySumFieldKey {
 			foundSum = true
-			var ok bool
-			if sum, ok = vi.(float64); !ok {
+			vSum, ok := toFloat64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported summary sum value type %T", vi)
 			}
+			sum = vSum
 
 		} else if quantile, err := strconv.ParseFloat(k, 64); err == nil {
-			if value, ok := vi.(float64); !ok {
+			value, ok := toFloat64(vi)
+			if !ok {
 				return fmt.Errorf("unsupported summary bucket bound value type %T", vi)
-			} else {
-				valueAtQuantile := quantileValues.AppendEmpty()
-				valueAtQuantile.SetQuantile(quantile)
-				valueAtQuantile.SetValue(value)
 			}
+			valueAtQuantile := quantileValues.AppendEmpty()
+			valueAtQuantile.SetQuantile(quantile)
+			valueAtQuantile.SetValue(value)
 		} else if k == common.AttributeStartTimeStatsd {
 		} else {
 			b.logger.Debug("skipping unrecognized summary field", "field", k, "value", vi)
